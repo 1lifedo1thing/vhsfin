@@ -34,24 +34,24 @@ class LivingRoomPage extends ConsumerWidget {
               final wide = constraints.maxWidth > 820;
               final pad = wide ? constraints.maxWidth * 0.14 : 16.0;
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(pad, 20, pad, 12),
-                      child: const _EntertainmentCenter(),
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(pad, 20, pad, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _EntertainmentCenter(),
+                    const SizedBox(height: 20),
+                    _BottomBar(
+                      connected: session != null,
+                      userName: session?.userName,
+                      onRemote: () => showVhsRemote(context),
+                      onCollection: () => context.push('/libraries'),
+                      onConnect: () => context.push('/connect'),
+                      onSignOut: () =>
+                          ref.read(sessionProvider.notifier).signOut(),
                     ),
-                  ),
-                  _BottomBar(
-                    connected: session != null,
-                    userName: session?.userName,
-                    onRemote: () => showVhsRemote(context),
-                    onCollection: () => context.push('/libraries'),
-                    onConnect: () => context.push('/connect'),
-                    onSignOut: () =>
-                        ref.read(sessionProvider.notifier).signOut(),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),

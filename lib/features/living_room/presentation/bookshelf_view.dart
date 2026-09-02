@@ -10,7 +10,7 @@ import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
 class BookshelfView extends ConsumerWidget {
   const BookshelfView({super.key, this.embedded = false});
 
-  /// When true, sits inside the wooden entertainment center (no outer plank chrome).
+  /// When true, sits inside the wooden entertainment center.
   final bool embedded;
 
   @override
@@ -34,13 +34,15 @@ class BookshelfView extends ConsumerWidget {
         return Column(
           children: [
             for (var i = 0; i < shelves.length; i++) ...[
-              if (i > 0) const SizedBox(height: 16),
-              _ShelfRow(
+              if (i > 0) const SizedBox(height: 14),
+              _ShelfBlock(
                 shelf: shelves[i],
                 loadedId: loadedId,
                 expandedSeriesId: expandedId,
                 embedded: embedded,
-                showTitle: !embedded || shelves[i].isEpisodeShelf || shelves.length > 1,
+                showTitle: !embedded ||
+                    shelves[i].isEpisodeShelf ||
+                    shelves.length > 1,
               ),
             ],
           ],
@@ -50,8 +52,8 @@ class BookshelfView extends ConsumerWidget {
   }
 }
 
-class _ShelfRow extends ConsumerWidget {
-  const _ShelfRow({
+class _ShelfBlock extends ConsumerWidget {
+  const _ShelfBlock({
     required this.shelf,
     required this.loadedId,
     required this.expandedSeriesId,
@@ -65,67 +67,94 @@ class _ShelfRow extends ConsumerWidget {
   final bool embedded;
   final bool showTitle;
 
+  static const _spineSlotWidth = 36.0;
+  static const _rowHeight = 186.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final body = shelf.items.isEmpty
-        ? Center(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showTitle)
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 8),
             child: Text(
-              shelf.id == 'empty'
-                  ? 'Pick a collection below'
-                  : 'Empty shelf',
-              style: TextStyle(
-                color: VhsColors.brand.withValues(alpha: 0.55),
+              shelf.title,
+              style: vhsBrandStyle(size: 13).copyWith(letterSpacing: 2),
+            ),
+          ),
+        if (shelf.items.isEmpty)
+          _cavity(
+            child: Center(
+              child: Text(
+                shelf.id == 'empty'
+                    ? 'Pick a collection below'
+                    : 'Empty shelf',
+                style: TextStyle(
+                  color: VhsColors.brand.withValues(alpha: 0.55),
+                ),
               ),
             ),
           )
-        : ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: shelf.items.length,
-            itemBuilder: (context, index) {
-              final tape = shelf.items[index];
-              final selected = tape.id == loadedId ||
-                  (tape.kind == TapeKind.series &&
-                      tape.id == expandedSeriesId);
-              return VhsSpine(
-                tape: tape,
-                selected: selected,
-                onTap: () => _onTap(ref, tape),
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final perRow = (constraints.maxWidth / _spineSlotWidth)
+                  .floor()
+                  .clamp(1, 100);
+              final rows = <List<Tape>>[];
+              for (var i = 0; i < shelf.items.length; i += perRow) {
+                final end = (i + perRow < shelf.items.length)
+                    ? i + perRow
+                    : shelf.items.length;
+                rows.add(shelf.items.sublist(i, end));
+              }
+
+              return Column(
+                children: [
+                  for (var r = 0; r < rows.length; r++) ...[
+                    if (r > 0) const SizedBox(height: 12),
+                    _cavity(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (final tape in rows[r])
+                            VhsSpine(
+                              tape: tape,
+                              selected: tape.id == loadedId ||
+                                  (tape.kind == TapeKind.series &&
+                                      tape.id == expandedSeriesId),
+                              onTap: () => _onTap(ref, tape),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    CustomPaint(
+                      size: const Size(double.infinity, 8),
+                      painter: ShelfLipPainter(),
+                    ),
+                  ],
+                ],
               );
             },
-          );
-
-    if (embedded) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showTitle)
-            Padding(
-              padding: const EdgeInsets.only(left: 2, bottom: 8),
-              child: Text(
-                shelf.title,
-                style: vhsBrandStyle(size: 13).copyWith(letterSpacing: 2),
-              ),
-            ),
-          Container(
-            height: 188,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.black.withValues(alpha: 0.28),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
-            ),
-            padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
-            child: body,
           ),
-          const SizedBox(height: 6),
-          CustomPaint(
-            size: const Size(double.infinity, 8),
-            painter: ShelfLipPainter(),
-          ),
-        ],
-      );
-    }
+      ],
+    );
+  }
 
-    return ShelfPlank(title: shelf.title, child: SizedBox.expand(child: body));
+  Widget _cavity({required Widget child}) {
+    return Container(
+      height: _rowHeight,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.black.withValues(alpha: embedded ? 0.28 : 0.22),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
+      child: child,
+    );
   }
 
   void _onTap(WidgetRef ref, Tape tape) {
