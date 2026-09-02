@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Serve Flutter web build and proxy Internet Archive JSON (CORS-safe)."""
+"""Serve Flutter web build and proxy cover lookups (CORS-safe)."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -14,7 +15,93 @@ from pathlib import Path
 
 UA = "vhsfin-proxy/0.1 (kids jellyfin client)"
 IA = "https://archive.org"
+VC = "https://vhscollector.com"
 ROOT = Path(__file__).resolve().parents[1] / "build" / "web"
+
+
+def title_slugs(title: str) -> list[str]:
+    t = title.strip().lower()
+    t = re.sub(r"\s*\(\d{4}\)\s*$", "", t)
+    t = re.sub(r"[^a-z0-9]+", "-", t).strip("-")
+    if not t:
+        return []
+    out = [t]
+    bare = re.sub(r"^(the|a|an)-", "", t)
+    if bare and bare != t:
+        out.append(bare)
+    # de-dupe preserve order
+    seen: set[str] = set()
+    uniq: list[str] = []
+    for s in out:
+        if s not in seen:
+            seen.add(s)
+            uniq.append(s)
+    return uniq
+
+
+def _full_vhsimage_urls(chunk: str) -> list[str]:
+    found = re.findall(
+        r"(?:https://vhscollector\.com)?(/sites/default/files/vhsimages/[^\"'\s>]+\.jpg)",
+        chunk,
+        flags=re.I,
+    )
+    # Drop Drupal image-style derivatives.
+    return [u for u in found if "/styles/" not in u]
+
+
+def extract_collector_art(html: str) -> dict | None:
+    """Prefer dedicated spine, else combined wraparound sleeve."""
+    for field, kind, fraction in (
+        ("field--name-field-vhs-imgspine", "spine", 1.0),
+        ("field--name-field-vhs-imgcomb", "comb", 0.09),
+    ):
+        idx = html.find(field)
+        if idx < 0:
+            continue
+        chunk = html[idx : idx + 2500]
+        urls = _full_vhsimage_urls(chunk)
+        if not urls:
+            # Sometimes only the styled src is in the first chunk; try href too.
+            hrefs = re.findall(
+                r'href="((?:https://vhscollector\.com)?/sites/default/files/vhsimages/[^"]+\.jpg)"',
+                chunk,
+                flags=re.I,
+            )
+            urls = [u for u in hrefs if "/styles/" not in u]
+        if not urls:
+            continue
+        path = urls[0]
+        if path.startswith("http"):
+            image_url = path
+        else:
+            image_url = VC + path
+        return {"imageUrl": image_url, "kind": kind, "fraction": fraction}
+    return None
+
+
+def lookup_vhscollector(title: str) -> dict:
+    for slug in title_slugs(title):
+        url = f"{VC}/movie/{slug}"
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        try:
+            with urllib.request.urlopen(req, timeout=18) as resp:
+                html = resp.read().decode("utf-8", "replace")
+                status = resp.status
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                continue
+            return {"ok": False, "error": f"HTTP {exc.code}", "slug": slug}
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "error": str(exc), "slug": slug}
+
+        if status != 200:
+            continue
+        art = extract_collector_art(html)
+        if art:
+            print(f"[vc] HIT slug={slug} kind={art['kind']}", flush=True)
+            return {"ok": True, "slug": slug, "page": url, **art}
+        print(f"[vc] page ok but no spine/comb slug={slug}", flush=True)
+    return {"ok": False, "error": "not_found"}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -44,7 +131,22 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/ia/health":
             self._json(200, {"ok": True})
             return
+        if parsed.path == "/vc/lookup":
+            self._vc_lookup(parsed.query)
+            return
         super().do_GET()
+
+    def _vc_lookup(self, query: str) -> None:
+        qs = urllib.parse.parse_qs(query)
+        title = (qs.get("title") or [""])[0].strip()
+        slug = (qs.get("slug") or [""])[0].strip()
+        if not title and slug:
+            title = slug.replace("-", " ")
+        if not title:
+            self._json(400, {"ok": False, "error": "missing title"})
+            return
+        result = lookup_vhscollector(title)
+        self._json(200 if result.get("ok") else 404, result)
 
     def _proxy_search(self, query: str) -> None:
         qs = urllib.parse.parse_qs(query)
@@ -104,9 +206,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, fmt: str, *args) -> None:
-        # Keep access log quiet except IA + errors.
         msg = fmt % args
-        if "/ia/" in msg or args and str(args[1]).startswith("4"):
+        if "/ia/" in msg or "/vc/" in msg or (args and str(args[1]).startswith("4")):
             super().log_message(fmt, *args)
 
 
@@ -127,7 +228,10 @@ def main() -> None:
     global ROOT
     ROOT = root
     server = ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
-    print(f"Serving {root} on http://0.0.0.0:{args.port} (IA proxy /ia/*)", flush=True)
+    print(
+        f"Serving {root} on http://0.0.0.0:{args.port} (proxies /ia/* /vc/*)",
+        flush=True,
+    )
     try:
         server.serve_forever()
     except KeyboardInterrupt:

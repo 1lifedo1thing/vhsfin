@@ -39,10 +39,11 @@ class VhsSpineArt {
   }
 }
 
-/// Looks up period VHS sleeve scans (Internet Archive, then vhsplus.com.br).
+/// Looks up period VHS sleeve scans (VHSCollector, then Internet Archive).
 ///
-/// Flutter web cannot `fetch` archive.org (no CORS) — we use JSONP instead.
-/// vhsplus.com.br exposes a CORS-friendly WordPress REST API.
+/// VHSCollector uses predictable `/movie/{slug}` pages with dedicated spine
+/// or wraparound sleeve scans. Flutter web hits them via `/vc/lookup` proxy
+/// (no CORS on vhscollector.com). IA still uses JSONP on web.
 class VhsCoverResolver {
   VhsCoverResolver({Dio? dio})
       : _dio = dio ??
@@ -58,42 +59,12 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.ia_spine_art.v4';
+  static const _cacheKey = 'vhsfin.spine_art.v5';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
   static const missTtl = Duration(hours: 12);
-  static const _vhsPlusApi = 'https://vhsplus.com.br/wp-json/wp/v2';
-
-  /// English → Portuguese search hints for Brazilian VHS PLUS catalog.
-  static const _ptHints = <String, List<String>>{
-    'the lion king': ['o rei leao', 'rei leao'],
-    'lion king': ['o rei leao', 'rei leao'],
-    'beauty and the beast': ['a bela e a fera', 'bela e a fera'],
-    'the little mermaid': ['a pequena sereia', 'pequena sereia'],
-    'little mermaid': ['a pequena sereia', 'pequena sereia'],
-    'lady and the tramp': ['a dama e o vagabundo', 'dama e o vagabundo'],
-    '101 dalmatians': ['101 dalmatas', 'cento e um dalmatas'],
-    'one hundred and one dalmatians': ['101 dalmatas'],
-    'snow white': ['branca de neve'],
-    'sleeping beauty': ['a bela adormecida', 'bela adormecida'],
-    'cinderella': ['cinderela'],
-    'peter pan': ['peter pan'],
-    'pinocchio': ['pinocio', 'pinóquio'],
-    'bambi': ['bambi'],
-    'dumbo': ['dumbo'],
-    'aladdin': ['aladdin', 'alladin'],
-    'mulan': ['mulan'],
-    'hercules': ['hercules', 'hércules'],
-    'pocahontas': ['pocahontas'],
-    'tarzan': ['tarzan'],
-    'toy story': ['toy story'],
-    'a bug\'s life': ['vida de inseto'],
-    'monsters, inc': ['monstros s.a', 'monstros sa'],
-    'finding nemo': ['procurando nemo'],
-    'the incredibles': ['os incriveis', 'os incríveis'],
-    'home alone': ['esqueca-me se for capaz', 'escondidos no sofá', 'home alone'],
-  };
+  static const _collectorBase = 'https://vhscollector.com';
 
   final Map<String, String> _memory = {};
 
@@ -197,11 +168,12 @@ class VhsCoverResolver {
     final cleaned = _normalizeTitle(title);
     if (cleaned.isEmpty) return null;
 
+    // Prefer VHSCollector — English slugs + real spine scans.
+    final fromCollector = await _searchVhsCollector(cleaned);
+    if (fromCollector != null) return fromCollector;
+
     final fromIa = await _searchInternetArchive(cleaned, year);
     if (fromIa != null) return fromIa;
-
-    final fromPlus = await _searchVhsPlus(cleaned);
-    if (fromPlus != null) return fromPlus;
 
     return null;
   }
@@ -248,138 +220,91 @@ class VhsCoverResolver {
     return null;
   }
 
-  Future<VhsSpineArt?> _searchVhsPlus(String cleaned) async {
-    final terms = <String>{
-      cleaned,
-      cleaned.replaceFirst(RegExp(r'^(the|a|an)\s+', caseSensitive: false), ''),
-      ...?_ptHints[cleaned.toLowerCase()],
-    };
-
-    final ranked = <({Map<String, dynamic> post, double score})>[];
-    for (final term in terms) {
-      if (term.trim().isEmpty) continue;
-      try {
-        final response = await _dio.get<List<dynamic>>(
-          '$_vhsPlusApi/posts',
-          queryParameters: {
-            'search': term,
-            'per_page': 8,
-            '_embed': '1',
-          },
-        );
-        final posts = response.data ?? const [];
-        for (final raw in posts) {
-          if (raw is! Map<String, dynamic>) continue;
-          final slug = (raw['slug'] as String? ?? '').toLowerCase();
-          final titleHtml = raw['title'];
-          final title = titleHtml is Map
-              ? (titleHtml['rendered'] as String? ?? '')
-              : '$titleHtml';
-          final plain = _stripHtml(title).toLowerCase();
-          if (_looksLikeVhsPlusShop(slug, plain)) continue;
-          final score = _vhsPlusScore(
-            slug: slug,
-            title: plain,
-            wanted: cleaned.toLowerCase(),
-            term: term.toLowerCase(),
-          );
-          if (score < 0.4) continue;
-          ranked.add((post: raw, score: score));
-        }
-      } catch (err) {
-        debugPrint('vhs-spine vhsplus error for "$term": $err');
-      }
-    }
-
-    if (ranked.isEmpty) return null;
-    ranked.sort((a, b) => b.score.compareTo(a.score));
-
-    for (final hit in ranked.take(5)) {
-      final url = await _vhsPlusImageUrl(hit.post);
-      if (url == null) continue;
-      final titleMap = hit.post['title'];
-      final label = titleMap is Map
-          ? _stripHtml(titleMap['rendered'] as String? ?? '')
-          : _stripHtml('$titleMap');
-      debugPrint('vhs-spine vhsplus hit "$label" → $url');
-      return VhsSpineArt(
-        imageUrl: url,
-        centerWidthFraction: wraparoundSpineFraction,
-      );
-    }
-    return null;
-  }
-
-  Future<String?> _vhsPlusImageUrl(Map<String, dynamic> post) async {
-    final embedded = post['_embedded'];
-    if (embedded is Map) {
-      final media = embedded['wp:featuredmedia'];
-      if (media is List && media.isNotEmpty && media.first is Map) {
-        final full = media.first['source_url'] as String?;
-        if (full != null && full.isNotEmpty) return full;
-      }
-    }
-
-    final mediaId = post['featured_media'];
-    if (mediaId is! int || mediaId <= 0) return null;
+  Future<VhsSpineArt?> _searchVhsCollector(String cleaned) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '$_vhsPlusApi/media/$mediaId',
-      );
-      final url = response.data?['source_url'] as String?;
-      if (url != null && url.isNotEmpty) return url;
+      if (kIsWeb) {
+        final response = await _dio.get<Map<String, dynamic>>(
+          '/vc/lookup',
+          queryParameters: {'title': cleaned},
+          options: Options(
+            validateStatus: (code) => code != null && code < 500,
+          ),
+        );
+        final data = response.data;
+        if (data == null || data['ok'] != true) return null;
+        final url = data['imageUrl'] as String?;
+        if (url == null || url.isEmpty) return null;
+        final fraction = (data['fraction'] as num?)?.toDouble() ??
+            wraparoundSpineFraction;
+        debugPrint(
+          'vhs-spine collector HIT "${data['slug']}" (${data['kind']}) → $url',
+        );
+        return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
+      }
+
+      for (final slug in _collectorSlugs(cleaned)) {
+        final art = await _collectorArtFromSlug(slug);
+        if (art != null) return art;
+      }
     } catch (err) {
-      debugPrint('vhs-spine vhsplus media error: $err');
+      debugPrint('vhs-spine collector error: $err');
     }
     return null;
   }
 
-  bool _looksLikeVhsPlusShop(String slug, String title) {
-    const bad = [
-      'loja',
-      'lojavhsplus',
-      'catalogo-de-filmes',
-      'mercado',
-      'pirataria',
-      'wishlist',
-    ];
-    for (final token in bad) {
-      if (slug.contains(token) || title.contains(token)) return true;
-    }
-    return false;
+  List<String> _collectorSlugs(String cleaned) {
+    final base = cleaned
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    if (base.isEmpty) return const [];
+    final bare = base.replaceFirst(RegExp(r'^(the|a|an)-'), '');
+    return {
+      base,
+      if (bare.isNotEmpty && bare != base) bare,
+    }.toList();
   }
 
-  double _vhsPlusScore({
-    required String slug,
-    required String title,
-    required String wanted,
-    required String term,
-  }) {
-    var score = _score('$title $slug', wanted);
-    if (title.contains(term) || slug.contains(term.replaceAll(' ', '-'))) {
-      score += 0.2;
+  Future<VhsSpineArt?> _collectorArtFromSlug(String slug) async {
+    try {
+      final response = await _dio.get<String>(
+        '$_collectorBase/movie/$slug',
+        options: Options(
+          responseType: ResponseType.plain,
+          validateStatus: (code) => code != null && code < 500,
+        ),
+      );
+      if (response.statusCode != 200 || response.data == null) return null;
+      return _parseCollectorHtml(response.data!);
+    } catch (err) {
+      debugPrint('vhs-spine collector slug=$slug: $err');
+      return null;
     }
-    if (slug.contains('capa') ||
-        slug.contains('capavhs') ||
-        slug.endsWith('-vhs') ||
-        title.contains('capa')) {
-      score += 0.25;
-    }
-    // Prefer dedicated cover posts over blog noise.
-    if (slug == wanted.replaceAll(' ', '-') ||
-        slug == term.replaceAll(' ', '-')) {
-      score += 0.2;
-    }
-    return score.clamp(0.0, 1.0);
   }
 
-  String _stripHtml(String value) {
-    return value
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll('&amp;', '&')
-        .replaceAll('&#8211;', '-')
-        .replaceAll('&nbsp;', ' ')
-        .trim();
+  VhsSpineArt? _parseCollectorHtml(String html) {
+    for (final entry in [
+      ('field--name-field-vhs-imgspine', 1.0),
+      ('field--name-field-vhs-imgcomb', wraparoundSpineFraction),
+    ]) {
+      final field = entry.$1;
+      final fraction = entry.$2;
+      final idx = html.indexOf(field);
+      if (idx < 0) continue;
+      final chunk = html.substring(idx, (idx + 2500).clamp(0, html.length));
+      final matches = RegExp(
+        r"""(?:https://vhscollector\.com)?(/sites/default/files/vhsimages/[^"'>\s]+\.jpg)""",
+        caseSensitive: false,
+      ).allMatches(chunk);
+      for (final match in matches) {
+        final path = match.group(1)!;
+        if (path.contains('/styles/')) continue;
+        final url = path.startsWith('http') ? path : '$_collectorBase$path';
+        debugPrint('vhs-spine collector parse → $url');
+        return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
+      }
+    }
+    return null;
   }
 
   Future<List<Map<String, dynamic>>> _searchDocs(String query) async {
