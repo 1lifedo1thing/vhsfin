@@ -1,0 +1,30 @@
+name: vhsfin
+description: Bare-bones Jellyfin client for kids — VCR living room, VHS playback.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.4.2
+  go_router: ^18.0.0
+  dio: ^5.11.0
+  shared_preferences: ^2.5.5
+  uuid: ^4.6.0
+  fancy_overlay: ^0.1.2
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.7
+  google_fonts: ^8.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
