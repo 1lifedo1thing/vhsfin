@@ -37,7 +37,8 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
             username: _userController.text,
             password: _passwordController.text,
           );
-      ref.invalidate(tapeLibraryProvider);
+      ref.invalidate(shelvesProvider);
+      ref.invalidate(librariesProvider);
       if (mounted) context.go('/');
     } catch (error) {
       setState(() => _error = error.toString());

@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/features/auth/presentation/connect_page.dart';
+import 'package:vhsfin/features/library/presentation/libraries_page.dart';
 import 'package:vhsfin/features/living_room/presentation/living_room_page.dart';
 import 'package:vhsfin/features/playback/presentation/clean_player_page.dart';
 
@@ -12,6 +13,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/connect',
       builder: (context, state) => const ConnectPage(),
+    ),
+    GoRoute(
+      path: '/libraries',
+      builder: (context, state) => const LibrariesPage(),
     ),
     GoRoute(
       path: '/play',

@@ -1,4 +1,6 @@
-/// A playable "tape" — one Jellyfin item (or demo stand-in).
+enum TapeKind { movie, series, episode }
+
+/// A playable or browsable "tape" — movie, series box, or episode.
 class Tape {
   const Tape({
     required this.id,
@@ -8,6 +10,12 @@ class Tape {
     this.imageUrl,
     this.duration,
     this.isDemo = false,
+    this.kind = TapeKind.movie,
+    this.seriesId,
+    this.libraryId,
+    this.libraryName,
+    this.productionYear,
+    this.episodeCount,
   });
 
   final String id;
@@ -17,6 +25,14 @@ class Tape {
   final String? imageUrl;
   final Duration? duration;
   final bool isDemo;
+  final TapeKind kind;
+  final String? seriesId;
+  final String? libraryId;
+  final String? libraryName;
+  final int? productionYear;
+  final int? episodeCount;
+
+  bool get isPlayable => kind != TapeKind.series;
 
   Tape copyWith({
     String? id,
@@ -26,6 +42,12 @@ class Tape {
     String? imageUrl,
     Duration? duration,
     bool? isDemo,
+    TapeKind? kind,
+    String? seriesId,
+    String? libraryId,
+    String? libraryName,
+    int? productionYear,
+    int? episodeCount,
   }) {
     return Tape(
       id: id ?? this.id,
@@ -35,11 +57,17 @@ class Tape {
       imageUrl: imageUrl ?? this.imageUrl,
       duration: duration ?? this.duration,
       isDemo: isDemo ?? this.isDemo,
+      kind: kind ?? this.kind,
+      seriesId: seriesId ?? this.seriesId,
+      libraryId: libraryId ?? this.libraryId,
+      libraryName: libraryName ?? this.libraryName,
+      productionYear: productionYear ?? this.productionYear,
+      episodeCount: episodeCount ?? this.episodeCount,
     );
   }
 }
 
-/// Public sample used when Jellyfin isn't connected yet.
+/// Public samples used when Jellyfin isn't connected yet.
 const demoTapes = <Tape>[
   Tape(
     id: 'demo-bbb',

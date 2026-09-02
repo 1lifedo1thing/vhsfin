@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vhsfin/features/auth/model/session.dart';
+import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
-/// Minimal Jellyfin REST client — auth + kids library browse + stream URLs.
+/// Minimal Jellyfin REST client — auth, views, shelves, streams.
 class JellyfinClient {
   JellyfinClient({Dio? dio}) : _dio = dio ?? Dio();
 
@@ -23,6 +24,17 @@ class JellyfinClient {
       if (token != null) 'Token="$token"',
     ];
     return parts.join(', ');
+  }
+
+  Options _authed(JellyfinSession session) {
+    return Options(
+      headers: {
+        'Authorization': _authHeader(
+          deviceId: session.deviceId,
+          token: session.accessToken,
+        ),
+      },
+    );
   }
 
   Future<JellyfinSession> authenticate({
@@ -59,43 +71,120 @@ class JellyfinClient {
     );
   }
 
-  Future<List<Tape>> fetchKidsMovies(JellyfinSession session) async {
+  Future<List<MediaLibrary>> fetchLibraries(JellyfinSession session) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/${session.userId}/Views',
+      options: _authed(session),
+    );
+
+    final items = response.data?['Items'] as List<dynamic>? ?? const [];
+    return items.map((raw) {
+      final item = raw as Map<String, dynamic>;
+      return MediaLibrary(
+        id: item['Id'] as String,
+        name: item['Name'] as String? ?? 'Library',
+        collectionType: item['CollectionType'] as String?,
+      );
+    }).toList();
+  }
+
+  /// Top-level playable/browsable items for a library: movies + series (not episodes).
+  Future<List<Tape>> fetchLibraryShelfItems({
+    required JellyfinSession session,
+    required MediaLibrary library,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '${session.normalizedServerUrl}/Users/${session.userId}/Items',
       queryParameters: {
-        'IncludeItemTypes': 'Movie,Episode',
+        'ParentId': library.id,
+        'IncludeItemTypes': 'Movie,Series',
         'Recursive': true,
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
-        'Fields': 'PrimaryImageAspectRatio,Overview,RunTimeTicks',
-        'Limit': 48,
+        'Fields': 'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount',
+        'Limit': 200,
       },
-      options: Options(
-        headers: {
-          'Authorization': _authHeader(
-            deviceId: session.deviceId,
-            token: session.accessToken,
-          ),
-        },
-      ),
+      options: _authed(session),
     );
 
-    final items = (response.data?['Items'] as List<dynamic>? ?? const []);
+    final items = response.data?['Items'] as List<dynamic>? ?? const [];
+    return items
+        .map((raw) => _tapeFromItem(raw as Map<String, dynamic>, session, library))
+        .toList();
+  }
+
+  Future<List<Tape>> fetchEpisodes({
+    required JellyfinSession session,
+    required String seriesId,
+    String? libraryName,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/${session.userId}/Items',
+      queryParameters: {
+        'ParentId': seriesId,
+        'IncludeItemTypes': 'Episode',
+        'Recursive': true,
+        'SortBy': 'SortName',
+        'SortOrder': 'Ascending',
+        'Fields': 'Overview,RunTimeTicks,IndexNumber,ParentIndexNumber',
+        'Limit': 400,
+      },
+      options: _authed(session),
+    );
+
+    final items = response.data?['Items'] as List<dynamic>? ?? const [];
     return items.map((raw) {
       final item = raw as Map<String, dynamic>;
       final id = item['Id'] as String;
-      final ticks = item['RunTimeTicks'] as int?;
+      final season = item['ParentIndexNumber'] as int?;
+      final episode = item['IndexNumber'] as int?;
+      final label = [
+        if (season != null) 'S${season.toString().padLeft(2, '0')}',
+        if (episode != null) 'E${episode.toString().padLeft(2, '0')}',
+      ].join('');
       return Tape(
         id: id,
-        title: item['Name'] as String? ?? 'Untitled',
-        subtitle: item['SeriesName'] as String? ?? item['ProductionYear']?.toString(),
+        title: item['Name'] as String? ?? 'Episode',
+        subtitle: label.isEmpty ? item['SeriesName'] as String? : label,
         streamUrl: streamUrl(session, id),
         imageUrl: primaryImageUrl(session, id),
-        duration: ticks == null
-            ? null
-            : Duration(microseconds: ticks ~/ 10),
+        duration: _durationFromTicks(item['RunTimeTicks'] as int?),
+        kind: TapeKind.episode,
+        seriesId: seriesId,
+        libraryName: libraryName,
+        productionYear: item['ProductionYear'] as int?,
       );
     }).toList();
+  }
+
+  Tape _tapeFromItem(
+    Map<String, dynamic> item,
+    JellyfinSession session,
+    MediaLibrary library,
+  ) {
+    final id = item['Id'] as String;
+    final type = item['Type'] as String? ?? 'Movie';
+    final isSeries = type == 'Series';
+    return Tape(
+      id: id,
+      title: item['Name'] as String? ?? 'Untitled',
+      subtitle: isSeries
+          ? '${item['ChildCount'] ?? '?'} eps'
+          : item['ProductionYear']?.toString(),
+      streamUrl: isSeries ? '' : streamUrl(session, id),
+      imageUrl: primaryImageUrl(session, id),
+      duration: _durationFromTicks(item['RunTimeTicks'] as int?),
+      kind: isSeries ? TapeKind.series : TapeKind.movie,
+      libraryId: library.id,
+      libraryName: library.name,
+      productionYear: item['ProductionYear'] as int?,
+      episodeCount: item['ChildCount'] as int?,
+    );
+  }
+
+  Duration? _durationFromTicks(int? ticks) {
+    if (ticks == null) return null;
+    return Duration(microseconds: ticks ~/ 10);
   }
 
   String streamUrl(JellyfinSession session, String itemId) {
