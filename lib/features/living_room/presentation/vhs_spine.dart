@@ -4,7 +4,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
-/// Bookshelf VHS spine — tall/narrow, vertical title, procedural plastic.
+/// Bookshelf VHS spine — real sleeve crop when IA has art, else procedural.
 class VhsSpine extends ConsumerWidget {
   const VhsSpine({
     super.key,
@@ -22,8 +22,8 @@ class VhsSpine extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = SpinePalette.fromTitle(tape.title);
-    final coverAsync = ref.watch(
-      vhsCoverUrlProvider((title: tape.title, year: tape.productionYear)),
+    final artAsync = ref.watch(
+      vhsSpineArtProvider((title: tape.title, year: tape.productionYear)),
     );
     final width = selected ? 34.0 : 28.0;
     final tip = _tipRadians(tape.id);
@@ -61,88 +61,17 @@ class VhsSpine extends ConsumerWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(2),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ColoredBox(color: palette.shell),
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 7,
-                        child: coverAsync.when(
-                          data: (iaUrl) {
-                            final url = iaUrl ?? tape.imageUrl;
-                            if (url == null) {
-                              return ColoredBox(color: palette.accent);
-                            }
-                            return Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.centerLeft,
-                              errorBuilder: (_, _, _) =>
-                                  ColoredBox(color: palette.accent),
-                            );
-                          },
-                          loading: () => ColoredBox(color: palette.accent),
-                          error: (_, _) => ColoredBox(color: palette.accent),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
-                        child: RotatedBox(
-                          quarterTurns: 3,
-                          child: Text(
-                            tape.title.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: palette.ink,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              height: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          height: 16,
-                          width: double.infinity,
-                          color: palette.label,
-                          alignment: Alignment.center,
-                          child: Text(
-                            tape.kind == TapeKind.series
-                                ? 'TV'
-                                : tape.kind == TapeKind.episode
-                                    ? (tape.subtitle ?? 'EP')
-                                    : 'VHS',
-                            style: TextStyle(
-                              color: palette.labelInk,
-                              fontSize: 7,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
-                      ),
-                      IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.18),
-                              ),
-                              right: BorderSide(
-                                color: Colors.black.withValues(alpha: 0.35),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: artAsync.when(
+                    data: (art) {
+                      if (art != null) {
+                        return _RealSpine(art: art);
+                      }
+                      return _ProceduralSpine(tape: tape, palette: palette);
+                    },
+                    loading: () =>
+                        _ProceduralSpine(tape: tape, palette: palette),
+                    error: (_, _) =>
+                        _ProceduralSpine(tape: tape, palette: palette),
                   ),
                 ),
               ),
@@ -156,9 +85,200 @@ class VhsSpine extends ConsumerWidget {
   /// A few spines lean left/right like a lived-in shelf.
   static double _tipRadians(String id) {
     final hash = id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
-    if (hash % 5 != 0) return 0; // most stand straight
+    if (hash % 5 != 0) return 0;
     final magnitude = 0.04 + (hash % 9) * 0.01;
     return hash.isEven ? magnitude : -magnitude;
+  }
+}
+
+class _RealSpine extends StatelessWidget {
+  const _RealSpine({required this.art});
+
+  final VhsSpineArt art;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black),
+        _SpineScanCrop(
+          url: art.imageUrl,
+          widthFraction: art.centerWidthFraction,
+        ),
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.14),
+                ),
+                right: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.4),
+                ),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.06),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.12),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shows only the centered vertical strip of a flat VHS sleeve scan.
+class _SpineScanCrop extends StatelessWidget {
+  const _SpineScanCrop({
+    required this.url,
+    required this.widthFraction,
+  });
+
+  final String url;
+  final double widthFraction;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+        final fraction = widthFraction.clamp(0.02, 1.0);
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        if (fraction >= 0.99) {
+          return Image.network(
+            url,
+            fit: BoxFit.cover,
+            width: w,
+            height: h,
+            cacheWidth: (w * dpr).ceil().clamp(64, 512),
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black),
+          );
+        }
+
+        final srcW = w / fraction;
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.center,
+            minWidth: srcW,
+            maxWidth: srcW,
+            minHeight: h,
+            maxHeight: h,
+            child: SizedBox(
+              width: srcW,
+              height: h,
+              child: Image.network(
+                url,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                // Decode near display size so 10MB sleeve scans stay light.
+                cacheWidth: (srcW * dpr).ceil().clamp(160, 1400),
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, _, _) =>
+                    const ColoredBox(color: Colors.black),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProceduralSpine extends StatelessWidget {
+  const _ProceduralSpine({
+    required this.tape,
+    required this.palette,
+  });
+
+  final Tape tape;
+  final SpinePalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: palette.shell),
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 7,
+          child: tape.imageUrl == null
+              ? ColoredBox(color: palette.accent)
+              : Image.network(
+                  tape.imageUrl!,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerLeft,
+                  errorBuilder: (_, _, _) =>
+                      ColoredBox(color: palette.accent),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
+          child: RotatedBox(
+            quarterTurns: 3,
+            child: Text(
+              tape.title.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.ink,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: 16,
+            width: double.infinity,
+            color: palette.label,
+            alignment: Alignment.center,
+            child: Text(
+              tape.kind == TapeKind.series
+                  ? 'TV'
+                  : tape.kind == TapeKind.episode
+                      ? (tape.subtitle ?? 'EP')
+                      : 'VHS',
+              style: TextStyle(
+                color: palette.labelInk,
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+        ),
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.18),
+                ),
+                right: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
