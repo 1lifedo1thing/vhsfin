@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_crt_screen.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
@@ -146,7 +147,9 @@ class VcrBox extends ConsumerWidget {
             child: _CassetteSlot(
               tape: deck.loadedTape,
               inserting: deck.power == VcrPower.inserting,
-              loaded: deck.isPowered,
+              loaded: deck.loadedTape != null &&
+                  (deck.power == VcrPower.playing ||
+                      deck.power == VcrPower.inserting),
             ),
           ),
           // Vent / speaker grille suggestion
@@ -174,11 +177,23 @@ class VcrBox extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
             child: _DeckButtons(
               enabled: deck.isPowered,
-              onRew: () => player.startRewind(),
-              onRewEnd: () => player.stopShuttle(),
+              onRew: () {
+                player.startRewind();
+                ref.read(deckSfxProvider).startRewind();
+              },
+              onRewEnd: () {
+                player.stopShuttle();
+                ref.read(deckSfxProvider).stopShuttle();
+              },
               onPlay: () => player.togglePlayPause(),
-              onFf: () => player.startFastForward(),
-              onFfEnd: () => player.stopShuttle(),
+              onFf: () {
+                player.startFastForward();
+                ref.read(deckSfxProvider).startFastForward();
+              },
+              onFfEnd: () {
+                player.stopShuttle();
+                ref.read(deckSfxProvider).stopShuttle();
+              },
               onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
               onFull: () {
                 if (!deck.isPlaying) return;

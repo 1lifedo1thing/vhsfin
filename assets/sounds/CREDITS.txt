@@ -1,0 +1,14 @@
+# Sound credits (CC0 / public domain — no attribution required)
+# Source: BigSoundBank — author Pierre SIBAN — https://bigsoundbank.com/
+#
+# vhs_insert.ogg  — VCR: Cassette Insertion (#2690)
+#   https://bigsoundbank.com/vcr-cassette-insertion-s2690.html
+#
+# vhs_eject.ogg   — VCR: cassette output (#2694), trimmed
+#   https://bigsoundbank.com/vcr-cassette-output-s2694.html
+#
+# vhs_ff.ogg      — VCR: forward (#2692), trimmed to 8s + looped in app
+#   https://bigsoundbank.com/vcr-forward-s2692.html
+#
+# vhs_rew.ogg     — VCR: rewind (#2693), trimmed to 8s + looped in app
+#   https://bigsoundbank.com/vcr-rewind-s2693.html

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
@@ -81,9 +82,18 @@ class VhsRemoteSheet extends ConsumerWidget {
                         label: 'REW',
                         icon: Icons.fast_rewind_rounded,
                         enabled: live,
-                        onTapDown: (_) => player.startRewind(),
-                        onTapUp: (_) => player.stopShuttle(),
-                        onTapCancel: () => player.stopShuttle(),
+                        onTapDown: (_) {
+                          player.startRewind();
+                          ref.read(deckSfxProvider).startRewind();
+                        },
+                        onTapUp: (_) {
+                          player.stopShuttle();
+                          ref.read(deckSfxProvider).stopShuttle();
+                        },
+                        onTapCancel: () {
+                          player.stopShuttle();
+                          ref.read(deckSfxProvider).stopShuttle();
+                        },
                       ),
                       _RemoteKey(
                         label: 'PLAY',
@@ -96,9 +106,18 @@ class VhsRemoteSheet extends ConsumerWidget {
                         label: 'FF',
                         icon: Icons.fast_forward_rounded,
                         enabled: live,
-                        onTapDown: (_) => player.startFastForward(),
-                        onTapUp: (_) => player.stopShuttle(),
-                        onTapCancel: () => player.stopShuttle(),
+                        onTapDown: (_) {
+                          player.startFastForward();
+                          ref.read(deckSfxProvider).startFastForward();
+                        },
+                        onTapUp: (_) {
+                          player.stopShuttle();
+                          ref.read(deckSfxProvider).stopShuttle();
+                        },
+                        onTapCancel: () {
+                          player.stopShuttle();
+                          ref.read(deckSfxProvider).stopShuttle();
+                        },
                       ),
                     ],
                   ),

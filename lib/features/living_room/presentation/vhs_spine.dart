@@ -304,7 +304,9 @@ class ProceduralVhsSpine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = SpinePalette.fromTitle(tape.title);
+    // Episodes in a series share palette/plate so the box set matches.
+    final styleKey = _styleKeyFor(tape);
+    final palette = SpinePalette.fromTitle(styleKey);
     final hasCover = tape.imageUrl != null && tape.imageUrl!.isNotEmpty;
     final style = _ProceduralSpineStyle.fromTape(tape, palette);
 
@@ -320,20 +322,20 @@ class ProceduralVhsSpine extends StatelessWidget {
           )
         else
           ColoredBox(color: palette.shell),
-        // Light tint — cover colors stay visible so the title "sits on" the box.
+        // Dim wash — keeps the poster readable without a tinted shell cast.
         if (hasCover)
-          ColoredBox(color: palette.shell.withValues(alpha: style.shellWash)),
+          ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withValues(alpha: hasCover ? 0.22 : 0.06),
+                Colors.black.withValues(alpha: hasCover ? 0.2 : 0.06),
                 Colors.transparent,
-                Colors.black.withValues(alpha: hasCover ? 0.4 : 0.14),
+                Colors.black.withValues(alpha: hasCover ? 0.35 : 0.14),
               ],
-              stops: const [0, 0.4, 1],
+              stops: const [0, 0.45, 1],
             ),
           ),
         ),
@@ -359,16 +361,22 @@ class ProceduralVhsSpine extends StatelessWidget {
         // Title block — sticker / banner / ghost so it feels printed on the sleeve.
         Padding(
           padding: const EdgeInsets.fromLTRB(5, 14, 3, 22),
-          child: RotatedBox(
-            quarterTurns: 1,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _SpineTitlePlate(
-                title: tape.title,
-                style: style,
-                onArt: hasCover,
-              ),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Length along the spine (becomes vertical after rotate).
+              final run = (constraints.maxHeight - 8).clamp(48.0, 220.0);
+              return RotatedBox(
+                quarterTurns: 1,
+                child: SizedBox(
+                  width: run,
+                  child: _SpineTitlePlate(
+                    title: tape.title,
+                    style: style,
+                    onArt: hasCover,
+                  ),
+                ),
+              );
+            },
           ),
         ),
         // Bottom catalog foot
@@ -436,7 +444,6 @@ enum _TitlePlateKind { banner, ghost }
 
 class _ProceduralSpineStyle {
   const _ProceduralSpineStyle({
-    required this.shellWash,
     required this.stripe,
     required this.foot,
     required this.footInk,
@@ -449,7 +456,6 @@ class _ProceduralSpineStyle {
     required this.useDisplayFont,
   });
 
-  final double shellWash;
   final Color stripe;
   final Color foot;
   final Color footInk;
@@ -462,9 +468,13 @@ class _ProceduralSpineStyle {
   final bool useDisplayFont;
 
   factory _ProceduralSpineStyle.fromTape(Tape tape, SpinePalette palette) {
-    final hash = tape.id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
+    // Same show → same plate / wash / foot treatment.
+    final seed = tape.seriesId ??
+        (tape.seriesTitle != null && tape.seriesTitle!.isNotEmpty
+            ? tape.seriesTitle!
+            : tape.id);
+    final hash = seed.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
     final plate = _TitlePlateKind.values[hash % 2];
-    final shellWash = 0.18 + (hash % 4) * 0.04; // 0.18–0.30
     final badges = <String>[
       if (tape.kind == TapeKind.series) 'TV SERIES',
       if (tape.kind == TapeKind.episode) (tape.subtitle ?? 'EPISODE'),
@@ -478,22 +488,28 @@ class _ProceduralSpineStyle {
     final catalog =
         'C${(hash % 9000 + 1000)}-${(hash ~/ 7 % 90 + 10)}';
 
-    final titleColor = VhsColors.brand;
-
     return _ProceduralSpineStyle(
-      shellWash: shellWash,
       stripe: palette.accent,
       foot: palette.label,
       footInk: palette.labelInk,
       badge: badge.toUpperCase(),
       catalog: hash % 3 == 0 ? '' : catalog,
       plate: plate,
-      titleColor: titleColor,
+      titleColor: VhsColors.brand,
       letterSpacing: 0.4 + (hash % 5) * 0.25,
       fontSize: 10.0 + (hash % 3),
       useDisplayFont: hash.isEven,
     );
   }
+}
+
+String _styleKeyFor(Tape tape) {
+  if (tape.kind == TapeKind.episode &&
+      tape.seriesTitle != null &&
+      tape.seriesTitle!.isNotEmpty) {
+    return tape.seriesTitle!;
+  }
+  return tape.title;
 }
 
 class _SpineTitlePlate extends StatelessWidget {
@@ -511,19 +527,21 @@ class _SpineTitlePlate extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Text(
       title.toUpperCase(),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+      softWrap: true,
+      overflow: TextOverflow.clip,
+      textAlign: TextAlign.center,
       style: (style.useDisplayFont
               ? GoogleFonts.bungee(
                   fontSize: style.fontSize,
                   letterSpacing: style.letterSpacing,
-                  height: 1,
+                  height: 1.05,
                 )
               : TextStyle(
                   fontSize: style.fontSize,
                   fontWeight: FontWeight.w900,
                   letterSpacing: style.letterSpacing,
-                  height: 1,
+                  height: 1.05,
                 ))
           .copyWith(
         color: style.titleColor,

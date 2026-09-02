@@ -5,6 +5,7 @@ import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
+import 'package:vhsfin/features/living_room/presentation/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/presentation/episode_picker_sheet.dart';
 import 'package:vhsfin/features/living_room/presentation/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
@@ -27,8 +28,10 @@ class BookshelfView extends ConsumerWidget {
       skipLoadingOnReload: true,
       loading: () => const SizedBox(
         height: 180,
-        child: Center(
-          child: CircularProgressIndicator(color: VhsColors.phosphor),
+        child: CrtLoadingIndicator(
+          compact: true,
+          style: CrtLoadStyle.snow,
+          message: 'STAND BY',
         ),
       ),
       error: (error, _) => Text('Could not load shelves: $error'),

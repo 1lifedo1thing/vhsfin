@@ -4,6 +4,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
+import 'package:vhsfin/features/living_room/presentation/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/presentation/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
 
@@ -111,10 +112,9 @@ class EpisodePickerSheet extends ConsumerWidget {
                   ),
                   Expanded(
                     child: episodesAsync.when(
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(
-                          color: VhsColors.phosphor,
-                        ),
+                      loading: () => const CrtLoadingIndicator(
+                        message: 'TUNING…',
+                        style: CrtLoadStyle.tape,
                       ),
                       error: (error, _) => Center(
                         child: Padding(
@@ -243,6 +243,7 @@ class _EpisodeShelfRow extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final episode in episodes)
                   SizedBox(
@@ -252,7 +253,8 @@ class _EpisodeShelfRow extends StatelessWidget {
                     child: Text(
                       episode.title,
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      overflow: TextOverflow.clip,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: episode.id == loadedId
@@ -260,7 +262,7 @@ class _EpisodeShelfRow extends StatelessWidget {
                             : VhsColors.brand,
                         fontSize: 8,
                         fontWeight: FontWeight.w700,
-                        height: 1.1,
+                        height: 1.15,
                       ),
                     ),
                   ),

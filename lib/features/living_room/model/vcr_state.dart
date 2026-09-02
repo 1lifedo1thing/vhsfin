@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
-enum VcrPower { off, inserting, playing }
+enum VcrPower { off, inserting, playing, ejecting }
 
 enum PlaybackStyle { vhsCrt, cleanFullscreen }
 
@@ -17,7 +20,10 @@ class VcrDeckState {
   final Tape? loadedTape;
   final PlaybackStyle style;
 
-  bool get isPowered => power != VcrPower.off;
+  bool get isPowered =>
+      power == VcrPower.inserting ||
+      power == VcrPower.playing ||
+      power == VcrPower.ejecting;
   bool get isPlaying => power == VcrPower.playing;
 
   VcrDeckState copyWith({
@@ -50,6 +56,8 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
       loadedTape: tape,
       style: style,
     );
+    // Fire-and-forget — don't delay the insert animation on audio.
+    unawaited(ref.read(deckSfxProvider).playInsert());
     await Future<void>.delayed(const Duration(milliseconds: 950));
     if (!ref.mounted) return;
     state = state.copyWith(power: VcrPower.playing);
@@ -64,7 +72,15 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
   }
 
   Future<void> eject() async {
-    await ref.read(deckPlayerProvider).stop();
+    final sfx = ref.read(deckSfxProvider);
+    unawaited(sfx.stopShuttle());
+    // Kick the clunk immediately — don't wait on deck teardown.
+    final ejectSound = sfx.playEject();
+    state = const VcrDeckState(power: VcrPower.ejecting);
+    unawaited(ref.read(deckPlayerProvider).stop());
+    await ejectSound;
+    if (!ref.mounted) return;
+    // …then snow.
     state = const VcrDeckState();
   }
 

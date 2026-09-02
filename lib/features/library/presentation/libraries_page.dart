@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
+import 'package:vhsfin/features/living_room/presentation/crt_loading_indicator.dart';
 
 /// Drill into libraries → folders → toggle multiple collections onto shelves.
 class LibrariesPage extends ConsumerStatefulWidget {
@@ -209,11 +210,7 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                   const SizedBox(height: 8),
                   Expanded(
                     child: childrenAsync.when(
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(
-                          color: VhsColors.phosphor,
-                        ),
-                      ),
+                      loading: () => const CrtLoadingIndicator(),
                       error: (error, _) => Center(child: Text('$error')),
                       data: (nodes) {
                         if (nodes.isEmpty) {

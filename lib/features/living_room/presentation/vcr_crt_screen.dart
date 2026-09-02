@@ -73,6 +73,7 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
 
     switch (widget.power) {
       case VcrPower.off:
+      case VcrPower.ejecting:
         await deck.stop();
         if (!mounted || gen != _syncGen) return;
         _insertController.value = 0;
@@ -120,6 +121,7 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
                 controller: controller,
                 opacity: widget.power == VcrPower.playing ? 1 : 0.15,
               ),
+            // Ejecting = black while the clunk plays; off = snow.
             if (widget.power == VcrPower.off) const StaticScreen(),
             if (widget.power == VcrPower.inserting)
               SlideTransition(
