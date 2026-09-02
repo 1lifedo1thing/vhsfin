@@ -15,6 +15,13 @@ class LivingRoomPage extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () => showVhsRemote(context),
+        backgroundColor: const Color(0xFF2A2A28),
+        foregroundColor: VhsColors.brand,
+        tooltip: 'Remote',
+        child: const Icon(Icons.settings_remote_rounded),
+      ),
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -35,7 +42,7 @@ class LivingRoomPage extends ConsumerWidget {
               final pad = wide ? constraints.maxWidth * 0.14 : 16.0;
 
               return SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(pad, 20, pad, 24),
+                padding: EdgeInsets.fromLTRB(pad, 20, pad, 88),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -44,7 +51,6 @@ class LivingRoomPage extends ConsumerWidget {
                     _BottomBar(
                       connected: session != null,
                       userName: session?.userName,
-                      onRemote: () => showVhsRemote(context),
                       onCollection: () => context.push('/libraries'),
                       onConnect: () => context.push('/connect'),
                       onSignOut: () =>
@@ -92,10 +98,8 @@ class _EntertainmentCenter extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top surface — VCR rests here.
           VcrBox(),
           SizedBox(height: 14),
-          // Shelf cavity under the VCR.
           BookshelfView(embedded: true),
         ],
       ),
@@ -106,7 +110,6 @@ class _EntertainmentCenter extends StatelessWidget {
 class _BottomBar extends StatelessWidget {
   const _BottomBar({
     required this.connected,
-    required this.onRemote,
     required this.onCollection,
     required this.onConnect,
     required this.onSignOut,
@@ -115,71 +118,48 @@ class _BottomBar extends StatelessWidget {
 
   final bool connected;
   final String? userName;
-  final VoidCallback onRemote;
   final VoidCallback onCollection;
   final VoidCallback onConnect;
   final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onRemote,
-              icon: const Icon(Icons.settings_remote_rounded),
-              label: const Text('REMOTE'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2A2A28),
-                foregroundColor: VhsColors.brand,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextButton(
+          onPressed: onCollection,
+          child: Text(
+            'COLLECTION',
+            style: TextStyle(
+              color: VhsColors.phosphor.withValues(alpha: 0.85),
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 1.1,
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: onCollection,
-                child: Text(
-                  'COLLECTION',
-                  style: TextStyle(
-                    color: VhsColors.phosphor.withValues(alpha: 0.85),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ),
-              Text(
-                '·',
-                style: TextStyle(
-                  color: VhsColors.brand.withValues(alpha: 0.35),
-                ),
-              ),
-              TextButton(
-                onPressed: connected ? onSignOut : onConnect,
-                child: Text(
-                  connected
-                      ? 'SIGN OUT${userName != null ? ' ($userName)' : ''}'
-                      : 'CONNECT',
-                  style: TextStyle(
-                    color: VhsColors.brand.withValues(alpha: 0.55),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ),
-            ],
+        ),
+        Text(
+          '·',
+          style: TextStyle(
+            color: VhsColors.brand.withValues(alpha: 0.35),
           ),
-        ],
-      ),
+        ),
+        TextButton(
+          onPressed: connected ? onSignOut : onConnect,
+          child: Text(
+            connected
+                ? 'SIGN OUT${userName != null ? ' ($userName)' : ''}'
+                : 'CONNECT',
+            style: TextStyle(
+              color: VhsColors.brand.withValues(alpha: 0.55),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

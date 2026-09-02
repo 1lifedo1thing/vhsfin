@@ -20,6 +20,7 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
   google_fonts: ^8.2.1
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

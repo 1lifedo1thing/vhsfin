@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/crt_glass_overlay.dart';
+import 'package:vhsfin/features/living_room/presentation/letterboxed_video.dart';
 import 'package:vhsfin/features/living_room/presentation/static_screen.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
@@ -54,6 +54,14 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
         oldWidget.tape?.id != widget.tape?.id) {
       _syncPlayback();
     }
+    // Coming back from fullscreen — keep playing on the CRT surface.
+    if (oldWidget.style == PlaybackStyle.cleanFullscreen &&
+        widget.style == PlaybackStyle.vhsCrt &&
+        widget.power == VcrPower.playing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await ref.read(deckPlayerProvider).play();
+      });
+    }
   }
 
   Future<void> _syncPlayback() async {
@@ -67,7 +75,6 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
         if (!mounted || gen != _syncGen) return;
         _insertController.value = 0;
       case VcrPower.inserting:
-        // Start buffering during the physical insert so PLAY isn't empty.
         if (tape != null && tape.streamUrl.isNotEmpty) {
           await deck.load(tape.streamUrl, play: false);
         }
@@ -89,27 +96,27 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
   @override
   Widget build(BuildContext context) {
     final deck = ref.watch(deckPlayerProvider);
-    final showVideo = widget.power == VcrPower.playing ||
-        (widget.power == VcrPower.inserting && widget.tape != null);
+    final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
+    // Don't bind a second Video while fullscreen owns the surface.
+    final showVideo = widget.style != PlaybackStyle.cleanFullscreen &&
+        (widget.power == VcrPower.playing ||
+            (widget.power == VcrPower.inserting && widget.tape != null));
     final controller = deck.controllerOrNull;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(3),
       child: AspectRatio(
         aspectRatio: 4 / 3,
         child: Stack(
           fit: StackFit.expand,
           children: [
             const ColoredBox(color: Colors.black),
-            // Keep Video mounted across insert→play so the surface stays warm.
             if (showVideo && controller != null)
-              Opacity(
+              LetterboxedVideo(
+                key: ValueKey('crt-$surfaceEpoch-${widget.tape?.id}'),
+                player: deck.player,
+                controller: controller,
                 opacity: widget.power == VcrPower.playing ? 1 : 0.15,
-                child: Video(
-                  controller: controller,
-                  controls: NoVideoControls,
-                  fill: Colors.black,
-                ),
               ),
             if (widget.power == VcrPower.off) const StaticScreen(),
             if (widget.power == VcrPower.inserting)
@@ -124,8 +131,16 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    width: 2,
+                    color: Colors.black.withValues(alpha: 0.65),
+                    width: 3,
+                  ),
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 1.15,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.35),
+                    ],
                   ),
                 ),
               ),

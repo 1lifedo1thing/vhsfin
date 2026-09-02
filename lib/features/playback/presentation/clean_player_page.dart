@@ -36,17 +36,34 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
     super.dispose();
   }
 
+  Future<void> _backToVcr() async {
+    final deck = ref.read(deckPlayerProvider);
+    await deck.stopShuttle();
+    deck.reattachSurface();
+    ref.read(vcrDeckProvider.notifier).setStyle(PlaybackStyle.vhsCrt);
+    if (!mounted) return;
+    context.pop();
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await deck.play();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tape = ref.watch(vcrDeckProvider).loadedTape;
     final player = ref.watch(deckPlayerProvider);
+    final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Video(controller: player.controller),
+          Video(
+            key: ValueKey('full-$surfaceEpoch'),
+            controller: player.controller,
+            fit: BoxFit.contain,
+            fill: Colors.black,
+          ),
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,
@@ -55,12 +72,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        ref
-                            .read(vcrDeckProvider.notifier)
-                            .setStyle(PlaybackStyle.vhsCrt);
-                        context.pop();
-                      },
+                      onPressed: _backToVcr,
                       icon: const Icon(Icons.close, color: Colors.white),
                     ),
                     const SizedBox(width: 8),
@@ -76,12 +88,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        ref
-                            .read(vcrDeckProvider.notifier)
-                            .setStyle(PlaybackStyle.vhsCrt);
-                        context.pop();
-                      },
+                      onPressed: _backToVcr,
                       child: const Text(
                         'BACK TO VCR',
                         style: TextStyle(

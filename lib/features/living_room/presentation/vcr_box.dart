@@ -6,7 +6,7 @@ import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_crt_screen.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
-/// Compact Zenith-style all-in-one TV/VCR — CRT, cassette slot, deck buttons.
+/// Compact Zenith-style all-in-one TV/VCR — CRT hood, cassette door, deck keys.
 class VcrBox extends ConsumerWidget {
   const VcrBox({super.key});
 
@@ -18,103 +18,173 @@ class VcrBox extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(0xFF3A3A3E),
-            VhsColors.vcrFace,
-            VhsColors.vcrBody,
+            Color(0xFF4A4A4E),
+            Color(0xFF2E2E32),
+            Color(0xFF1A1A1E),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
           if (ledOn)
             BoxShadow(
-              color: VhsColors.phosphor.withValues(alpha: 0.14),
-              blurRadius: 22,
-              spreadRadius: 1,
+              color: VhsColors.phosphor.withValues(alpha: 0.12),
+              blurRadius: 18,
             ),
         ],
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: const Color(0xFF5A5A60)),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Text(
-                'VHSFIN',
-                style: vhsBrandStyle(size: 13).copyWith(letterSpacing: 3),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'SYSTEM',
-                style: TextStyle(
-                  color: VhsColors.brand.withValues(alpha: 0.45),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
+          // Brand badge row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+            child: Row(
+              children: [
+                Text(
+                  'VHSFIN',
+                  style: vhsBrandStyle(size: 12).copyWith(letterSpacing: 3),
                 ),
-              ),
-              const Spacer(),
-              _Led(on: ledOn),
-              const SizedBox(width: 8),
-              Text(
-                ledOn ? 'PLAY' : 'STANDBY',
-                style: TextStyle(
-                  color: ledOn ? VhsColors.phosphor : VhsColors.phosphorDim,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.4,
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: VhsColors.brand.withValues(alpha: 0.25),
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    'COLOR TV · VCR',
+                    style: TextStyle(
+                      color: VhsColors.brand.withValues(alpha: 0.5),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const Spacer(),
+                _Led(on: ledOn),
+                const SizedBox(width: 6),
+                Text(
+                  ledOn ? 'PLAY' : 'OFF',
+                  style: TextStyle(
+                    color: ledOn ? VhsColors.phosphor : VhsColors.phosphorDim,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
+          // CRT with deep hood / bezel
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF0E0E10),
+                    Color(0xFF18181C),
+                    Color(0xFF0A0A0C),
+                  ],
+                ),
+                border: Border.all(color: const Color(0xFF2A2A2E), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: VcrCrtScreen(
+                power: deck.power,
+                style: deck.style,
+                tape: deck.loadedTape,
+              ),
+            ),
+          ),
+          // Chrome strip
           Container(
-            padding: const EdgeInsets.all(7),
+            margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+            height: 6,
             decoration: BoxDecoration(
-              color: VhsColors.vcrBezel,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(1),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF6A6A70),
+                  Color(0xFFC8C8D0),
+                  Color(0xFF7A7A80),
+                  Color(0xFFB0B0B8),
+                  Color(0xFF5A5A60),
+                ],
               ),
             ),
-            child: VcrCrtScreen(
-              power: deck.power,
-              style: deck.style,
-              tape: deck.loadedTape,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: _CassetteSlot(
+              title: deck.loadedTape?.title,
+              inserting: deck.power == VcrPower.inserting,
+              loaded: deck.isPowered,
             ),
           ),
-          const SizedBox(height: 10),
-          _CassetteSlot(
-            title: deck.loadedTape?.title,
-            inserting: deck.power == VcrPower.inserting,
-            loaded: deck.isPowered,
+          // Vent / speaker grille suggestion
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: List.generate(
+                18,
+                (i) => Expanded(
+                  child: Container(
+                    height: 10,
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    decoration: BoxDecoration(
+                      color: i.isEven
+                          ? const Color(0xFF121214)
+                          : const Color(0xFF2A2A2E),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          _DeckButtons(
-            enabled: deck.isPowered,
-            onRew: () => player.startRewind(),
-            onRewEnd: () => player.stopShuttle(),
-            onPlay: () => player.togglePlayPause(),
-            onFf: () => player.startFastForward(),
-            onFfEnd: () => player.stopShuttle(),
-            onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
-            onFull: () {
-              if (!deck.isPlaying) return;
-              ref
-                  .read(vcrDeckProvider.notifier)
-                  .setStyle(PlaybackStyle.cleanFullscreen);
-              context.push('/play');
-            },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+            child: _DeckButtons(
+              enabled: deck.isPowered,
+              onRew: () => player.startRewind(),
+              onRewEnd: () => player.stopShuttle(),
+              onPlay: () => player.togglePlayPause(),
+              onFf: () => player.startFastForward(),
+              onFfEnd: () => player.stopShuttle(),
+              onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
+              onFull: () {
+                if (!deck.isPlaying) return;
+                ref
+                    .read(vcrDeckProvider.notifier)
+                    .setStyle(PlaybackStyle.cleanFullscreen);
+                context.push('/play');
+              },
+            ),
           ),
         ],
       ),
@@ -138,33 +208,48 @@ class _CassetteSlot extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Door / flap above the mouth
         Container(
-          height: 36,
+          height: 12,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF0A0A0C), Color(0xFF1A1A1E)],
+              colors: [Color(0xFF3A3A40), Color(0xFF222226)],
             ),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.8)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.04),
-                blurRadius: 0,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            border: Border.all(color: Colors.black.withValues(alpha: 0.5)),
+          ),
+          alignment: Alignment.center,
+          child: Container(
+            width: 36,
+            height: 3,
+            decoration: BoxDecoration(
+              color: const Color(0xFF111114),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ),
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(3)),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF050506), Color(0xFF141418)],
+            ),
+            border: Border.all(color: Colors.black),
           ),
           clipBehavior: Clip.hardEdge,
           child: Stack(
             children: [
-              // Slot mouth / lip
               Align(
                 alignment: Alignment.topCenter,
                 child: Container(
-                  height: 5,
-                  color: Colors.black.withValues(alpha: 0.55),
+                  height: 4,
+                  color: Colors.black.withValues(alpha: 0.65),
                 ),
               ),
               if (loaded || inserting)
@@ -172,19 +257,26 @@ class _CassetteSlot extends StatelessWidget {
                   duration: const Duration(milliseconds: 450),
                   curve: Curves.easeOutCubic,
                   alignment:
-                      inserting ? const Alignment(0, 1.4) : Alignment.center,
+                      inserting ? const Alignment(0, 1.5) : Alignment.center,
                   child: Container(
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 6,
+                      horizontal: 16,
+                      vertical: 7,
                     ),
-                    height: 22,
+                    height: 24,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(2),
                       color: VhsColors.tapeShell,
                       border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.25),
+                        color: Colors.black.withValues(alpha: 0.3),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -205,25 +297,14 @@ class _CassetteSlot extends StatelessWidget {
                   child: Text(
                     'VHS',
                     style: TextStyle(
-                      color: Color(0xFF3A3A40),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 4,
+                      color: Color(0xFF333338),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 6,
                     ),
                   ),
                 ),
             ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          loaded ? 'CASSETTE LOADED' : 'INSERT A TAPE FROM THE SHELF',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: VhsColors.brand.withValues(alpha: 0.4),
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
           ),
         ),
       ],
@@ -331,22 +412,32 @@ class _DeckKey extends StatelessWidget {
         onTapDown: enabled ? onTapDown : null,
         onTapUp: enabled ? onTapUp : null,
         onTapCancel: enabled ? onTapCancel : null,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             children: [
               Container(
-                width: 34,
-                height: 28,
+                width: 36,
+                height: 26,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: const Color(0xFF121214),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(3),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF2A2A2E), Color(0xFF101012)],
                   ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                child: Icon(icon, size: 18, color: color),
+                child: Icon(icon, size: 17, color: color),
               ),
               const SizedBox(height: 3),
               Text(
@@ -375,8 +466,8 @@ class _Led extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      width: 9,
-      height: 9,
+      width: 8,
+      height: 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: on ? VhsColors.ledOn : VhsColors.ledOff,
@@ -384,7 +475,7 @@ class _Led extends StatelessWidget {
             ? [
                 BoxShadow(
                   color: VhsColors.ledOn.withValues(alpha: 0.7),
-                  blurRadius: 8,
+                  blurRadius: 7,
                 ),
               ]
             : null,

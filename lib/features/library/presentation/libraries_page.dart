@@ -5,7 +5,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 
-/// Drill into libraries → folders → pick the nested collection for the shelf.
+/// Drill into libraries → folders → toggle multiple collections onto shelves.
 class LibrariesPage extends ConsumerStatefulWidget {
   const LibrariesPage({super.key});
 
@@ -22,19 +22,29 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
     });
   }
 
+  ShelfSource _sourceFor(LibraryNode node, List<String> breadcrumb) {
+    return ShelfSource(
+      id: node.id,
+      name: node.name,
+      breadcrumb: breadcrumb,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final stack = ref.watch(browseStackProvider);
     final childrenAsync = ref.watch(browseChildrenProvider);
-    final selected = ref.watch(shelfSourceProvider);
+    final selected = ref.watch(shelfSourcesProvider);
 
     final current = stack.isEmpty ? null : stack.last;
     final breadcrumb = stack.map((n) => n.name).toList();
+    final currentSelected =
+        current != null && selected.any((s) => s.id == current.id);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('COLLECTION'),
+        title: const Text('SHELVES'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -45,6 +55,21 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
             }
           },
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ref.invalidate(shelvesProvider);
+              context.pop();
+            },
+            child: const Text(
+              'DONE',
+              style: TextStyle(
+                color: VhsColors.phosphor,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
       ),
       body: DecoratedBox(
         decoration: const BoxDecoration(
@@ -59,7 +84,7 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                 child: Padding(
                   padding: EdgeInsets.all(24),
                   child: Text(
-                    'Connect to Jellyfin first, then drill into a library and pick a folder like Kids Movies.',
+                    'Connect to Jellyfin first, then add folders like Kids Movies and TV Shows as separate shelves.',
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -73,14 +98,14 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          stack.isEmpty ? 'LIBRARIES' : current!.name.toUpperCase(),
+                          stack.isEmpty
+                              ? 'LIBRARIES'
+                              : current!.name.toUpperCase(),
                           style: vhsBrandStyle(size: 22),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          stack.isEmpty
-                              ? 'Open a library, then choose a folder inside it for the shelf.'
-                              : 'Open another folder, or use this one as the shelf.',
+                          'Add as many shelves as you want — each checked folder gets its own row under the VCR.',
                           style: TextStyle(
                             color: VhsColors.brand.withValues(alpha: 0.7),
                           ),
@@ -114,15 +139,43 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                             ],
                           ),
                         ],
-                        if (selected != null) ...[
-                          const SizedBox(height: 10),
+                        if (selected.isNotEmpty) ...[
+                          const SizedBox(height: 12),
                           Text(
-                            'Shelf now: ${selected.pathLabel}',
-                            style: const TextStyle(
-                              color: VhsColors.phosphor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
+                            'ON THE CONSOLE',
+                            style: TextStyle(
+                              color: VhsColors.brand.withValues(alpha: 0.55),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final source in selected)
+                                InputChip(
+                                  label: Text(source.pathLabel),
+                                  selected: true,
+                                  selectedColor:
+                                      VhsColors.phosphor.withValues(alpha: 0.2),
+                                  checkmarkColor: VhsColors.phosphor,
+                                  labelStyle: const TextStyle(
+                                    color: VhsColors.phosphor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                  deleteIconColor: VhsColors.phosphor,
+                                  onDeleted: () async {
+                                    await ref
+                                        .read(shelfSourcesProvider.notifier)
+                                        .remove(source.id);
+                                    ref.invalidate(shelvesProvider);
+                                  },
+                                ),
+                            ],
                           ),
                         ],
                       ],
@@ -133,11 +186,10 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: ElevatedButton(
                         onPressed: () async {
-                          await ref.read(shelfSourceProvider.notifier).select(
-                                ShelfSource(
-                                  id: current.id,
-                                  name: current.name,
-                                  breadcrumb: breadcrumb.length <= 1
+                          await ref.read(shelfSourcesProvider.notifier).toggle(
+                                _sourceFor(
+                                  current,
+                                  breadcrumb.length <= 1
                                       ? const []
                                       : breadcrumb.sublist(
                                           0,
@@ -146,9 +198,12 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                                 ),
                               );
                           ref.invalidate(shelvesProvider);
-                          if (context.mounted) context.pop();
                         },
-                        child: Text('USE “${current.name.toUpperCase()}” AS SHELF'),
+                        child: Text(
+                          currentSelected
+                              ? 'REMOVE “${current.name.toUpperCase()}”'
+                              : 'ADD “${current.name.toUpperCase()}” AS SHELF',
+                        ),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -168,7 +223,7 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                               child: Text(
                                 current == null
                                     ? 'No libraries found.'
-                                    : 'No more folders here. Use the button above to set this folder as the shelf.',
+                                    : 'No more folders here. Add this folder with the button above.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color:
@@ -179,12 +234,14 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                           );
                         }
                         return ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
                           itemCount: nodes.length,
                           separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final node = nodes[index];
-                            final isSelected = selected?.id == node.id;
+                            final isSelected =
+                                selected.any((s) => s.id == node.id);
+                            final crumbsForNode = [...breadcrumb];
                             return ListTile(
                               leading: Icon(
                                 stack.isEmpty
@@ -216,35 +273,29 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                                       VhsColors.brand.withValues(alpha: 0.55),
                                 ),
                               ),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Checkbox(
+                                    value: isSelected,
+                                    activeColor: VhsColors.phosphor,
+                                    checkColor: VhsColors.woodDeep,
+                                    onChanged: (_) async {
+                                      await ref
+                                          .read(shelfSourcesProvider.notifier)
+                                          .toggle(
+                                            _sourceFor(node, crumbsForNode),
+                                          );
+                                      ref.invalidate(shelvesProvider);
+                                    },
+                                  ),
+                                  const Icon(Icons.chevron_right),
+                                ],
+                              ),
                               onTap: () {
                                 ref
                                     .read(browseStackProvider.notifier)
                                     .push(node);
-                              },
-                              onLongPress: () async {
-                                final crumbs = [
-                                  ...breadcrumb,
-                                ];
-                                await ref
-                                    .read(shelfSourceProvider.notifier)
-                                    .select(
-                                      ShelfSource(
-                                        id: node.id,
-                                        name: node.name,
-                                        breadcrumb: crumbs,
-                                      ),
-                                    );
-                                ref.invalidate(shelvesProvider);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Shelf set to ${node.name}',
-                                      ),
-                                    ),
-                                  );
-                                }
                               },
                             );
                           },
@@ -255,7 +306,7 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: Text(
-                      'Tip: open Movies → Kids Movies, then tap USE AS SHELF. Long-press a folder to select it without opening.',
+                      'Tip: open Movies → Kids Movies and check it, then go back and check TV Shows too. Each becomes its own shelf.',
                       style: TextStyle(
                         color: VhsColors.brand.withValues(alpha: 0.45),
                         fontSize: 12,

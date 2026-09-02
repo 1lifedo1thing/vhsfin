@@ -111,18 +111,21 @@ final browseChildrenProvider =
   );
 });
 
-final shelfSourceProvider =
-    NotifierProvider<ShelfSourceNotifier, ShelfSource?>(ShelfSourceNotifier.new);
+final shelfSourcesProvider =
+    NotifierProvider<ShelfSourcesNotifier, List<ShelfSource>>(
+  ShelfSourcesNotifier.new,
+);
 
-class ShelfSourceNotifier extends Notifier<ShelfSource?> {
-  static const _key = 'vhsfin.shelf_source.v2';
-  static const _legacyKey = 'vhsfin.selected_library';
+class ShelfSourcesNotifier extends Notifier<List<ShelfSource>> {
+  static const _key = 'vhsfin.shelf_sources.v3';
+  static const _legacySingleKey = 'vhsfin.shelf_source.v2';
+  static const _legacyIdKey = 'vhsfin.selected_library';
   static const _legacyMultiKey = 'vhsfin.selected_libraries';
 
   @override
-  ShelfSource? build() {
+  List<ShelfSource> build() {
     _restore();
-    return null;
+    return const [];
   }
 
   Future<void> _restore() async {
@@ -130,45 +133,72 @@ class ShelfSourceNotifier extends Notifier<ShelfSource?> {
     final raw = prefs.getString(_key);
     if (raw != null) {
       try {
-        state = ShelfSource.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+        final list = jsonDecode(raw) as List<dynamic>;
+        state = list
+            .map((e) => ShelfSource.fromJson(e as Map<String, dynamic>))
+            .toList();
         return;
       } catch (_) {
         await prefs.remove(_key);
       }
     }
 
-    final legacyId = prefs.getString(_legacyKey);
+    final legacySingle = prefs.getString(_legacySingleKey);
+    if (legacySingle != null) {
+      try {
+        state = [
+          ShelfSource.fromJson(jsonDecode(legacySingle) as Map<String, dynamic>),
+        ];
+        await _persist();
+        return;
+      } catch (_) {}
+    }
+
+    final legacyId = prefs.getString(_legacyIdKey);
     if (legacyId != null && legacyId.isNotEmpty) {
-      state = ShelfSource(id: legacyId, name: 'Library');
+      state = [ShelfSource(id: legacyId, name: 'Library')];
+      await _persist();
       return;
     }
+
     final legacyMulti = prefs.getStringList(_legacyMultiKey);
     if (legacyMulti != null && legacyMulti.isNotEmpty) {
-      state = ShelfSource(id: legacyMulti.first, name: 'Library');
+      state = [
+        for (final id in legacyMulti) ShelfSource(id: id, name: 'Library'),
+      ];
+      await _persist();
     }
   }
 
-  Future<void> select(ShelfSource source) async {
-    state = source;
+  Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(source.toJson()));
-  }
-}
-
-final expandedSeriesIdProvider =
-    NotifierProvider<ExpandedSeriesNotifier, String?>(
-  ExpandedSeriesNotifier.new,
-);
-
-class ExpandedSeriesNotifier extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  void toggle(String seriesId) {
-    state = state == seriesId ? null : seriesId;
+    await prefs.setString(
+      _key,
+      jsonEncode(state.map((s) => s.toJson()).toList()),
+    );
   }
 
-  void clear() => state = null;
+  bool containsId(String id) => state.any((s) => s.id == id);
+
+  Future<void> toggle(ShelfSource source) async {
+    if (containsId(source.id)) {
+      state = state.where((s) => s.id != source.id).toList();
+    } else {
+      state = [...state, source];
+    }
+    await _persist();
+  }
+
+  Future<void> add(ShelfSource source) async {
+    if (containsId(source.id)) return;
+    state = [...state, source];
+    await _persist();
+  }
+
+  Future<void> remove(String id) async {
+    state = state.where((s) => s.id != id).toList();
+    await _persist();
+  }
 }
 
 final shelvesProvider = FutureProvider<List<Shelf>>((ref) async {
@@ -179,55 +209,32 @@ final shelvesProvider = FutureProvider<List<Shelf>>((ref) async {
     ];
   }
 
-  final source = ref.watch(shelfSourceProvider);
-  if (source == null) {
+  final sources = ref.watch(shelfSourcesProvider);
+  if (sources.isEmpty) {
     return [
       const Shelf(
         id: 'empty',
-        title: 'Pick a collection',
+        title: 'Pick collections',
         items: [],
       ),
     ];
   }
 
   final client = ref.watch(jellyfinClientProvider);
-  final items = await client.fetchShelfItems(
-    session: session,
-    source: source,
-  );
+  final shelves = <Shelf>[];
 
-  final shelves = <Shelf>[
-    Shelf(
-      id: source.id,
-      title: source.name.toUpperCase(),
-      items: items,
-    ),
-  ];
-
-  final expandedId = ref.watch(expandedSeriesIdProvider);
-  if (expandedId != null) {
-    Tape? series;
-    for (final item in items) {
-      if (item.id == expandedId && item.kind == TapeKind.series) {
-        series = item;
-        break;
-      }
-    }
-    if (series != null) {
-      final episodes = await client.fetchEpisodes(
-        session: session,
-        seriesId: series.id,
-        libraryName: series.libraryName,
-      );
-      shelves.add(
-        Shelf(
-          id: 'episodes-$expandedId',
-          title: '${series.title.toUpperCase()} · EPISODES',
-          items: episodes,
-          parentSeriesId: expandedId,
-        ),
-      );
-    }
+  for (final source in sources) {
+    final items = await client.fetchShelfItems(
+      session: session,
+      source: source,
+    );
+    shelves.add(
+      Shelf(
+        id: source.id,
+        title: source.name.toUpperCase(),
+        items: items,
+      ),
+    );
   }
 
   return shelves;

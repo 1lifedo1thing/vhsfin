@@ -5,6 +5,7 @@ import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
+import 'package:vhsfin/features/living_room/presentation/episode_picker_sheet.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
 
 class BookshelfView extends ConsumerWidget {
@@ -17,9 +18,12 @@ class BookshelfView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final shelvesAsync = ref.watch(shelvesProvider);
     final loadedId = ref.watch(vcrDeckProvider).loadedTape?.id;
-    final expandedId = ref.watch(expandedSeriesIdProvider);
+    final loadedSeriesId = ref.watch(vcrDeckProvider).loadedTape?.seriesId;
 
     return shelvesAsync.when(
+      // Keep prior shelves visible while refreshing so episode picks don't
+      // blank the console with a spinner.
+      skipLoadingOnReload: true,
       loading: () => const SizedBox(
         height: 180,
         child: Center(
@@ -38,11 +42,9 @@ class BookshelfView extends ConsumerWidget {
               _ShelfBlock(
                 shelf: shelves[i],
                 loadedId: loadedId,
-                expandedSeriesId: expandedId,
+                loadedSeriesId: loadedSeriesId,
                 embedded: embedded,
-                showTitle: !embedded ||
-                    shelves[i].isEpisodeShelf ||
-                    shelves.length > 1,
+                showTitle: !embedded || shelves.length > 1,
               ),
             ],
           ],
@@ -56,14 +58,14 @@ class _ShelfBlock extends ConsumerWidget {
   const _ShelfBlock({
     required this.shelf,
     required this.loadedId,
-    required this.expandedSeriesId,
+    required this.loadedSeriesId,
     required this.embedded,
     required this.showTitle,
   });
 
   final Shelf shelf;
   final String? loadedId;
-  final String? expandedSeriesId;
+  final String? loadedSeriesId;
   final bool embedded;
   final bool showTitle;
 
@@ -88,7 +90,7 @@ class _ShelfBlock extends ConsumerWidget {
             child: Center(
               child: Text(
                 shelf.id == 'empty'
-                    ? 'Pick a collection below'
+                    ? 'Pick collections below'
                     : 'Empty shelf',
                 style: TextStyle(
                   color: VhsColors.brand.withValues(alpha: 0.55),
@@ -123,8 +125,8 @@ class _ShelfBlock extends ConsumerWidget {
                               tape: tape,
                               selected: tape.id == loadedId ||
                                   (tape.kind == TapeKind.series &&
-                                      tape.id == expandedSeriesId),
-                              onTap: () => _onTap(ref, tape),
+                                      tape.id == loadedSeriesId),
+                              onTap: () => _onTap(context, ref, tape),
                             ),
                         ],
                       ),
@@ -157,9 +159,9 @@ class _ShelfBlock extends ConsumerWidget {
     );
   }
 
-  void _onTap(WidgetRef ref, Tape tape) {
+  void _onTap(BuildContext context, WidgetRef ref, Tape tape) {
     if (tape.kind == TapeKind.series) {
-      ref.read(expandedSeriesIdProvider.notifier).toggle(tape.id);
+      showEpisodePicker(context, series: tape);
       return;
     }
     ref.read(vcrDeckProvider.notifier).insertTape(tape);
