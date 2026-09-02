@@ -1,8 +1,12 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:vhsfin/features/library/data/ia_jsonp_stub.dart'
+    if (dart.library.js_interop) 'package:vhsfin/features/library/data/ia_jsonp_web.dart';
 
 /// Real VHS sleeve art for a bookshelf spine (IA scan), when available.
 class VhsSpineArt {
@@ -35,8 +39,8 @@ class VhsSpineArt {
 
 /// Looks up period VHS sleeve scans on Internet Archive and caches hits.
 ///
-/// Only searches titles from ~2005 and earlier (VHS era). Hits are meant to be
-/// shown as the whole spine via a centered vertical crop — no procedural text.
+/// Flutter web cannot `fetch` archive.org (no CORS) — we use JSONP instead.
+/// VHSCollector.com has no API and is mid-rebuild — not used.
 class VhsCoverResolver {
   VhsCoverResolver({Dio? dio})
       : _dio = dio ??
@@ -51,12 +55,12 @@ class VhsCoverResolver {
             );
 
   final Dio _dio;
-  static const _cacheKey = 'vhsfin.ia_spine_art.v2';
+
+  static const _cacheKey = 'vhsfin.ia_spine_art.v3';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
-
-  /// Center strip of a flat BACK|SPINE|FRONT J-card.
   static const wraparoundSpineFraction = 0.09;
+  static const missTtl = Duration(hours: 12);
 
   final Map<String, String> _memory = {};
 
@@ -64,7 +68,10 @@ class VhsCoverResolver {
     required String title,
     int? year,
   }) async {
-    if (year != null && year > vhsEraLastYear) return null;
+    if (year != null && year > vhsEraLastYear) {
+      debugPrint('vhs-spine skip post-era "$title" ($year)');
+      return null;
+    }
 
     final key = _key(title, year);
     if (_memory.containsKey(key)) {
@@ -75,19 +82,31 @@ class VhsCoverResolver {
     final disk = _readDisk(prefs);
     if (disk.containsKey(key)) {
       final value = disk[key]!;
-      _memory[key] = value;
-      return _decodeMemory(value);
+      if (_isFreshMiss(value) || !_isMiss(value)) {
+        _memory[key] = value;
+        return _decodeMemory(value);
+      }
+      disk.remove(key);
     }
 
     final resolved = await _search(title, year);
-    final stored = resolved == null ? _miss : jsonEncode(resolved.toJson());
+    final stored = resolved == null
+        ? jsonEncode({
+            'miss': true,
+            'at': DateTime.now().toUtc().toIso8601String(),
+          })
+        : jsonEncode(resolved.toJson());
     _memory[key] = stored;
     disk[key] = stored;
     await prefs.setString(_cacheKey, jsonEncode(disk));
+    debugPrint(
+      resolved == null
+          ? 'vhs-spine MISS "$title" ($year)'
+          : 'vhs-spine HIT "$title" → ${resolved.imageUrl}',
+    );
     return resolved;
   }
 
-  /// Legacy helper — image URL only.
   Future<String?> coverUrlFor({
     required String title,
     int? year,
@@ -95,8 +114,31 @@ class VhsCoverResolver {
     return (await spineArtFor(title: title, year: year))?.imageUrl;
   }
 
+  bool _isMiss(String raw) {
+    if (raw == _miss) return true;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map['miss'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isFreshMiss(String raw) {
+    if (raw == _miss) return false;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      if (map['miss'] != true) return false;
+      final at = DateTime.tryParse(map['at'] as String? ?? '');
+      if (at == null) return false;
+      return DateTime.now().toUtc().difference(at) < missTtl;
+    } catch (_) {
+      return false;
+    }
+  }
+
   VhsSpineArt? _decodeMemory(String raw) {
-    if (raw == _miss) return null;
+    if (_isMiss(raw)) return null;
     try {
       return VhsSpineArt.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
@@ -104,40 +146,47 @@ class VhsCoverResolver {
     }
   }
 
+  String _normalizeTitle(String title) {
+    var t = title.trim();
+    t = t.replaceAll(RegExp(r'\s*\(\d{4}\)\s*$'), '');
+    t = t.replaceAll(RegExp(r'\s+'), ' ');
+    final article = RegExp(
+      r'^(.+),\s*(The|A|An)$',
+      caseSensitive: false,
+    ).firstMatch(t);
+    if (article != null) {
+      t = '${article.group(2)} ${article.group(1)}';
+    }
+    return t.trim();
+  }
+
   Future<VhsSpineArt?> _search(String title, int? year) async {
-    final cleaned = title.trim();
+    final cleaned = _normalizeTitle(title);
     if (cleaned.isEmpty) return null;
 
-    final yearClause = year != null ? ' AND year:[$year TO $year]' : '';
-    final eraClause = ' AND year:[1975 TO $vhsEraLastYear]';
+    final softYear = year != null
+        ? ' AND year:[${year - 1} TO ${year + 10}]'
+        : ' AND year:[1975 TO $vhsEraLastYear]';
 
     final queries = <String>[
-      'title:("$cleaned") AND (title:("vhs cover") OR title:("VHS Cover") OR title:("vhs case"))$yearClause',
-      'title:("$cleaned") AND subject:(vhs) AND (cover OR sleeve OR scan) AND mediatype:image$eraClause',
-      'title:("$cleaned") AND (title:("vhs cover") OR title:("VHS Cover"))$eraClause',
-      'title:("$cleaned") AND (vhs OR videocassette) AND mediatype:image$eraClause',
+      'title:("$cleaned") AND (title:("vhs cover") OR title:("VHS Cover") OR title:("vhs case") OR title:("Case Cover"))',
+      'title:("$cleaned") AND (title:("vhs cover") OR title:("VHS Cover"))$softYear',
+      'title:("$cleaned") AND subject:(vhs) AND (cover OR sleeve OR scan) AND mediatype:image',
+      '("$cleaned") AND ("vhs cover" OR "VHS Cover" OR "vhs case cover") AND mediatype:image',
     ];
 
     for (final query in queries) {
       try {
-        final url =
-            'https://archive.org/advancedsearch.php'
-            '?q=${Uri.encodeQueryComponent(query)}'
-            '&fl[]=identifier&fl[]=title&fl[]=year&fl[]=mediatype'
-            '&rows=8&output=json';
-        final response = await _dio.get<Map<String, dynamic>>(url);
-        final docs =
-            response.data?['response']?['docs'] as List<dynamic>? ?? const [];
+        final docs = await _searchDocs(query);
+        debugPrint('vhs-spine query docs=${docs.length} for "$cleaned"');
         final ranked = <({Map<String, dynamic> doc, double score})>[];
-        for (final raw in docs) {
-          final doc = raw as Map<String, dynamic>;
+        for (final doc in docs) {
           final id = doc['identifier'] as String?;
           if (id == null || id.isEmpty) continue;
           final docTitle = (doc['title'] as String? ?? '').toLowerCase();
-          // Skip obvious tape rips / openings, keep cover scans.
           if (_looksLikeVideoRip(docTitle)) continue;
           final score = _score(docTitle, cleaned.toLowerCase());
-          if (score < 0.4) continue;
+          if (score < 0.35) continue;
           ranked.add((doc: doc, score: score));
         }
         ranked.sort((a, b) => b.score.compareTo(a.score));
@@ -146,11 +195,37 @@ class VhsCoverResolver {
           final art = await _artFromIdentifier(id, hit.doc);
           if (art != null) return art;
         }
-      } catch (_) {
-        // Best-effort — fall through to next query / procedural spine.
+      } catch (err) {
+        debugPrint('vhs-spine search error: $err');
       }
     }
     return null;
+  }
+
+  Future<List<Map<String, dynamic>>> _searchDocs(String query) async {
+    if (kIsWeb) {
+      final multiFl = 'https://archive.org/advancedsearch.php'
+          '?q=${Uri.encodeQueryComponent(query)}'
+          '&fl[]=identifier&fl[]=title&fl[]=year&fl[]=mediatype'
+          '&rows=8&output=json';
+      final data = await iaJsonp(multiFl);
+      final docs =
+          data['response']?['docs'] as List<dynamic>? ?? const [];
+      return docs.cast<Map<String, dynamic>>();
+    }
+
+    final response = await _dio.get<Map<String, dynamic>>(
+      'https://archive.org/advancedsearch.php',
+      queryParameters: {
+        'q': query,
+        'fl[]': ['identifier', 'title', 'year', 'mediatype'],
+        'rows': 8,
+        'output': 'json',
+      },
+    );
+    final docs =
+        response.data?['response']?['docs'] as List<dynamic>? ?? const [];
+    return docs.cast<Map<String, dynamic>>();
   }
 
   Future<VhsSpineArt?> _artFromIdentifier(
@@ -158,10 +233,16 @@ class VhsCoverResolver {
     Map<String, dynamic> doc,
   ) async {
     try {
-      final meta = await _dio.get<Map<String, dynamic>>(
-        'https://archive.org/metadata/$id',
-      );
-      final files = meta.data?['files'] as List<dynamic>? ?? const [];
+      final Map<String, dynamic> meta;
+      if (kIsWeb) {
+        meta = await iaJsonp('https://archive.org/metadata/$id');
+      } else {
+        final response = await _dio.get<Map<String, dynamic>>(
+          'https://archive.org/metadata/$id',
+        );
+        meta = response.data ?? {};
+      }
+      final files = meta['files'] as List<dynamic>? ?? const [];
       final pick = _pickScanFile(files);
       if (pick == null) return null;
       final name = pick.name;
@@ -170,8 +251,8 @@ class VhsCoverResolver {
       final title = (doc['title'] as String? ?? name).toLowerCase();
       final fraction = _spineFractionFor(name: name, title: title);
       return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
-    } catch (_) {
-      // Thumbnail fallback — low res but better than nothing.
+    } catch (err) {
+      debugPrint('vhs-spine metadata error id=$id: $err');
       return VhsSpineArt(
         imageUrl: 'https://archive.org/services/img/$id',
         centerWidthFraction: wraparoundSpineFraction,
@@ -217,7 +298,6 @@ class VhsCoverResolver {
     if (blob.contains('spine') && !blob.contains('cover')) {
       return 1;
     }
-    // Flat sleeve / case scans → center strip is the spine.
     return wraparoundSpineFraction;
   }
 
@@ -261,7 +341,7 @@ class VhsCoverResolver {
   }
 
   String _key(String title, int? year) =>
-      '${title.trim().toLowerCase()}|${year ?? ''}';
+      '${_normalizeTitle(title).toLowerCase()}|${year ?? ''}';
 
   Map<String, String> _readDisk(SharedPreferences prefs) {
     final raw = prefs.getString(_cacheKey);
