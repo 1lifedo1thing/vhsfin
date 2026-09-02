@@ -24,7 +24,11 @@ class VhsSpine extends ConsumerWidget {
     final palette = SpinePalette.fromTitle(tape.title);
     final artAsync = ref.watch(vhsSpineArtProvider(tape));
     final width = selected ? 34.0 : 28.0;
-    final tip = _tipRadians(tape.id);
+    final tip = selected ? 0.0 : _tipRadians(tape.id);
+    // Rotation around the bottom swings the top into neighbors — reserve that
+    // horizontal room so tipped spines don't overlap.
+    final swing = height * tip.abs();
+    final slotWidth = width + swing * 2 + 10;
 
     return Semantics(
       button: true,
@@ -35,13 +39,13 @@ class VhsSpine extends ConsumerWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: width + 6,
+          width: slotWidth,
           height: height + 8,
           alignment: Alignment.bottomCenter,
           child: Transform.translate(
             offset: Offset(0, selected ? -14 : 0),
             child: Transform.rotate(
-              angle: selected ? 0 : tip,
+              angle: tip,
               alignment: Alignment.bottomCenter,
               child: Container(
                 width: width,
@@ -80,15 +84,14 @@ class VhsSpine extends ConsumerWidget {
     );
   }
 
-  /// A few spines lean left/right like a lived-in shelf.
+  /// A few spines lean slightly — kept small so neighbors don't collide.
   static double _tipRadians(String id) {
     final hash = id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
-    if (hash % 5 != 0) return 0;
-    final magnitude = 0.04 + (hash % 9) * 0.01;
+    if (hash % 6 != 0) return 0;
+    final magnitude = 0.018 + (hash % 4) * 0.006; // ~1°–2.3°
     return hash.isEven ? magnitude : -magnitude;
   }
 }
-
 class _RealSpine extends StatelessWidget {
   const _RealSpine({required this.art});
 

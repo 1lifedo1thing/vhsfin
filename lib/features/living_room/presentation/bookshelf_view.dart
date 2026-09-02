@@ -70,7 +70,7 @@ class _ShelfBlock extends ConsumerWidget {
   final bool embedded;
   final bool showTitle;
 
-  static const _spineSlotWidth = 36.0;
+  static const _spineSlotWidth = 44.0;
   static const _rowHeight = 186.0;
 
   @override
