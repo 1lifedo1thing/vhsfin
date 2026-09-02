@@ -100,7 +100,7 @@ class _RealSpine extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         const ColoredBox(color: Colors.black),
-        _SpineScanCrop(
+        VhsSleeveCrop(
           url: art.imageUrl,
           widthFraction: art.centerWidthFraction,
         ),
@@ -132,18 +132,23 @@ class _RealSpine extends StatelessWidget {
   }
 }
 
-/// Shows only the centered vertical strip of a flat VHS sleeve scan.
-///
-/// Scales so the **full sleeve height** fits the spine, then clips to the
-/// center [widthFraction] (the spine panel) — never crops top/bottom.
-class _SpineScanCrop extends StatelessWidget {
-  const _SpineScanCrop({
+/// Shows a vertical strip of a VHS sleeve scan (spine) or a side panel (front).
+class VhsSleeveCrop extends StatelessWidget {
+  const VhsSleeveCrop({
+    super.key,
     required this.url,
     required this.widthFraction,
+    this.alignment = Alignment.center,
   });
 
   final String url;
+
+  /// Horizontal fraction of the source image to keep.
   final double widthFraction;
+
+  /// Which part of the source to keep when cropping (center = spine,
+  /// centerRight ≈ front panel on a BACK|SPINE|FRONT wraparound).
+  final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +173,7 @@ class _SpineScanCrop extends StatelessWidget {
 
         return ClipRect(
           child: Align(
-            alignment: Alignment.center,
+            alignment: alignment,
             widthFactor: fraction,
             heightFactor: 1,
             child: SizedBox(
@@ -178,7 +183,6 @@ class _SpineScanCrop extends StatelessWidget {
                 height: h,
                 fit: BoxFit.fitHeight,
                 alignment: Alignment.center,
-                // Decode for full sleeve height; width follows aspect.
                 cacheHeight: (h * dpr).ceil().clamp(160, 1600),
                 filterQuality: FilterQuality.medium,
                 errorBuilder: (_, _, _) =>

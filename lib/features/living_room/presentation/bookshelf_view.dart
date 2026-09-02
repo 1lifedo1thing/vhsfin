@@ -6,6 +6,7 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/episode_picker_sheet.dart';
+import 'package:vhsfin/features/living_room/presentation/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
 
 class BookshelfView extends ConsumerWidget {
@@ -164,6 +165,10 @@ class _ShelfBlock extends ConsumerWidget {
       showEpisodePicker(context, series: tape);
       return;
     }
-    ref.read(vcrDeckProvider.notifier).insertTape(tape);
+    showTapeInspectSheet(
+      context,
+      tape: tape,
+      onInsert: () => ref.read(vcrDeckProvider.notifier).insertTape(tape),
+    );
   }
 }

@@ -50,33 +50,45 @@ def _full_vhsimage_urls(chunk: str) -> list[str]:
     return [u for u in found if "/styles/" not in u]
 
 
+def _image_from_field(html: str, field: str) -> str | None:
+    idx = html.find(field)
+    if idx < 0:
+        return None
+    chunk = html[idx : idx + 2500]
+    urls = _full_vhsimage_urls(chunk)
+    if not urls:
+        hrefs = re.findall(
+            r'href="((?:https://vhscollector\.com)?/sites/default/files/vhsimages/[^"]+\.jpg)"',
+            chunk,
+            flags=re.I,
+        )
+        urls = [u for u in hrefs if "/styles/" not in u]
+    if not urls:
+        return None
+    path = urls[0]
+    return path if path.startswith("http") else VC + path
+
+
 def extract_collector_art(html: str) -> dict | None:
-    """Prefer dedicated spine, else combined wraparound sleeve."""
-    for field, kind, fraction in (
-        ("field--name-field-vhs-imgspine", "spine", 1.0),
-        ("field--name-field-vhs-imgcomb", "comb", 0.09),
-    ):
-        idx = html.find(field)
-        if idx < 0:
-            continue
-        chunk = html[idx : idx + 2500]
-        urls = _full_vhsimage_urls(chunk)
-        if not urls:
-            # Sometimes only the styled src is in the first chunk; try href too.
-            hrefs = re.findall(
-                r'href="((?:https://vhscollector\.com)?/sites/default/files/vhsimages/[^"]+\.jpg)"',
-                chunk,
-                flags=re.I,
-            )
-            urls = [u for u in hrefs if "/styles/" not in u]
-        if not urls:
-            continue
-        path = urls[0]
-        if path.startswith("http"):
-            image_url = path
-        else:
-            image_url = VC + path
-        return {"imageUrl": image_url, "kind": kind, "fraction": fraction}
+    """Prefer dedicated spine (+ front), else combined wraparound sleeve."""
+    front = _image_from_field(html, "field--name-field-vhs-imgfront")
+    spine = _image_from_field(html, "field--name-field-vhs-imgspine")
+    comb = _image_from_field(html, "field--name-field-vhs-imgcomb")
+
+    if spine:
+        return {
+            "imageUrl": spine,
+            "frontImageUrl": front,
+            "kind": "spine",
+            "fraction": 1.0,
+        }
+    if comb:
+        return {
+            "imageUrl": comb,
+            "frontImageUrl": front,
+            "kind": "comb",
+            "fraction": 0.09,
+        }
     return None
 
 

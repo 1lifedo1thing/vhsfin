@@ -10,24 +10,33 @@ import 'package:vhsfin/features/library/data/ia_jsonp_stub.dart'
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
-/// Real VHS sleeve art for a bookshelf spine (IA scan), when available.
+/// Real VHS sleeve art for a bookshelf spine (and optional front cover).
 class VhsSpineArt {
   const VhsSpineArt({
     required this.imageUrl,
     this.centerWidthFraction = 0.09,
+    this.frontImageUrl,
   });
 
+  /// Spine source — dedicated spine scan, or a flat wraparound sleeve.
   final String imageUrl;
 
-  /// Fraction of scan width to keep, centered. `1` = use the whole image
-  /// (dedicated spine scan). Typical wraparound J-cards use ~0.09.
+  /// Fraction of [imageUrl] width to keep, centered. `1` = whole image
+  /// (dedicated spine). Typical wraparound J-cards use ~0.09.
   final double centerWidthFraction;
 
+  /// Dedicated front cover when available (VHSCollector `imgfront`).
+  final String? frontImageUrl;
+
   bool get isFullBleedSpine => centerWidthFraction >= 0.99;
+
+  /// Wraparound sleeve — front is the right panel when [frontImageUrl] is null.
+  bool get isWraparound => centerWidthFraction < 0.99;
 
   Map<String, dynamic> toJson() => {
         'u': imageUrl,
         'f': centerWidthFraction,
+        if (frontImageUrl != null) 'front': frontImageUrl,
       };
 
   static VhsSpineArt? fromJson(Map<String, dynamic>? json) {
@@ -35,7 +44,12 @@ class VhsSpineArt {
     final url = json['u'] as String?;
     if (url == null || url.isEmpty) return null;
     final f = (json['f'] as num?)?.toDouble() ?? 0.09;
-    return VhsSpineArt(imageUrl: url, centerWidthFraction: f);
+    final front = json['front'] as String?;
+    return VhsSpineArt(
+      imageUrl: url,
+      centerWidthFraction: f,
+      frontImageUrl: front,
+    );
   }
 }
 
@@ -59,7 +73,7 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.spine_art.v5';
+  static const _cacheKey = 'vhsfin.spine_art.v6';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
@@ -236,10 +250,15 @@ class VhsCoverResolver {
         if (url == null || url.isEmpty) return null;
         final fraction = (data['fraction'] as num?)?.toDouble() ??
             wraparoundSpineFraction;
+        final front = data['frontImageUrl'] as String?;
         debugPrint(
           'vhs-spine collector HIT "${data['slug']}" (${data['kind']}) → $url',
         );
-        return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
+        return VhsSpineArt(
+          imageUrl: url,
+          centerWidthFraction: fraction,
+          frontImageUrl: front,
+        );
       }
 
       for (final slug in _collectorSlugs(cleaned)) {
@@ -285,14 +304,9 @@ class VhsCoverResolver {
   }
 
   VhsSpineArt? _parseCollectorHtml(String html) {
-    for (final entry in [
-      ('field--name-field-vhs-imgspine', 1.0),
-      ('field--name-field-vhs-imgcomb', wraparoundSpineFraction),
-    ]) {
-      final field = entry.$1;
-      final fraction = entry.$2;
+    String? fieldUrl(String field) {
       final idx = html.indexOf(field);
-      if (idx < 0) continue;
+      if (idx < 0) return null;
       final chunk = html.substring(idx, (idx + 2500).clamp(0, html.length));
       final matches = RegExp(
         r"""(?:https://vhscollector\.com)?(/sites/default/files/vhsimages/[^"'>\s]+\.jpg)""",
@@ -301,10 +315,27 @@ class VhsCoverResolver {
       for (final match in matches) {
         final path = match.group(1)!;
         if (path.contains('/styles/')) continue;
-        final url = path.startsWith('http') ? path : '$_collectorBase$path';
-        debugPrint('vhs-spine collector parse → $url');
-        return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
+        return path.startsWith('http') ? path : '$_collectorBase$path';
       }
+      return null;
+    }
+
+    final front = fieldUrl('field--name-field-vhs-imgfront');
+    final spine = fieldUrl('field--name-field-vhs-imgspine');
+    final comb = fieldUrl('field--name-field-vhs-imgcomb');
+    if (spine != null) {
+      return VhsSpineArt(
+        imageUrl: spine,
+        centerWidthFraction: 1,
+        frontImageUrl: front,
+      );
+    }
+    if (comb != null) {
+      return VhsSpineArt(
+        imageUrl: comb,
+        centerWidthFraction: wraparoundSpineFraction,
+        frontImageUrl: front,
+      );
     }
     return null;
   }
