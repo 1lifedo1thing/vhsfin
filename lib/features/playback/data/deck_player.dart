@@ -43,6 +43,9 @@ class DeckPlayerController {
   }
 
   /// Fresh video surface after fullscreen — web loses the old texture otherwise.
+  ///
+  /// Call only after the fullscreen [Video] has been disposed (no second
+  /// [Video] mounted yet). Then bump [surfaceEpoch] so the CRT remounts.
   void reattachSurface() {
     if (_player == null) return;
     _controller = VideoController(_player!);

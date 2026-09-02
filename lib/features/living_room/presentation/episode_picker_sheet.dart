@@ -218,11 +218,12 @@ class _EpisodeShelfRow extends StatelessWidget {
           used += episode.id == loadedId ? 34.0 : VhsSpine.nominalWidth;
         }
         final leftover = constraints.maxWidth - used;
-        final bookend = leftover > VhsSpine.nominalWidth * 0.75;
         const spineHeight = 148.0;
-        final bookendTip = bookend
-            ? VhsSpine.bookendTipFor(leftover: leftover, height: spineHeight)
-            : 0.0;
+        final tips = VhsSpine.tipsForRow(
+          ids: episodes.map((e) => e.id).toList(),
+          leftover: leftover,
+          height: spineHeight,
+        );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,10 +236,7 @@ class _EpisodeShelfRow extends StatelessWidget {
                     tape: episodes[i],
                     height: spineHeight,
                     selected: episodes[i].id == loadedId,
-                    tipRadians:
-                        bookend && i == episodes.length - 1 && bookendTip != 0
-                            ? bookendTip
-                            : null,
+                    tipRadians: tips[i],
                     onTap: () => onTap(episodes[i]),
                   ),
               ],

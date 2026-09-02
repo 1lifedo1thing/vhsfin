@@ -194,10 +194,11 @@ class _ShelfTapeRow extends StatelessWidget {
           used += selected ? 34.0 : VhsSpine.nominalWidth;
         }
         final leftover = constraints.maxWidth - used;
-        final bookend = leftover > VhsSpine.nominalWidth * 0.75;
-        final bookendTip = bookend
-            ? VhsSpine.bookendTipFor(leftover: leftover, height: 168)
-            : 0.0;
+        final tips = VhsSpine.tipsForRow(
+          ids: tapes.map((t) => t.id).toList(),
+          leftover: leftover,
+          height: 168,
+        );
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -208,9 +209,7 @@ class _ShelfTapeRow extends StatelessWidget {
                 selected: tapes[i].id == loadedId ||
                     (tapes[i].kind == TapeKind.series &&
                         tapes[i].id == loadedSeriesId),
-                tipRadians: bookend && i == tapes.length - 1 && bookendTip != 0
-                    ? bookendTip
-                    : null,
+                tipRadians: tips[i],
                 onTap: () => onTap(tapes[i]),
               ),
           ],

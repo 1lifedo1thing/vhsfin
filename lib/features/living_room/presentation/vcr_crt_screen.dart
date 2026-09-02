@@ -54,12 +54,14 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
         oldWidget.tape?.id != widget.tape?.id) {
       _syncPlayback();
     }
-    // Coming back from fullscreen — keep playing on the CRT surface.
+    // Coming back from fullscreen — CRT just remounted; nudge play after paint.
     if (oldWidget.style == PlaybackStyle.cleanFullscreen &&
         widget.style == PlaybackStyle.vhsCrt &&
         widget.power == VcrPower.playing) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await ref.read(deckPlayerProvider).play();
+        if (!mounted) return;
+        final deck = ref.read(deckPlayerProvider);
+        await deck.play();
       });
     }
   }

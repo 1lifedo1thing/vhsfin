@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -20,18 +21,98 @@ class VhsSpine extends ConsumerWidget {
   /// Upright (non-selected) spine thickness — used for shelf packing.
   static const double nominalWidth = 28;
 
-  /// Strong left lean for a trailing bookend when a row has leftover shelf.
-  static const double bookendTip = -0.22; // ~12.5° into the stack
+  /// Peak |angle| for a trailing bookend lean (~12.5°).
+  static const double bookendTipAbs = 0.22;
+
+  /// Tips large enough to kick the base opposite the lean (into empty shelf).
+  static const double _kickTipThreshold = 0.055;
 
   /// Left-lean tip whose base kick (`h·sinθ` to the right) fits in [leftover].
   static double bookendTipFor({
     required double leftover,
     required double height,
+    double maxAbs = bookendTipAbs,
+    int salt = 0,
   }) {
     if (leftover <= 0) return 0;
     final maxSin = (leftover / height).clamp(0.0, 0.45);
     final maxTip = math.asin(maxSin);
-    return -math.min(bookendTip.abs(), maxTip);
+    // Vary how hard this shelf leans (40%–100% of the allowed angle).
+    final t = ((salt * 37) & 255) / 255.0;
+    final target = maxAbs * (0.4 + 0.6 * t);
+    return -math.min(target, maxTip);
+  }
+
+  /// Per-index tips for one packed row — varied so shelves don't all match.
+  ///
+  /// Large left leans only when there's leftover to the right (base kicks out).
+  /// Smaller tips are rest-against leans with no base slide.
+  static List<double?> tipsForRow({
+    required List<String> ids,
+    required double leftover,
+    required double height,
+  }) {
+    final tips = List<double?>.filled(ids.length, null);
+    if (ids.isEmpty) return tips;
+
+    var seed = 0;
+    for (final id in ids) {
+      seed = (seed * 33 + id.hashCode) & 0x7fffffff;
+    }
+
+    // Casual micro-leans (~1/5 of tapes) — rest on a neighbor, no kick.
+    for (var i = 0; i < ids.length; i++) {
+      final h = ids[i].hashCode & 0xffff;
+      if (h % 5 != 0) continue;
+      final mag = 0.016 + (h % 5) * 0.005; // ~0.9°–2.3°
+      tips[i] = h.isEven ? -mag : mag;
+    }
+
+    // Trailing lean into empty shelf — mode depends on the row's tapes.
+    if (leftover > nominalWidth * 0.55) {
+      final last = ids.length - 1;
+      final mode = seed % 8;
+      if (mode == 0) {
+        // Neat row — leave casual tips only.
+      } else if (mode == 1 || mode == 2) {
+        tips[last] = bookendTipFor(
+          leftover: leftover,
+          height: height,
+          maxAbs: 0.11,
+          salt: seed,
+        );
+      } else if (mode == 3 || mode == 4) {
+        tips[last] = bookendTipFor(
+          leftover: leftover,
+          height: height,
+          maxAbs: 0.24,
+          salt: seed,
+        );
+      } else if (mode == 5 && ids.length >= 2 && leftover > nominalWidth) {
+        // Soft cascade: last two lean left, kicks share leftover.
+        tips[last - 1] = bookendTipFor(
+          leftover: leftover * 0.4,
+          height: height,
+          maxAbs: 0.09,
+          salt: seed >> 2,
+        );
+        tips[last] = bookendTipFor(
+          leftover: leftover * 0.7,
+          height: height,
+          maxAbs: 0.2,
+          salt: seed,
+        );
+      } else {
+        tips[last] = bookendTipFor(
+          leftover: leftover,
+          height: height,
+          maxAbs: 0.18,
+          salt: seed ^ 0xA5,
+        );
+      }
+    }
+
+    return tips;
   }
 
   final Tape tape;
@@ -39,21 +120,20 @@ class VhsSpine extends ConsumerWidget {
   final VoidCallback? onTap;
   final double height;
 
-  /// When set, overrides the procedural tip (e.g. bookend lean).
+  /// When set, overrides upright (e.g. bookend / casual lean).
   final double? tipRadians;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final palette = SpinePalette.fromTitle(tape.title);
     final artAsync = ref.watch(vhsSpineArtProvider(tape));
     final width = selected ? 34.0 : nominalWidth;
     // Tip is visual only — layout width stays at [width] so rows never grow
     // past the shelf from leaning.
     final tip = selected ? 0.0 : (tipRadians ?? 0.0);
-    // Bookend lean (explicit tipRadians): top tips left, base kicks right into
-    // empty shelf — otherwise it would slide into the stack and overlap.
-    final leanX =
-        tipRadians != null ? -height * math.sin(tip) : 0.0;
+    // Strong left lean: top into the stack, base kicks right into empty shelf.
+    final leanX = tip.abs() >= _kickTipThreshold
+        ? -height * math.sin(tip)
+        : 0.0;
 
     return Semantics(
       button: true,
@@ -93,12 +173,10 @@ class VhsSpine extends ConsumerWidget {
                         if (art != null) {
                           return _RealSpine(art: art);
                         }
-                        return _ProceduralSpine(tape: tape, palette: palette);
+                        return ProceduralVhsSpine(tape: tape);
                       },
-                      loading: () =>
-                          _ProceduralSpine(tape: tape, palette: palette),
-                      error: (_, _) =>
-                          _ProceduralSpine(tape: tape, palette: palette),
+                      loading: () => ProceduralVhsSpine(tape: tape),
+                      error: (_, _) => ProceduralVhsSpine(tape: tape),
                     ),
                   ),
                 ),
@@ -217,74 +295,121 @@ class VhsSleeveCrop extends StatelessWidget {
   }
 }
 
-class _ProceduralSpine extends StatelessWidget {
-  const _ProceduralSpine({
-    required this.tape,
-    required this.palette,
-  });
+/// Procedural VHS spine — translucent cover wash + printed title plate.
+/// Shared by the bookshelf and the tape-info preview.
+class ProceduralVhsSpine extends StatelessWidget {
+  const ProceduralVhsSpine({super.key, required this.tape});
 
   final Tape tape;
-  final SpinePalette palette;
 
   @override
   Widget build(BuildContext context) {
+    final palette = SpinePalette.fromTitle(tape.title);
+    final hasCover = tape.imageUrl != null && tape.imageUrl!.isNotEmpty;
+    final style = _ProceduralSpineStyle.fromTape(tape, palette);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColoredBox(color: palette.shell),
+        if (hasCover)
+          Image.network(
+            tape.imageUrl!,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            errorBuilder: (_, _, _) => ColoredBox(color: palette.shell),
+          )
+        else
+          ColoredBox(color: palette.shell),
+        // Light tint — cover colors stay visible so the title "sits on" the box.
+        if (hasCover)
+          ColoredBox(color: palette.shell.withValues(alpha: style.shellWash)),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: hasCover ? 0.22 : 0.06),
+                Colors.transparent,
+                Colors.black.withValues(alpha: hasCover ? 0.4 : 0.14),
+              ],
+              stops: const [0, 0.4, 1],
+            ),
+          ),
+        ),
+        // Top studio stripe
+        Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            height: 7,
+            width: double.infinity,
+            color: style.stripe.withValues(alpha: hasCover ? 0.85 : 1),
+          ),
+        ),
+        // Thin accent rail
         Positioned(
           left: 0,
-          top: 0,
-          bottom: 0,
-          width: 7,
-          child: tape.imageUrl == null
-              ? ColoredBox(color: palette.accent)
-              : Image.network(
-                  tape.imageUrl!,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerLeft,
-                  errorBuilder: (_, _, _) =>
-                      ColoredBox(color: palette.accent),
-                ),
+          top: 7,
+          bottom: 18,
+          width: 3,
+          child: ColoredBox(
+            color: style.stripe.withValues(alpha: hasCover ? 0.7 : 1),
+          ),
         ),
+        // Title block — sticker / banner / ghost so it feels printed on the sleeve.
         Padding(
-          padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
+          padding: const EdgeInsets.fromLTRB(5, 14, 3, 22),
           child: RotatedBox(
-            // US spines read top→bottom.
             quarterTurns: 1,
-            child: Text(
-              tape.title.toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: palette.ink,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-                height: 1,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _SpineTitlePlate(
+                title: tape.title,
+                style: style,
+                onArt: hasCover,
               ),
             ),
           ),
         ),
+        // Bottom catalog foot
         Align(
           alignment: Alignment.bottomCenter,
           child: Container(
-            height: 16,
+            height: 18,
             width: double.infinity,
-            color: palette.label,
-            alignment: Alignment.center,
-            child: Text(
-              tape.kind == TapeKind.series
-                  ? 'TV'
-                  : tape.kind == TapeKind.episode
-                      ? (tape.subtitle ?? 'EP')
-                      : 'VHS',
-              style: TextStyle(
-                color: palette.labelInk,
-                fontSize: 7,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            color: style.foot.withValues(alpha: hasCover ? 0.78 : 1),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  style.badge,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: style.footInk,
+                    fontSize: 6.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                    height: 1,
+                  ),
+                ),
+                if (style.catalog.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    style.catalog,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: style.footInk.withValues(alpha: 0.75),
+                      fontSize: 5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -293,10 +418,10 @@ class _ProceduralSpine extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: Colors.white.withValues(alpha: 0.14),
                 ),
                 right: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Colors.black.withValues(alpha: 0.38),
                 ),
               ),
             ),
@@ -304,6 +429,139 @@ class _ProceduralSpine extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+enum _TitlePlateKind { banner, ghost }
+
+class _ProceduralSpineStyle {
+  const _ProceduralSpineStyle({
+    required this.shellWash,
+    required this.stripe,
+    required this.foot,
+    required this.footInk,
+    required this.badge,
+    required this.catalog,
+    required this.plate,
+    required this.titleColor,
+    required this.letterSpacing,
+    required this.fontSize,
+    required this.useDisplayFont,
+  });
+
+  final double shellWash;
+  final Color stripe;
+  final Color foot;
+  final Color footInk;
+  final String badge;
+  final String catalog;
+  final _TitlePlateKind plate;
+  final Color titleColor;
+  final double letterSpacing;
+  final double fontSize;
+  final bool useDisplayFont;
+
+  factory _ProceduralSpineStyle.fromTape(Tape tape, SpinePalette palette) {
+    final hash = tape.id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
+    final plate = _TitlePlateKind.values[hash % 2];
+    final shellWash = 0.18 + (hash % 4) * 0.04; // 0.18–0.30
+    final badges = <String>[
+      if (tape.kind == TapeKind.series) 'TV SERIES',
+      if (tape.kind == TapeKind.episode) (tape.subtitle ?? 'EPISODE'),
+      if (tape.kind == TapeKind.movie) 'VHS',
+      'HI-FI',
+      'STEREO',
+      if (tape.productionYear != null) '${tape.productionYear}',
+      'CLAMSHELL',
+    ];
+    final badge = badges[hash % badges.length];
+    final catalog =
+        'C${(hash % 9000 + 1000)}-${(hash ~/ 7 % 90 + 10)}';
+
+    final titleColor = VhsColors.brand;
+
+    return _ProceduralSpineStyle(
+      shellWash: shellWash,
+      stripe: palette.accent,
+      foot: palette.label,
+      footInk: palette.labelInk,
+      badge: badge.toUpperCase(),
+      catalog: hash % 3 == 0 ? '' : catalog,
+      plate: plate,
+      titleColor: titleColor,
+      letterSpacing: 0.4 + (hash % 5) * 0.25,
+      fontSize: 10.0 + (hash % 3),
+      useDisplayFont: hash.isEven,
+    );
+  }
+}
+
+class _SpineTitlePlate extends StatelessWidget {
+  const _SpineTitlePlate({
+    required this.title,
+    required this.style,
+    required this.onArt,
+  });
+
+  final String title;
+  final _ProceduralSpineStyle style;
+  final bool onArt;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      title.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: (style.useDisplayFont
+              ? GoogleFonts.bungee(
+                  fontSize: style.fontSize,
+                  letterSpacing: style.letterSpacing,
+                  height: 1,
+                )
+              : TextStyle(
+                  fontSize: style.fontSize,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: style.letterSpacing,
+                  height: 1,
+                ))
+          .copyWith(
+        color: style.titleColor,
+        shadows: style.plate == _TitlePlateKind.ghost
+            ? const [
+                Shadow(
+                  color: Colors.black87,
+                  blurRadius: 5,
+                  offset: Offset(0, 1),
+                ),
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 1,
+                  offset: Offset(0, 0),
+                ),
+              ]
+            : null,
+      ),
+    );
+
+    switch (style.plate) {
+      case _TitlePlateKind.banner:
+        // Accent ink banner using the sleeve's stripe color.
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          decoration: BoxDecoration(
+            color: style.stripe.withValues(alpha: onArt ? 0.82 : 0.95),
+            borderRadius: BorderRadius.circular(1),
+          ),
+          child: text,
+        );
+      case _TitlePlateKind.ghost:
+        // Printed directly on the art with a hard shadow — matches busy covers.
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: text,
+        );
+    }
   }
 }
 

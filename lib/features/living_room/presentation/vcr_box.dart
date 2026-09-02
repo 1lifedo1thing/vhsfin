@@ -237,7 +237,7 @@ class _CassetteSlot extends ConsumerWidget {
           ),
         ),
         Container(
-          height: 44,
+          height: 48,
           decoration: BoxDecoration(
             borderRadius:
                 const BorderRadius.vertical(bottom: Radius.circular(3)),
@@ -299,8 +299,8 @@ class _SlotCassette extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      height: 28,
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      height: 32,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(2),
         color: VhsColors.tapeShell,
@@ -318,13 +318,27 @@ class _SlotCassette extends StatelessWidget {
           ? Stack(
               fit: StackFit.expand,
               children: [
-                // Spine reads top→bottom on the shelf; rotate so top is left in the bay.
-                RotatedBox(
-                  quarterTurns: 3,
-                  child: VhsSleeveCrop(
-                    url: art!.imageUrl,
-                    widthFraction: art!.centerWidthFraction,
-                  ),
+                // Force vertical spine canvas to (slotH × slotW), then rotate so
+                // it exactly fills the bay — RotatedBox alone sizes to the crop
+                // strip and chops the title off.
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    final h = constraints.maxHeight;
+                    return Center(
+                      child: RotatedBox(
+                        quarterTurns: 3,
+                        child: SizedBox(
+                          width: h,
+                          height: w,
+                          child: VhsSleeveCrop(
+                            url: art!.imageUrl,
+                            widthFraction: art!.centerWidthFraction,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 IgnorePointer(
                   child: DecoratedBox(

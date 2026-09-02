@@ -16,6 +16,8 @@ class CleanPlayerPage extends ConsumerStatefulWidget {
 }
 
 class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
+  var _leaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,14 +38,21 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
     super.dispose();
   }
 
+  /// Pop fullscreen *before* CRT binds video — two [Video]s on one controller
+  /// blanks the web surface (audio keeps going).
   Future<void> _backToVcr() async {
+    if (_leaving) return;
+    _leaving = true;
     final deck = ref.read(deckPlayerProvider);
+    final vcr = ref.read(vcrDeckProvider.notifier);
     await deck.stopShuttle();
-    deck.reattachSurface();
-    ref.read(vcrDeckProvider.notifier).setStyle(PlaybackStyle.vhsCrt);
     if (!mounted) return;
     context.pop();
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+    // Wait for HtmlElementView / <video> teardown.
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    deck.reattachSurface();
+    vcr.setStyle(PlaybackStyle.vhsCrt);
+    await Future<void>.delayed(const Duration(milliseconds: 32));
     await deck.play();
   }
 
@@ -53,56 +62,63 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
     final player = ref.watch(deckPlayerProvider);
     final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Video(
-            key: ValueKey('full-$surfaceEpoch'),
-            controller: player.controller,
-            fit: BoxFit.contain,
-            fill: Colors.black,
-          ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _backToVcr,
-                      icon: const Icon(Icons.close, color: Colors.white),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        tape?.title ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: VhsColors.brand,
-                          fontWeight: FontWeight.w700,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _backToVcr();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Video(
+              key: ValueKey('full-$surfaceEpoch'),
+              controller: player.controller,
+              fit: BoxFit.contain,
+              fill: Colors.black,
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: _backToVcr,
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          tape?.title ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: VhsColors.brand,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: _backToVcr,
-                      child: const Text(
-                        'BACK TO VCR',
-                        style: TextStyle(
-                          color: VhsColors.phosphor,
-                          fontWeight: FontWeight.w800,
+                      TextButton(
+                        onPressed: _backToVcr,
+                        child: const Text(
+                          'BACK TO VCR',
+                          style: TextStyle(
+                            color: VhsColors.phosphor,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

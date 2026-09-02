@@ -73,7 +73,7 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.spine_art.v7';
+  static const _cacheKey = 'vhsfin.spine_art.v8';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
@@ -96,7 +96,7 @@ class VhsCoverResolver {
       return null;
     }
 
-    final key = _key(title, year, seriesTitle);
+    final key = _key(title, year, seriesTitle, kind);
     if (_memory.containsKey(key)) {
       return _decodeMemory(_memory[key]!);
     }
@@ -116,6 +116,7 @@ class VhsCoverResolver {
       title,
       year: year,
       seriesTitle: seriesTitle,
+      kind: kind,
       relaxYear: relaxYear,
     );
     final stored = resolved == null
@@ -129,8 +130,8 @@ class VhsCoverResolver {
     await prefs.setString(_cacheKey, jsonEncode(disk));
     debugPrint(
       resolved == null
-          ? 'vhs-spine MISS "$title" ($year)'
-          : 'vhs-spine HIT "$title" → ${resolved.imageUrl}',
+          ? 'vhs-spine MISS "$title" ($year) kind=$kind'
+          : 'vhs-spine HIT "$title" kind=$kind → ${resolved.imageUrl}',
     );
     return resolved;
   }
@@ -200,6 +201,7 @@ class VhsCoverResolver {
     String title, {
     int? year,
     String? seriesTitle,
+    TapeKind kind = TapeKind.movie,
     bool relaxYear = false,
   }) async {
     final cleaned = _normalizeTitle(title);
@@ -224,8 +226,12 @@ class VhsCoverResolver {
       if (bare.isNotEmpty) lookupTitles.add(bare);
     }
 
+    final isSeriesBox = kind == TapeKind.series;
     for (final queryTitle in lookupTitles) {
-      final fromCollector = await _searchVhsCollector(queryTitle);
+      final fromCollector = await _searchVhsCollector(
+        queryTitle,
+        avoidAmbiguousMovieSlug: isSeriesBox,
+      );
       if (fromCollector != null) return fromCollector;
     }
 
@@ -233,7 +239,8 @@ class VhsCoverResolver {
     final iaYear = (!relaxYear || (year != null && year <= vhsEraLastYear))
         ? year
         : null;
-    final fromIa = await _searchInternetArchive(cleaned, iaYear);
+    final iaPrimary = isSeriesBox ? '$cleaned TV' : cleaned;
+    final fromIa = await _searchInternetArchive(iaPrimary, iaYear);
     if (fromIa != null) return fromIa;
 
     if (series != null && series.isNotEmpty) {
@@ -243,6 +250,18 @@ class VhsCoverResolver {
     }
 
     return null;
+  }
+
+  /// Short generic titles collide with same-named films on VHSCollector.
+  bool _ambiguousCollectorTitle(String cleaned) {
+    final words = cleaned
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.length >= 3) return false;
+    final compact = cleaned.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    return compact.length <= 14;
   }
 
   Future<VhsSpineArt?> _searchInternetArchive(
@@ -287,36 +306,51 @@ class VhsCoverResolver {
     return null;
   }
 
-  Future<VhsSpineArt?> _searchVhsCollector(String cleaned) async {
+  Future<VhsSpineArt?> _searchVhsCollector(
+    String cleaned, {
+    bool avoidAmbiguousMovieSlug = false,
+  }) async {
     try {
-      if (kIsWeb) {
-        final response = await _dio.get<Map<String, dynamic>>(
-          '/vc/lookup',
-          queryParameters: {'title': cleaned},
-          options: Options(
-            validateStatus: (code) => code != null && code < 500,
-          ),
-        );
-        final data = response.data;
-        if (data == null || data['ok'] != true) return null;
-        final url = data['imageUrl'] as String?;
-        if (url == null || url.isEmpty) return null;
-        final fraction = (data['fraction'] as num?)?.toDouble() ??
-            wraparoundSpineFraction;
-        final front = data['frontImageUrl'] as String?;
-        debugPrint(
-          'vhs-spine collector HIT "${data['slug']}" (${data['kind']}) → $url',
-        );
-        return VhsSpineArt(
-          imageUrl: url,
-          centerWidthFraction: fraction,
-          frontImageUrl: front,
-        );
-      }
+      final queries = <String>[
+        if (avoidAmbiguousMovieSlug) ...[
+          '$cleaned TV',
+          '$cleaned series',
+          // Only use the bare title when it's specific enough.
+          if (!_ambiguousCollectorTitle(cleaned)) cleaned,
+        ] else
+          cleaned,
+      ];
 
-      for (final slug in _collectorSlugs(cleaned)) {
-        final art = await _collectorArtFromSlug(slug);
-        if (art != null) return art;
+      for (final query in queries) {
+        if (kIsWeb) {
+          final response = await _dio.get<Map<String, dynamic>>(
+            '/vc/lookup',
+            queryParameters: {'title': query},
+            options: Options(
+              validateStatus: (code) => code != null && code < 500,
+            ),
+          );
+          final data = response.data;
+          if (data == null || data['ok'] != true) continue;
+          final url = data['imageUrl'] as String?;
+          if (url == null || url.isEmpty) continue;
+          final fraction = (data['fraction'] as num?)?.toDouble() ??
+              wraparoundSpineFraction;
+          final front = data['frontImageUrl'] as String?;
+          debugPrint(
+            'vhs-spine collector HIT "${data['slug']}" (${data['kind']}) → $url',
+          );
+          return VhsSpineArt(
+            imageUrl: url,
+            centerWidthFraction: fraction,
+            frontImageUrl: front,
+          );
+        }
+
+        for (final slug in _collectorSlugs(query)) {
+          final art = await _collectorArtFromSlug(slug);
+          if (art != null) return art;
+        }
       }
     } catch (err) {
       debugPrint('vhs-spine collector error: $err');
@@ -554,8 +588,13 @@ class VhsCoverResolver {
         .replaceAll('ç', 'c');
   }
 
-  String _key(String title, int? year, [String? seriesTitle]) =>
-      '${_normalizeTitle(title).toLowerCase()}|${seriesTitle?.toLowerCase() ?? ''}|${year ?? ''}';
+  String _key(
+    String title,
+    int? year, [
+    String? seriesTitle,
+    TapeKind kind = TapeKind.movie,
+  ]) =>
+      '${_normalizeTitle(title).toLowerCase()}|${seriesTitle?.toLowerCase() ?? ''}|${year ?? ''}|${kind.name}';
 
   Map<String, String> _readDisk(SharedPreferences prefs) {
     final raw = prefs.getString(_cacheKey);
@@ -574,7 +613,10 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
 });
 
 /// Resolves spine art for a tape: Jellyfin Box image first, else remote lookup.
-/// New hits may be saved as Jellyfin `Box` — never overwrites an existing Box.
+///
+/// Auto-saves remote hits as Jellyfin `Box` for **movies only** — never for
+/// series/episodes (same-name film collisions like Arthur), and never
+/// overwrites an existing Box.
 final vhsSpineArtProvider =
     FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
   if (tape.hasBoxImage) {
@@ -591,6 +633,10 @@ final vhsSpineArtProvider =
         kind: tape.kind,
       );
   if (art == null || tape.isDemo) return art;
+
+  // Don't write series/episode Box back to Jellyfin — a deleted wrong match
+  // would otherwise keep resurrecting (Arthur PBS ← Arthur movie).
+  if (tape.kind != TapeKind.movie) return art;
 
   final session = ref.watch(sessionProvider);
   if (session == null) return art;
