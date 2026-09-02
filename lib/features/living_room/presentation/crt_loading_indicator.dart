@@ -8,7 +8,7 @@ enum CrtLoadStyle {
   /// Tiny CRT static + STAND BY.
   snow,
 
-  /// Plastic cassette with spinning reels.
+  /// Black VHS cassette with spinning reels.
   tape,
 }
 
@@ -85,7 +85,7 @@ class _SnowBadge extends StatelessWidget {
   }
 }
 
-/// Beige shell cassette with two windows and animated hubs.
+/// Top-down VHS cassette — flap, twin reel windows, center label.
 class VhsTapeSpinner extends StatefulWidget {
   const VhsTapeSpinner({super.key, this.compact = false});
 
@@ -104,7 +104,7 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
     super.initState();
     _spin = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1600),
     )..repeat();
   }
 
@@ -116,8 +116,9 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
 
   @override
   Widget build(BuildContext context) {
-    final w = widget.compact ? 112.0 : 168.0;
-    final h = widget.compact ? 68.0 : 100.0;
+    // Real VHS footprint ~188×104mm ≈ 1.81:1.
+    final w = widget.compact ? 168.0 : 248.0;
+    final h = w / 1.81;
 
     return AnimatedBuilder(
       animation: _spin,
@@ -128,10 +129,8 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
           height: h,
           child: CustomPaint(
             painter: _VhsCassettePainter(
-              angle: t,
-              // Left reel slightly slower — looks like tape transferring.
               leftAngle: t,
-              rightAngle: -t * 1.15,
+              rightAngle: -t * 1.08,
             ),
           ),
         );
@@ -142,12 +141,10 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
 
 class _VhsCassettePainter extends CustomPainter {
   _VhsCassettePainter({
-    required this.angle,
     required this.leftAngle,
     required this.rightAngle,
   });
 
-  final double angle;
   final double leftAngle;
   final double rightAngle;
 
@@ -155,99 +152,187 @@ class _VhsCassettePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final shell = RRect.fromRectAndRadius(
       Offset.zero & size,
-      const Radius.circular(5),
+      const Radius.circular(3),
     );
 
-    // Shell body
+    // Charcoal body
     canvas.drawRRect(
       shell,
       Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFE8DCC4), Color(0xFFC4B090), Color(0xFFA89070)],
+          colors: [Color(0xFF2C2C2E), Color(0xFF161618), Color(0xFF0E0E10)],
         ).createShader(Offset.zero & size),
     );
+
+    // Horizontal ribbing across the face (below the flap)
+    final ribPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.035)
+      ..strokeWidth = 1;
+    final ribDark = Paint()
+      ..color = Colors.black.withValues(alpha: 0.18)
+      ..strokeWidth = 1;
+    final ribTop = size.height * 0.2;
+    final ribBottom = size.height * 0.96;
+    for (var y = ribTop; y < ribBottom; y += 3.2) {
+      canvas.drawLine(Offset(4, y), Offset(size.width - 4, y), ribPaint);
+      canvas.drawLine(Offset(4, y + 1), Offset(size.width - 4, y + 1), ribDark);
+    }
+
     canvas.drawRRect(
       shell,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
-        ..color = const Color(0xFF3A2A18),
+        ..strokeWidth = 1.6
+        ..color = const Color(0xFF050506),
     );
 
-    // Label plate
+    // —— Protective flap (top edge) ——
+    final flap = RRect.fromRectAndRadius(
+      Rect.fromLTWH(1, 1, size.width - 2, size.height * 0.175),
+      const Radius.circular(2.5),
+    );
+    canvas.drawRRect(
+      flap,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF3A3A3E), Color(0xFF1A1A1C)],
+        ).createShader(flap.outerRect),
+    );
+    // Hinge seam under flap
+    canvas.drawLine(
+      Offset(size.width * 0.04, flap.outerRect.bottom - 0.5),
+      Offset(size.width * 0.96, flap.outerRect.bottom - 0.5),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.55)
+        ..strokeWidth = 1.2,
+    );
+
+    // Embossed flap copy
+    final flapStyle = TextStyle(
+      color: Colors.white.withValues(alpha: 0.22),
+      fontSize: size.height * 0.055,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.2,
+    );
+    final leftFlap = TextPainter(
+      text: TextSpan(text: 'Insert this side into recorder', style: flapStyle),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: size.width * 0.42);
+    leftFlap.paint(
+      canvas,
+      Offset(size.width * 0.05, flap.center.dy - leftFlap.height / 2 - 1),
+    );
+
+    // Center arrow
+    final arrowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeJoin = StrokeJoin.round;
+    final ax = size.width * 0.5;
+    final ay = flap.center.dy;
+    final path = Path()
+      ..moveTo(ax, ay - size.height * 0.035)
+      ..lineTo(ax, ay + size.height * 0.03)
+      ..moveTo(ax - size.width * 0.018, ay - size.height * 0.01)
+      ..lineTo(ax, ay - size.height * 0.035)
+      ..lineTo(ax + size.width * 0.018, ay - size.height * 0.01);
+    canvas.drawPath(path, arrowPaint);
+
+    final rightFlap = TextPainter(
+      text: TextSpan(text: 'Do not touch the tape inside', style: flapStyle),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: size.width * 0.4);
+    rightFlap.paint(
+      canvas,
+      Offset(
+        size.width * 0.95 - rightFlap.width,
+        flap.center.dy - rightFlap.height / 2 - 1,
+      ),
+    );
+
+    // —— Twin reel windows + center label ——
+    final winTop = size.height * 0.28;
+    final winH = size.height * 0.52;
+    final winW = size.width * 0.26;
+    final leftWin = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * 0.06, winTop, winW, winH),
+      const Radius.circular(3),
+    );
+    final rightWin = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * 0.68, winTop, winW, winH),
+      const Radius.circular(3),
+    );
     final label = RRect.fromRectAndRadius(
       Rect.fromLTWH(
-        size.width * 0.12,
-        size.height * 0.58,
-        size.width * 0.76,
-        size.height * 0.28,
+        size.width * 0.34,
+        size.height * 0.32,
+        size.width * 0.32,
+        size.height * 0.44,
       ),
-      const Radius.circular(2),
+      const Radius.circular(3),
     );
-    canvas.drawRRect(label, Paint()..color = const Color(0xFFF7F0E0));
+
+    _drawWindow(canvas, leftWin);
+    _drawWindow(canvas, rightWin);
+
+    // Center paper label
+    canvas.drawRRect(
+      label,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF4F0E8), Color(0xFFE6E0D4)],
+        ).createShader(label.outerRect),
+    );
     canvas.drawRRect(
       label,
       Paint()
         ..style = PaintingStyle.stroke
-        ..color = const Color(0xFF2A1810).withValues(alpha: 0.35),
+        ..color = const Color(0xFF2A2A28).withValues(alpha: 0.35),
     );
-
-    final labelCenter = label.center;
-    final tp = TextPainter(
+    final loadTp = TextPainter(
       text: TextSpan(
         text: 'LOADING',
         style: TextStyle(
-          color: const Color(0xFF2A1810).withValues(alpha: 0.75),
-          fontSize: size.height * 0.11,
+          color: const Color(0xFF2A1810).withValues(alpha: 0.55),
+          fontSize: size.height * 0.09,
           fontWeight: FontWeight.w900,
-          letterSpacing: 1.6,
+          letterSpacing: 1.8,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: label.width);
-    tp.paint(
+    loadTp.paint(
       canvas,
-      Offset(labelCenter.dx - tp.width / 2, labelCenter.dy - tp.height / 2),
-    );
-
-    // Clear window over reels
-    final window = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        size.width * 0.1,
-        size.height * 0.12,
-        size.width * 0.8,
-        size.height * 0.38,
+      Offset(
+        label.center.dx - loadTp.width / 2,
+        label.center.dy - loadTp.height / 2,
       ),
-      const Radius.circular(3),
-    );
-    canvas.drawRRect(window, Paint()..color = const Color(0xFF1A1410));
-    canvas.drawRRect(
-      window,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..color = Colors.black.withValues(alpha: 0.5),
     );
 
-    final reelY = window.center.dy;
-    final reelR = size.height * 0.13;
-    final left = Offset(size.width * 0.28, reelY);
-    final right = Offset(size.width * 0.72, reelY);
-
-    _drawReel(canvas, left, reelR, leftAngle, full: true);
-    _drawReel(canvas, right, reelR * 0.92, rightAngle, full: false);
-
-    // Tape path between reels
-    final tapePaint = Paint()
-      ..color = const Color(0xFF2A2018)
-      ..strokeWidth = size.height * 0.035
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(left.dx + reelR * 0.55, reelY + reelR * 0.15),
-      Offset(right.dx - reelR * 0.55, reelY + reelR * 0.15),
-      tapePaint,
+    // Reels inside windows (supply full, take-up emptier)
+    final reelR = math.min(winW, winH) * 0.38;
+    _drawReel(
+      canvas,
+      leftWin.center,
+      reelR,
+      leftAngle,
+      fill: 0.92,
+    );
+    _drawReel(
+      canvas,
+      rightWin.center,
+      reelR * 0.95,
+      rightAngle,
+      fill: 0.28,
     );
 
     // Soft sheen
@@ -258,10 +343,30 @@ class _VhsCassettePainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.center,
           colors: [
-            Colors.white.withValues(alpha: 0.18),
+            Colors.white.withValues(alpha: 0.07),
             Colors.transparent,
           ],
         ).createShader(Offset.zero & size),
+    );
+  }
+
+  void _drawWindow(Canvas canvas, RRect window) {
+    canvas.drawRRect(window, Paint()..color = const Color(0xFF08080A));
+    canvas.drawRRect(
+      window,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3
+        ..color = Colors.black.withValues(alpha: 0.75),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        window.outerRect.deflate(1.5),
+        const Radius.circular(2),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.white.withValues(alpha: 0.06),
     );
   }
 
@@ -270,46 +375,66 @@ class _VhsCassettePainter extends CustomPainter {
     Offset c,
     double r,
     double angle, {
-    required bool full,
+    required double fill,
   }) {
-    // Tape pancake
+    // Dark magnetic tape pancake
     canvas.drawCircle(
       c,
       r,
-      Paint()..color = full ? const Color(0xFF1A100C) : const Color(0xFF3A2A1C),
+      Paint()..color = const Color(0xFF12100E),
     );
+    final tapeR = r * (0.38 + 0.55 * fill.clamp(0.0, 1.0));
     canvas.drawCircle(
       c,
-      r * (full ? 0.72 : 0.45),
-      Paint()..color = const Color(0xFF0C0806),
+      tapeR,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFF1A100C),
+            const Color(0xFF0A0806),
+            Colors.black.withValues(alpha: 0.9),
+          ],
+        ).createShader(Rect.fromCircle(center: c, radius: tapeR)),
     );
 
-    // Hub
-    canvas.drawCircle(c, r * 0.28, Paint()..color = const Color(0xFFD4C4A0));
+    // Gloss on tape
+    canvas.drawArc(
+      Rect.fromCircle(center: c, radius: tapeR * 0.92),
+      -0.9,
+      0.7,
+      false,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.08)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * 0.12,
+    );
+
+    // White plastic hub
+    final hubR = r * 0.34;
+    canvas.drawCircle(c, hubR, Paint()..color = const Color(0xFFECE8E0));
     canvas.drawCircle(
       c,
-      r * 0.28,
+      hubR,
       Paint()
         ..style = PaintingStyle.stroke
-        ..color = const Color(0xFF2A1810),
+        ..strokeWidth = 1.1
+        ..color = const Color(0xFF2A1810).withValues(alpha: 0.45),
     );
 
-    // Spokes
     final spoke = Paint()
-      ..color = const Color(0xFF2A1810)
+      ..color = const Color(0xFF3A3028).withValues(alpha: 0.7)
       ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 6; i++) {
       final a = angle + i * math.pi / 3;
       canvas.drawLine(
-        c + Offset(math.cos(a), math.sin(a)) * r * 0.08,
-        c + Offset(math.cos(a), math.sin(a)) * r * 0.26,
+        c + Offset(math.cos(a), math.sin(a)) * hubR * 0.25,
+        c + Offset(math.cos(a), math.sin(a)) * hubR * 0.88,
         spoke,
       );
     }
-
-    // Center hole
-    canvas.drawCircle(c, r * 0.08, Paint()..color = const Color(0xFF1A100C));
+    canvas.drawCircle(c, hubR * 0.28, Paint()..color = const Color(0xFF2A2824));
+    canvas.drawCircle(c, hubR * 0.12, Paint()..color = const Color(0xFF0C0C0E));
   }
 
   @override

@@ -18,6 +18,10 @@ class Tape {
     this.libraryName,
     this.productionYear,
     this.episodeCount,
+    this.overview,
+    this.genres = const [],
+    this.communityRating,
+    this.officialRating,
   });
 
   final String id;
@@ -39,10 +43,21 @@ class Tape {
   final String? libraryName;
   final int? productionYear;
   final int? episodeCount;
+  final String? overview;
+  final List<String> genres;
+  final double? communityRating;
+  final String? officialRating;
 
   bool get isPlayable => kind != TapeKind.series;
 
   bool get hasBoxImage => boxImageUrl != null && boxImageUrl!.isNotEmpty;
+
+  /// Family providers key on [id] so shelf + preview share spine art.
+  @override
+  bool operator ==(Object other) => other is Tape && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 
   Tape copyWith({
     String? id,
@@ -60,6 +75,10 @@ class Tape {
     String? libraryName,
     int? productionYear,
     int? episodeCount,
+    String? overview,
+    List<String>? genres,
+    double? communityRating,
+    String? officialRating,
   }) {
     return Tape(
       id: id ?? this.id,
@@ -77,6 +96,10 @@ class Tape {
       libraryName: libraryName ?? this.libraryName,
       productionYear: productionYear ?? this.productionYear,
       episodeCount: episodeCount ?? this.episodeCount,
+      overview: overview ?? this.overview,
+      genres: genres ?? this.genres,
+      communityRating: communityRating ?? this.communityRating,
+      officialRating: officialRating ?? this.officialRating,
     );
   }
 }

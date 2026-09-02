@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -134,19 +136,28 @@ class VhsSpine extends ConsumerWidget {
     final leanX = tip.abs() >= _kickTipThreshold
         ? -height * math.sin(tip)
         : 0.0;
+    final popY = selected ? -14.0 : 0.0;
+    // Visual can sit well outside the packing box (kick + rotate + pop).
+    final tipSpread = height * math.sin(tip.abs());
+    final expandLeft = (leanX < 0 ? -leanX : 0.0) + tipSpread + 4;
+    final expandRight = (leanX > 0 ? leanX : 0.0) + tipSpread + 4;
+    final expandTop = (selected ? 14.0 : 0.0) + tipSpread * 0.35 + 4;
 
     return Semantics(
       button: true,
       label: tape.kind == TapeKind.series
           ? 'Open series ${tape.title}'
           : 'Play ${tape.title}',
-      child: GestureDetector(
-        onTap: onTap,
-        child: SizedBox(
-          width: width,
-          height: height + 8,
+      child: SizedBox(
+        width: width,
+        height: height + 8,
+        child: _SpineTapTarget(
+          onTap: onTap,
+          expandLeft: expandLeft,
+          expandRight: expandRight,
+          expandTop: expandTop,
           child: Transform.translate(
-            offset: Offset(leanX, selected ? -14 : 0),
+            offset: Offset(leanX, popY),
             child: Transform.rotate(
               angle: tip,
               alignment: Alignment.bottomCenter,
@@ -186,6 +197,134 @@ class VhsSpine extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// Packing-sized box whose hit region covers lean/pop overhang.
+///
+/// [Transform] moves the paint, but parent [SizedBox] still owns layout width —
+/// without this, taps on the visible leaned spine miss the layout slot.
+class _SpineTapTarget extends SingleChildRenderObjectWidget {
+  const _SpineTapTarget({
+    required this.onTap,
+    required this.expandLeft,
+    required this.expandRight,
+    required this.expandTop,
+    required Widget child,
+  }) : super(child: child);
+
+  final VoidCallback? onTap;
+  final double expandLeft;
+  final double expandRight;
+  final double expandTop;
+
+  @override
+  RenderSpineTapTarget createRenderObject(BuildContext context) {
+    return RenderSpineTapTarget(
+      onTap: onTap,
+      expandLeft: expandLeft,
+      expandRight: expandRight,
+      expandTop: expandTop,
+    );
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    RenderSpineTapTarget renderObject,
+  ) {
+    renderObject
+      ..onTap = onTap
+      ..expandLeft = expandLeft
+      ..expandRight = expandRight
+      ..expandTop = expandTop;
+  }
+}
+
+class RenderSpineTapTarget extends RenderProxyBox {
+  RenderSpineTapTarget({
+    VoidCallback? onTap,
+    required double expandLeft,
+    required double expandRight,
+    required double expandTop,
+  })  : _onTap = onTap,
+        _expandLeft = expandLeft,
+        _expandRight = expandRight,
+        _expandTop = expandTop {
+    _tap.onTap = onTap;
+  }
+
+  final TapGestureRecognizer _tap = TapGestureRecognizer();
+
+  VoidCallback? _onTap;
+  VoidCallback? get onTap => _onTap;
+  set onTap(VoidCallback? value) {
+    if (_onTap == value) return;
+    _onTap = value;
+    _tap.onTap = value;
+  }
+
+  double _expandLeft;
+  double get expandLeft => _expandLeft;
+  set expandLeft(double value) {
+    if (_expandLeft == value) return;
+    _expandLeft = value;
+  }
+
+  double _expandRight;
+  double get expandRight => _expandRight;
+  set expandRight(double value) {
+    if (_expandRight == value) return;
+    _expandRight = value;
+  }
+
+  double _expandTop;
+  double get expandTop => _expandTop;
+  set expandTop(double value) {
+    if (_expandTop == value) return;
+    _expandTop = value;
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _tap.onTap = _onTap;
+  }
+
+  @override
+  void detach() {
+    _tap.onTap = null;
+    super.detach();
+  }
+
+  @override
+  void dispose() {
+    _tap.dispose();
+    super.dispose();
+  }
+
+  Rect get _hitRect => Rect.fromLTRB(
+        -_expandLeft,
+        -_expandTop,
+        size.width + _expandRight,
+        size.height,
+      );
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_hitRect.contains(position)) return false;
+    // Prefer transformed child when it still contains the point; otherwise
+    // claim the overhang so the visible lean stays tappable.
+    hitTestChildren(result, position: position);
+    result.add(BoxHitTestEntry(this, position));
+    return true;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, covariant HitTestEntry entry) {
+    if (event is PointerDownEvent) {
+      _tap.addPointer(event);
+    }
   }
 }
 class _RealSpine extends StatelessWidget {
@@ -689,6 +828,8 @@ class ShelfPlank extends StatelessWidget {
 }
 
 class ShelfLipPainter extends CustomPainter {
+  const ShelfLipPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()

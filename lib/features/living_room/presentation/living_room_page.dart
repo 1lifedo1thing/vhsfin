@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/living_room/presentation/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_box.dart';
@@ -13,6 +14,7 @@ class LivingRoomPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
+    final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.small(
@@ -51,10 +53,16 @@ class LivingRoomPage extends ConsumerWidget {
                     _BottomBar(
                       connected: session != null,
                       userName: session?.userName,
+                      vhsOnly: displayPrefs.vhsOnly,
+                      sortLabel: displayPrefs.sort.buttonLabel,
                       onCollection: () => context.push('/libraries'),
                       onConnect: () => context.push('/connect'),
                       onSignOut: () =>
                           ref.read(sessionProvider.notifier).signOut(),
+                      onVhsOnlyChanged: (value) => ref
+                          .read(shelfDisplayPrefsProvider.notifier)
+                          .setVhsOnly(value),
+                      onOpenSort: () => showShelfSortSheet(context),
                     ),
                   ],
                 ),
@@ -94,11 +102,14 @@ class _EntertainmentCenter extends StatelessWidget {
         ],
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 12),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          VcrBox(),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14),
+            child: VcrBox(),
+          ),
           SizedBox(height: 14),
           BookshelfView(embedded: true),
         ],
@@ -113,53 +124,290 @@ class _BottomBar extends StatelessWidget {
     required this.onCollection,
     required this.onConnect,
     required this.onSignOut,
+    required this.vhsOnly,
+    required this.sortLabel,
+    required this.onVhsOnlyChanged,
+    required this.onOpenSort,
     this.userName,
   });
 
   final bool connected;
   final String? userName;
+  final bool vhsOnly;
+  final String sortLabel;
   final VoidCallback onCollection;
   final VoidCallback onConnect;
   final VoidCallback onSignOut;
+  final ValueChanged<bool> onVhsOnlyChanged;
+  final VoidCallback onOpenSort;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        TextButton(
+        _VhsOnlySwitch(
+          value: vhsOnly,
+          onChanged: onVhsOnlyChanged,
+        ),
+        _dot(),
+        _BarLink(
+          label: 'SORT · $sortLabel ▾',
+          onPressed: onOpenSort,
+        ),
+        _dot(),
+        _BarLink(
+          label: 'COLLECTION',
           onPressed: onCollection,
-          child: Text(
-            'COLLECTION',
-            style: TextStyle(
-              color: VhsColors.phosphor.withValues(alpha: 0.85),
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-              letterSpacing: 1.1,
-            ),
-          ),
         ),
-        Text(
-          '·',
-          style: TextStyle(
-            color: VhsColors.brand.withValues(alpha: 0.35),
-          ),
-        ),
-        TextButton(
+        _dot(),
+        _BarLink(
+          label: connected
+              ? 'SIGN OUT${userName != null ? ' ($userName)' : ''}'
+              : 'CONNECT',
+          dim: true,
           onPressed: connected ? onSignOut : onConnect,
-          child: Text(
-            connected
-                ? 'SIGN OUT${userName != null ? ' ($userName)' : ''}'
-                : 'CONNECT',
-            style: TextStyle(
-              color: VhsColors.brand.withValues(alpha: 0.55),
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              letterSpacing: 1.1,
-            ),
-          ),
         ),
       ],
+    );
+  }
+
+  Widget _dot() {
+    return Text(
+      '·',
+      style: TextStyle(
+        color: VhsColors.brand.withValues(alpha: 0.35),
+      ),
+    );
+  }
+}
+
+class _VhsOnlySwitch extends StatelessWidget {
+  const _VhsOnlySwitch({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.22),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'VHS ONLY',
+                style: TextStyle(
+                  color: value
+                      ? VhsColors.phosphor.withValues(alpha: 0.95)
+                      : VhsColors.brand.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                value ? 'ON' : 'OFF',
+                style: TextStyle(
+                  color: value
+                      ? VhsColors.phosphor.withValues(alpha: 0.7)
+                      : VhsColors.brand.withValues(alpha: 0.4),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: VhsColors.phosphor,
+                activeTrackColor: VhsColors.phosphorDim,
+                inactiveThumbColor: VhsColors.brand.withValues(alpha: 0.7),
+                inactiveTrackColor: Colors.black.withValues(alpha: 0.45),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BarLink extends StatelessWidget {
+  const _BarLink({
+    required this.label,
+    required this.onPressed,
+    this.dim = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool dim;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = dim
+        ? VhsColors.brand.withValues(alpha: 0.55)
+        : VhsColors.phosphor.withValues(alpha: 0.85);
+
+    return TextButton(
+      onPressed: onPressed,
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> showShelfSortSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const _ShelfSortSheet(),
+  );
+}
+
+class _ShelfSortSheet extends ConsumerWidget {
+  const _ShelfSortSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(shelfDisplayPrefsProvider).sort;
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Material(
+            color: const Color(0xFF2A1810),
+            borderRadius: BorderRadius.circular(14),
+            elevation: 18,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.45)),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF3A2418), Color(0xFF1A100C)],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 8, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'SORT BY',
+                            style: TextStyle(
+                              color: VhsColors.phosphor.withValues(alpha: 0.8),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: VhsColors.brand.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (final mode in ShelfSortMode.values)
+                    _SortOption(
+                      label: mode.menuTitle,
+                      selected: mode == current,
+                      onTap: () {
+                        ref
+                            .read(shelfDisplayPrefsProvider.notifier)
+                            .setSort(mode);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SortOption extends StatelessWidget {
+  const _SortOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? VhsColors.phosphor
+                      : VhsColors.brand.withValues(alpha: 0.85),
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(
+                Icons.check_rounded,
+                size: 20,
+                color: VhsColors.phosphor.withValues(alpha: 0.9),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

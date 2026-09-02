@@ -4,7 +4,7 @@
 # vhs_insert.ogg  — VCR: Cassette Insertion (#2690)
 #   https://bigsoundbank.com/vcr-cassette-insertion-s2690.html
 #
-# vhs_eject.ogg   — VCR: cassette output (#2694), trimmed
+# vhs_eject.ogg   — VCR: cassette output (#2694), lead-in trimmed (~1.4s)
 #   https://bigsoundbank.com/vcr-cassette-output-s2694.html
 #
 # vhs_ff.ogg      — VCR: forward (#2692), trimmed to 8s + looped in app

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vhsfin/features/library/data/ia_jsonp_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/library/data/ia_jsonp_web.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
+import 'package:vhsfin/features/library/data/vhs_art_rejects.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Real VHS sleeve art for a bookshelf spine (and optional front cover).
@@ -151,6 +152,31 @@ class VhsCoverResolver {
         ?.imageUrl;
   }
 
+  /// Permanently treat this title key as a miss so a rejected sleeve is not
+  /// re-fetched from VHSCollector / IA (miss TTL still refreshes eventually).
+  Future<void> forceMiss({
+    required String title,
+    int? year,
+    String? seriesTitle,
+    TapeKind kind = TapeKind.movie,
+  }) async {
+    final key = _key(title, year, seriesTitle, kind);
+    final stored = jsonEncode({
+      'miss': true,
+      'at': DateTime.now().toUtc().toIso8601String(),
+      'rejected': true,
+    });
+    _memory[key] = stored;
+    final prefs = await SharedPreferences.getInstance();
+    final disk = _readDisk(prefs);
+    disk[key] = stored;
+    await prefs.setString(_cacheKey, jsonEncode(disk));
+    debugPrint('vhs-spine REJECT → miss "$title" ($year) kind=$kind');
+  }
+
+  /// Rejected sleeves stay missed longer than ordinary cache misses.
+  static const rejectedMissTtl = Duration(days: 365);
+
   bool _isMiss(String raw) {
     if (raw == _miss) return true;
     try {
@@ -168,7 +194,8 @@ class VhsCoverResolver {
       if (map['miss'] != true) return false;
       final at = DateTime.tryParse(map['at'] as String? ?? '');
       if (at == null) return false;
-      return DateTime.now().toUtc().difference(at) < missTtl;
+      final ttl = map['rejected'] == true ? rejectedMissTtl : missTtl;
+      return DateTime.now().toUtc().difference(at) < ttl;
     } catch (_) {
       return false;
     }
@@ -617,9 +644,17 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
 /// Auto-saves remote hits as Jellyfin `Box` for **movies only** — never for
 /// series/episodes (same-name film collisions like Arthur), and never
 /// overwrites an existing Box.
+///
+/// User rejections ([vhsArtRejectsProvider]) skip a bad Box tag and block the
+/// matched URL; the resolver title key is forced to a long-lived miss.
 final vhsSpineArtProvider =
     FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
-  if (tape.hasBoxImage) {
+  final rejectsNotifier = ref.watch(vhsArtRejectsProvider.notifier);
+  ref.watch(vhsArtRejectsProvider);
+  final ignoreBox =
+      rejectsNotifier.shouldIgnoreBox(tape.id, tape.boxImageUrl);
+
+  if (tape.hasBoxImage && !ignoreBox) {
     return VhsSpineArt(
       imageUrl: tape.boxImageUrl!,
       centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
@@ -633,6 +668,12 @@ final vhsSpineArtProvider =
         kind: tape.kind,
       );
   if (art == null || tape.isDemo) return art;
+
+  if (ref
+      .read(vhsArtRejectsProvider.notifier)
+      .isUrlBlocked(tape.id, art.imageUrl)) {
+    return null;
+  }
 
   // Don't write series/episode Box back to Jellyfin — a deleted wrong match
   // would otherwise keep resurrecting (Arthur PBS ← Arthur movie).
@@ -658,3 +699,4 @@ final vhsSpineArtProvider =
   }
   return art;
 });
+

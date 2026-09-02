@@ -122,7 +122,8 @@ class JellyfinClient {
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
         'Fields':
-            'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount,ImageTags',
+            'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount,ImageTags,'
+                'ProductionYear,Genres,CommunityRating,OfficialRating',
         'Limit': 300,
       },
       options: _authed(session),
@@ -155,7 +156,9 @@ class JellyfinClient {
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
         'Fields':
-            'Overview,RunTimeTicks,IndexNumber,ParentIndexNumber,ImageTags,ProductionYear,SeriesName',
+            'PrimaryImageAspectRatio,Overview,RunTimeTicks,IndexNumber,'
+                'ParentIndexNumber,ImageTags,ProductionYear,SeriesName,Genres,'
+                'CommunityRating,OfficialRating',
         'Limit': 400,
       },
       options: _authed(session),
@@ -186,6 +189,10 @@ class JellyfinClient {
         seriesTitle: resolvedSeries,
         libraryName: libraryName,
         productionYear: item['ProductionYear'] as int?,
+        overview: _overview(item),
+        genres: _genres(item),
+        communityRating: _communityRating(item),
+        officialRating: item['OfficialRating'] as String?,
       );
     }).toList();
   }
@@ -213,7 +220,34 @@ class JellyfinClient {
       libraryName: source.name,
       productionYear: item['ProductionYear'] as int?,
       episodeCount: item['ChildCount'] as int?,
+      overview: _overview(item),
+      genres: _genres(item),
+      communityRating: _communityRating(item),
+      officialRating: item['OfficialRating'] as String?,
     );
+  }
+
+  String? _overview(Map<String, dynamic> item) {
+    final raw = item['Overview'] as String?;
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  List<String> _genres(Map<String, dynamic> item) {
+    final raw = item['Genres'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<String>()
+        .map((g) => g.trim())
+        .where((g) => g.isNotEmpty)
+        .toList();
+  }
+
+  double? _communityRating(Map<String, dynamic> item) {
+    final raw = item['CommunityRating'];
+    if (raw is num) return raw.toDouble();
+    return null;
   }
 
   Duration? _durationFromTicks(int? ticks) {
@@ -275,6 +309,22 @@ class JellyfinClient {
           'Type': 'Box',
           'ImageUrl': imageUrl,
         },
+        options: _authed(session),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Remove a stored `Box` image (e.g. after the user rejects a bad auto-match).
+  Future<bool> deleteBoxImage({
+    required JellyfinSession session,
+    required String itemId,
+  }) async {
+    try {
+      await _dio.delete<void>(
+        '${session.normalizedServerUrl}/Items/$itemId/Images/Box',
         options: _authed(session),
       );
       return true;
