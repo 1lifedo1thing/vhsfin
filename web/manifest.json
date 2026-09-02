@@ -1,14 +1,20 @@
 {
-    "name": "vhsfin",
-    "short_name": "vhsfin",
+    "name": "VHSFin",
+    "short_name": "VHSFin",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#2A1810",
+    "theme_color": "#2A1810",
+    "description": "Kids Jellyfin client with a living-room VCR.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
         {
             "src": "icons/Icon-192.png",
             "sizes": "192x192",
