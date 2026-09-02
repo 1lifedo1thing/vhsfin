@@ -262,7 +262,7 @@ class _SleeveArt extends StatelessWidget {
   final VhsSpineArt? art;
   final double height;
 
-  static const _spineLean = 0.09; // ~5° into the cover
+  static const _spineLean = 0.1; // ~5.7° into the cover
   static const _depthFace = 5.0;
   /// Open-edge clamshell curve — right side only; spine edge stays square.
   static const _vhsCorner = 14.0;
@@ -274,8 +274,8 @@ class _SleeveArt extends StatelessWidget {
     final frontW = sleeveH * 0.72;
     // Room for the spine base to kick left when it leans into the poster.
     final leanPad = sleeveH * math.sin(_spineLean) + 6;
-    // Light tuck — touch the cover without burying under it.
-    const tuck = 5.0;
+    // Same lean; less tuck so the spine sits further left of the cover.
+    const tuck = 3.0;
     final totalW = leanPad + spineW + frontW - tuck + _depthFace;
 
     return SizedBox(
@@ -325,25 +325,22 @@ class _SleeveArt extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: leanPad * 0.15,
+            left: 0,
             bottom: 0,
-            child: Transform.translate(
-              offset: Offset(sleeveH * math.sin(_spineLean) * 0.12, 0),
-              child: Transform.rotate(
-                angle: _spineLean,
-                alignment: Alignment.bottomCenter,
-                child: _ArtFrame(
-                  width: spineW,
-                  height: sleeveH,
-                  elevated: true,
-                  borderRadius: BorderRadius.circular(2),
-                  child: art != null
-                      ? VhsSleeveCrop(
-                          url: art!.imageUrl,
-                          widthFraction: art!.centerWidthFraction,
-                        )
-                      : ProceduralVhsSpine(tape: tape),
-                ),
+            child: Transform.rotate(
+              angle: _spineLean,
+              alignment: Alignment.bottomCenter,
+              child: _ArtFrame(
+                width: spineW,
+                height: sleeveH,
+                elevated: true,
+                borderRadius: BorderRadius.circular(2),
+                child: art != null
+                    ? VhsSleeveCrop(
+                        url: art!.imageUrl,
+                        widthFraction: art!.centerWidthFraction,
+                      )
+                    : ProceduralVhsSpine(tape: tape),
               ),
             ),
           ),
