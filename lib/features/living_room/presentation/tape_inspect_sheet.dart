@@ -14,15 +14,19 @@ Future<void> showTapeInspectSheet(
   required Tape tape,
   required VoidCallback onInsert,
 }) {
-  // Warm the image cache with the same URLs the shelf already resolved so the
-  // popup spine doesn't flash empty while Image.network re-decodes.
+  // Warm ImageCache with the *same* ResizeImage keys the shelf already used
+  // (sharedCacheHeight) so the popup spine doesn't re-decode from network.
+  final container = ProviderScope.containerOf(context);
+  final art = container.read(vhsSpineArtProvider(tape)).asData?.value;
   final images = <String>{
     if (tape.imageUrl != null && tape.imageUrl!.isNotEmpty) tape.imageUrl!,
     if (tape.boxImageUrl != null && tape.boxImageUrl!.isNotEmpty)
       tape.boxImageUrl!,
+    if (art?.imageUrl != null) art!.imageUrl,
+    if (art?.frontImageUrl != null) art!.frontImageUrl!,
   };
   for (final url in images) {
-    precacheImage(NetworkImage(url), context);
+    precacheImage(VhsSleeveCrop.providerFor(url), context);
   }
 
   return showModalBottomSheet<void>(
@@ -50,10 +54,10 @@ class _TapeInspectSheet extends ConsumerWidget {
     final art = artAsync.asData?.value;
     final spineUrl = art?.imageUrl;
     if (spineUrl != null) {
-      precacheImage(NetworkImage(spineUrl), context);
+      precacheImage(VhsSleeveCrop.providerFor(spineUrl), context);
       final front = art?.frontImageUrl;
       if (front != null) {
-        precacheImage(NetworkImage(front), context);
+        precacheImage(VhsSleeveCrop.providerFor(front), context);
       }
     }
     final bottom = MediaQuery.paddingOf(context).bottom;

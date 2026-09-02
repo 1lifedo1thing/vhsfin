@@ -379,6 +379,10 @@ class VhsSleeveCrop extends StatelessWidget {
     this.alignment = Alignment.center,
   });
 
+  /// Decode height shared by shelf spines + inspect preview so [ImageCache]
+  /// hits instead of re-decoding when the popup opens taller than a shelf slot.
+  static const int sharedCacheHeight = 512;
+
   final String url;
 
   /// Horizontal fraction of the source image to keep.
@@ -388,6 +392,14 @@ class VhsSleeveCrop extends StatelessWidget {
   /// centerRight ≈ front panel on a BACK|SPINE|FRONT wraparound).
   final Alignment alignment;
 
+  /// Same provider the [Image.network] widgets below use — for [precacheImage].
+  static ImageProvider providerFor(String url) {
+    return ResizeImage(
+      NetworkImage(url),
+      height: sharedCacheHeight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -395,7 +407,6 @@ class VhsSleeveCrop extends StatelessWidget {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
         final fraction = widthFraction.clamp(0.02, 1.0);
-        final dpr = MediaQuery.devicePixelRatioOf(context);
         if (fraction >= 0.99) {
           return Image.network(
             url,
@@ -403,7 +414,7 @@ class VhsSleeveCrop extends StatelessWidget {
             width: w,
             height: h,
             alignment: Alignment.center,
-            cacheHeight: (h * dpr).ceil().clamp(64, 1600),
+            cacheHeight: sharedCacheHeight,
             filterQuality: FilterQuality.medium,
             errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black),
           );
@@ -421,7 +432,7 @@ class VhsSleeveCrop extends StatelessWidget {
                 height: h,
                 fit: BoxFit.fitHeight,
                 alignment: Alignment.center,
-                cacheHeight: (h * dpr).ceil().clamp(160, 1600),
+                cacheHeight: sharedCacheHeight,
                 filterQuality: FilterQuality.medium,
                 errorBuilder: (_, _, _) =>
                     const ColoredBox(color: Colors.black),

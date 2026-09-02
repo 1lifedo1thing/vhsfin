@@ -95,8 +95,9 @@ class _ShelfBlock extends ConsumerWidget {
   final bool showTitle;
   final bool vhsOnly;
 
-  /// Pack at upright spine thickness; tipped tapes add their own lean overhang.
-  static const _spineSlotWidth = VhsSpine.nominalWidth;
+  /// Pack at upright spine thickness + a hair of air between tapes.
+  static const _spineGap = 2.0;
+  static const _spineSlotWidth = VhsSpine.nominalWidth + _spineGap;
   // Room for upright spines + lean slack inside the bay.
   static const _rowHeight = 192.0;
   static const _lipHeight = 8.0;
@@ -153,6 +154,7 @@ class _ShelfBlock extends ConsumerWidget {
                         tapes: rows[r],
                         loadedId: loadedId,
                         loadedSeriesId: loadedSeriesId,
+                        gap: _spineGap,
                         onTap: (tape) => _onTap(context, ref, tape),
                       ),
                     ),
@@ -225,18 +227,20 @@ class _ShelfTapeRow extends StatelessWidget {
     required this.loadedId,
     required this.loadedSeriesId,
     required this.onTap,
+    this.gap = 2,
   });
 
   final List<Tape> tapes;
   final String? loadedId;
   final String? loadedSeriesId;
   final ValueChanged<Tape> onTap;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        var used = 0.0;
+        var used = tapes.isEmpty ? 0.0 : (tapes.length - 1) * gap;
         for (final tape in tapes) {
           final selected = tape.id == loadedId ||
               (tape.kind == TapeKind.series && tape.id == loadedSeriesId);
@@ -253,7 +257,8 @@ class _ShelfTapeRow extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            for (var i = 0; i < tapes.length; i++)
+            for (var i = 0; i < tapes.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
               RepaintBoundary(
                 child: VhsSpine(
                   tape: tapes[i],
@@ -265,6 +270,7 @@ class _ShelfTapeRow extends StatelessWidget {
                   onTap: () => onTap(tapes[i]),
                 ),
               ),
+            ],
           ],
         );
       },
