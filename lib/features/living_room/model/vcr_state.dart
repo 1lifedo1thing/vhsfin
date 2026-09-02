@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/playback/data/deck_player.dart';
 
 enum VcrPower { off, inserting, playing }
 
@@ -40,13 +41,16 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
   @override
   VcrDeckState build() => const VcrDeckState();
 
-  Future<void> insertTape(Tape tape, {PlaybackStyle style = PlaybackStyle.vhsCrt}) async {
+  Future<void> insertTape(
+    Tape tape, {
+    PlaybackStyle style = PlaybackStyle.vhsCrt,
+  }) async {
     state = state.copyWith(
       power: VcrPower.inserting,
       loadedTape: tape,
       style: style,
     );
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    await Future<void>.delayed(const Duration(milliseconds: 950));
     if (!ref.mounted) return;
     state = state.copyWith(power: VcrPower.playing);
   }
@@ -59,7 +63,8 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     );
   }
 
-  void eject() {
+  Future<void> eject() async {
+    await ref.read(deckPlayerProvider).stop();
     state = const VcrDeckState();
   }
 

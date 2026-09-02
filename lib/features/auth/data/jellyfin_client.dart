@@ -71,45 +71,71 @@ class JellyfinClient {
     );
   }
 
-  Future<List<MediaLibrary>> fetchLibraries(JellyfinSession session) async {
+  Future<List<LibraryNode>> fetchLibraries(JellyfinSession session) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '${session.normalizedServerUrl}/Users/${session.userId}/Views',
       options: _authed(session),
     );
 
     final items = response.data?['Items'] as List<dynamic>? ?? const [];
-    return items.map((raw) {
-      final item = raw as Map<String, dynamic>;
-      return MediaLibrary(
-        id: item['Id'] as String,
-        name: item['Name'] as String? ?? 'Library',
-        collectionType: item['CollectionType'] as String?,
-      );
-    }).toList();
+    return items
+        .map((raw) => LibraryNode.fromItem(raw as Map<String, dynamic>))
+        .toList();
   }
 
-  /// Top-level playable/browsable items for a library: movies + series (not episodes).
-  Future<List<Tape>> fetchLibraryShelfItems({
+  /// Non-recursive children — folders/box sets to drill into for shelf picking.
+  Future<List<LibraryNode>> fetchBrowsableChildren({
     required JellyfinSession session,
-    required MediaLibrary library,
+    required String parentId,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '${session.normalizedServerUrl}/Users/${session.userId}/Items',
       queryParameters: {
-        'ParentId': library.id,
-        'IncludeItemTypes': 'Movie,Series',
-        'Recursive': true,
-        'SortBy': 'SortName',
+        'ParentId': parentId,
+        'Recursive': false,
+        'SortBy': 'IsFolder,SortName',
         'SortOrder': 'Ascending',
-        'Fields': 'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount',
-        'Limit': 200,
+        'Fields': 'ChildCount,CollectionType,PrimaryImageAspectRatio',
+        'Limit': 300,
       },
       options: _authed(session),
     );
 
     final items = response.data?['Items'] as List<dynamic>? ?? const [];
     return items
-        .map((raw) => _tapeFromItem(raw as Map<String, dynamic>, session, library))
+        .map((raw) => LibraryNode.fromItem(raw as Map<String, dynamic>))
+        .where((node) => node.canBrowse)
+        .toList();
+  }
+
+  /// Movies + series under a chosen shelf folder (recursive).
+  Future<List<Tape>> fetchShelfItems({
+    required JellyfinSession session,
+    required ShelfSource source,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/${session.userId}/Items',
+      queryParameters: {
+        'ParentId': source.id,
+        'IncludeItemTypes': 'Movie,Series',
+        'Recursive': true,
+        'SortBy': 'SortName',
+        'SortOrder': 'Ascending',
+        'Fields': 'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount',
+        'Limit': 300,
+      },
+      options: _authed(session),
+    );
+
+    final items = response.data?['Items'] as List<dynamic>? ?? const [];
+    return items
+        .map(
+          (raw) => _tapeFromItem(
+            raw as Map<String, dynamic>,
+            session,
+            source,
+          ),
+        )
         .toList();
   }
 
@@ -160,7 +186,7 @@ class JellyfinClient {
   Tape _tapeFromItem(
     Map<String, dynamic> item,
     JellyfinSession session,
-    MediaLibrary library,
+    ShelfSource source,
   ) {
     final id = item['Id'] as String;
     final type = item['Type'] as String? ?? 'Movie';
@@ -175,8 +201,8 @@ class JellyfinClient {
       imageUrl: primaryImageUrl(session, id),
       duration: _durationFromTicks(item['RunTimeTicks'] as int?),
       kind: isSeries ? TapeKind.series : TapeKind.movie,
-      libraryId: library.id,
-      libraryName: library.name,
+      libraryId: source.id,
+      libraryName: source.name,
       productionYear: item['ProductionYear'] as int?,
       episodeCount: item['ChildCount'] as int?,
     );

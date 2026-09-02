@@ -26,6 +26,7 @@ class VhsSpine extends ConsumerWidget {
       vhsCoverUrlProvider((title: tape.title, year: tape.productionYear)),
     );
     final width = selected ? 34.0 : 28.0;
+    final tip = _tipRadians(tape.id);
 
     return Semantics(
       button: true,
@@ -36,113 +37,128 @@ class VhsSpine extends ConsumerWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: width,
-          height: height,
-          transform: Matrix4.translationValues(0, selected ? -14 : 0, 0),
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: selected ? 0.55 : 0.35),
-                blurRadius: selected ? 14 : 8,
-                offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+          width: width + 6,
+          height: height + 8,
+          alignment: Alignment.bottomCenter,
+          child: Transform.translate(
+            offset: Offset(0, selected ? -14 : 0),
+            child: Transform.rotate(
+              angle: selected ? 0 : tip,
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: width,
+                height: height,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          Colors.black.withValues(alpha: selected ? 0.55 : 0.35),
+                      blurRadius: selected ? 14 : 8,
+                      offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(color: palette.shell),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 7,
+                        child: coverAsync.when(
+                          data: (iaUrl) {
+                            final url = iaUrl ?? tape.imageUrl;
+                            if (url == null) {
+                              return ColoredBox(color: palette.accent);
+                            }
+                            return Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.centerLeft,
+                              errorBuilder: (_, _, _) =>
+                                  ColoredBox(color: palette.accent),
+                            );
+                          },
+                          loading: () => ColoredBox(color: palette.accent),
+                          error: (_, _) => ColoredBox(color: palette.accent),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Text(
+                            tape.title.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.ink,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          height: 16,
+                          width: double.infinity,
+                          color: palette.label,
+                          alignment: Alignment.center,
+                          child: Text(
+                            tape.kind == TapeKind.series
+                                ? 'TV'
+                                : tape.kind == TapeKind.episode
+                                    ? (tape.subtitle ?? 'EP')
+                                    : 'VHS',
+                            style: TextStyle(
+                              color: palette.labelInk,
+                              fontSize: 7,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
+                              right: BorderSide(
+                                color: Colors.black.withValues(alpha: 0.35),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(color: palette.shell),
-                // Cover strip (IA or Jellyfin) along the spine edge.
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 7,
-                  child: coverAsync.when(
-                    data: (iaUrl) {
-                      final url = iaUrl ?? tape.imageUrl;
-                      if (url == null) {
-                        return ColoredBox(color: palette.accent);
-                      }
-                      return Image.network(
-                        url,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerLeft,
-                        errorBuilder: (_, _, _) =>
-                            ColoredBox(color: palette.accent),
-                      );
-                    },
-                    loading: () => ColoredBox(color: palette.accent),
-                    error: (_, _) => ColoredBox(color: palette.accent),
-                  ),
-                ),
-                // Vertical title.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
-                  child: RotatedBox(
-                    quarterTurns: 3,
-                    child: Text(
-                      tape.title.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.ink,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ),
-                // Bottom brand stub.
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    height: 16,
-                    width: double.infinity,
-                    color: palette.label,
-                    alignment: Alignment.center,
-                    child: Text(
-                      tape.kind == TapeKind.series
-                          ? 'TV'
-                          : tape.kind == TapeKind.episode
-                              ? (tape.subtitle ?? 'EP')
-                              : 'VHS',
-                      style: TextStyle(
-                        color: palette.labelInk,
-                        fontSize: 7,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                  ),
-                ),
-                // Plastic edge highlight.
-                IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.18),
-                        ),
-                        right: BorderSide(
-                          color: Colors.black.withValues(alpha: 0.35),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// A few spines lean left/right like a lived-in shelf.
+  static double _tipRadians(String id) {
+    final hash = id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
+    if (hash % 5 != 0) return 0; // most stand straight
+    final magnitude = 0.04 + (hash % 9) * 0.01;
+    return hash.isEven ? magnitude : -magnitude;
   }
 }
 
@@ -241,7 +257,7 @@ class ShelfPlank extends StatelessWidget {
               const SizedBox(height: 8),
               CustomPaint(
                 size: const Size(double.infinity, 10),
-                painter: _PlankLipPainter(),
+                painter: ShelfLipPainter(),
               ),
             ],
           ),
@@ -251,7 +267,7 @@ class ShelfPlank extends StatelessWidget {
   }
 }
 
-class _PlankLipPainter extends CustomPainter {
+class ShelfLipPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
