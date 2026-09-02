@@ -13,6 +13,7 @@ class Tape {
     this.isDemo = false,
     this.kind = TapeKind.movie,
     this.seriesId,
+    this.seriesTitle,
     this.libraryId,
     this.libraryName,
     this.productionYear,
@@ -31,6 +32,9 @@ class Tape {
   final bool isDemo;
   final TapeKind kind;
   final String? seriesId;
+
+  /// Parent series name — used to look up per-episode VHS releases.
+  final String? seriesTitle;
   final String? libraryId;
   final String? libraryName;
   final int? productionYear;
@@ -51,6 +55,7 @@ class Tape {
     bool? isDemo,
     TapeKind? kind,
     String? seriesId,
+    String? seriesTitle,
     String? libraryId,
     String? libraryName,
     int? productionYear,
@@ -67,6 +72,7 @@ class Tape {
       isDemo: isDemo ?? this.isDemo,
       kind: kind ?? this.kind,
       seriesId: seriesId ?? this.seriesId,
+      seriesTitle: seriesTitle ?? this.seriesTitle,
       libraryId: libraryId ?? this.libraryId,
       libraryName: libraryName ?? this.libraryName,
       productionYear: productionYear ?? this.productionYear,

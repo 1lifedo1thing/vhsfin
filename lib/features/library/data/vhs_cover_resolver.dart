@@ -73,7 +73,7 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.spine_art.v6';
+  static const _cacheKey = 'vhsfin.spine_art.v7';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
@@ -85,13 +85,18 @@ class VhsCoverResolver {
   Future<VhsSpineArt?> spineArtFor({
     required String title,
     int? year,
+    String? seriesTitle,
+    TapeKind kind = TapeKind.movie,
   }) async {
-    if (year != null && year > vhsEraLastYear) {
+    // Movies past the VHS era are skipped; episodes/series still try —
+    // kids shows like VeggieTales often have per-episode VHS releases.
+    final relaxYear = kind == TapeKind.episode || kind == TapeKind.series;
+    if (!relaxYear && year != null && year > vhsEraLastYear) {
       debugPrint('vhs-spine skip post-era "$title" ($year)');
       return null;
     }
 
-    final key = _key(title, year);
+    final key = _key(title, year, seriesTitle);
     if (_memory.containsKey(key)) {
       return _decodeMemory(_memory[key]!);
     }
@@ -107,7 +112,12 @@ class VhsCoverResolver {
       disk.remove(key);
     }
 
-    final resolved = await _search(title, year);
+    final resolved = await _search(
+      title,
+      year: year,
+      seriesTitle: seriesTitle,
+      relaxYear: relaxYear,
+    );
     final stored = resolved == null
         ? jsonEncode({
             'miss': true,
@@ -128,8 +138,16 @@ class VhsCoverResolver {
   Future<String?> coverUrlFor({
     required String title,
     int? year,
+    String? seriesTitle,
+    TapeKind kind = TapeKind.movie,
   }) async {
-    return (await spineArtFor(title: title, year: year))?.imageUrl;
+    return (await spineArtFor(
+      title: title,
+      year: year,
+      seriesTitle: seriesTitle,
+      kind: kind,
+    ))
+        ?.imageUrl;
   }
 
   bool _isMiss(String raw) {
@@ -178,16 +196,51 @@ class VhsCoverResolver {
     return t.trim();
   }
 
-  Future<VhsSpineArt?> _search(String title, int? year) async {
+  Future<VhsSpineArt?> _search(
+    String title, {
+    int? year,
+    String? seriesTitle,
+    bool relaxYear = false,
+  }) async {
     final cleaned = _normalizeTitle(title);
     if (cleaned.isEmpty) return null;
 
-    // Prefer VHSCollector — English slugs + real spine scans.
-    final fromCollector = await _searchVhsCollector(cleaned);
-    if (fromCollector != null) return fromCollector;
+    final series = seriesTitle == null ? null : _normalizeTitle(seriesTitle);
+    final lookupTitles = <String>{
+      cleaned,
+      if (series != null && series.isNotEmpty) ...[
+        '$series $cleaned',
+        '$series - $cleaned',
+        '$series: $cleaned',
+      ],
+    };
+    // "VeggieTales - Dave and the Giant Pickle" → also try the bare episode.
+    if (series != null &&
+        cleaned.toLowerCase().startsWith(series.toLowerCase())) {
+      final bare = cleaned
+          .substring(series.length)
+          .replaceFirst(RegExp(r'^[\s:\-–—]+'), '')
+          .trim();
+      if (bare.isNotEmpty) lookupTitles.add(bare);
+    }
 
-    final fromIa = await _searchInternetArchive(cleaned, year);
+    for (final queryTitle in lookupTitles) {
+      final fromCollector = await _searchVhsCollector(queryTitle);
+      if (fromCollector != null) return fromCollector;
+    }
+
+    // IA is weaker for episode tapes; still try primary title.
+    final iaYear = (!relaxYear || (year != null && year <= vhsEraLastYear))
+        ? year
+        : null;
+    final fromIa = await _searchInternetArchive(cleaned, iaYear);
     if (fromIa != null) return fromIa;
+
+    if (series != null && series.isNotEmpty) {
+      final fromIaSeries =
+          await _searchInternetArchive('$series $cleaned', iaYear);
+      if (fromIaSeries != null) return fromIaSeries;
+    }
 
     return null;
   }
@@ -276,13 +329,16 @@ class VhsCoverResolver {
         .toLowerCase()
         .replaceAll("'", '')
         .replaceAll('’', '')
+        .replaceAll('&', ' and ')
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
     if (base.isEmpty) return const [];
     final bare = base.replaceFirst(RegExp(r'^(the|a|an)-'), '');
+    final collapsed = base.replaceAll('-and-', '-');
     return {
       base,
       if (bare.isNotEmpty && bare != base) bare,
+      if (collapsed != base) collapsed,
     }.toList();
   }
 
@@ -446,10 +502,9 @@ class VhsCoverResolver {
       'full vhs',
       'vhs rip',
       'complete vhs',
-      'recorded',
-      'episode',
+      'recorded from',
       'ytp',
-      'audio',
+      'audio only',
     ];
     for (final token in bad) {
       if (docTitle.contains(token)) return true;
@@ -499,8 +554,8 @@ class VhsCoverResolver {
         .replaceAll('ç', 'c');
   }
 
-  String _key(String title, int? year) =>
-      '${_normalizeTitle(title).toLowerCase()}|${year ?? ''}';
+  String _key(String title, int? year, [String? seriesTitle]) =>
+      '${_normalizeTitle(title).toLowerCase()}|${seriesTitle?.toLowerCase() ?? ''}|${year ?? ''}';
 
   Map<String, String> _readDisk(SharedPreferences prefs) {
     final raw = prefs.getString(_cacheKey);
@@ -532,6 +587,8 @@ final vhsSpineArtProvider =
   final art = await ref.watch(vhsCoverResolverProvider).spineArtFor(
         title: tape.title,
         year: tape.productionYear,
+        seriesTitle: tape.seriesTitle,
+        kind: tape.kind,
       );
   if (art == null || tape.isDemo) return art;
 

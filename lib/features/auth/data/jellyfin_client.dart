@@ -144,6 +144,7 @@ class JellyfinClient {
     required JellyfinSession session,
     required String seriesId,
     String? libraryName,
+    String? seriesTitle,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '${session.normalizedServerUrl}/Users/${session.userId}/Items',
@@ -153,7 +154,8 @@ class JellyfinClient {
         'Recursive': true,
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
-        'Fields': 'Overview,RunTimeTicks,IndexNumber,ParentIndexNumber',
+        'Fields':
+            'Overview,RunTimeTicks,IndexNumber,ParentIndexNumber,ImageTags,ProductionYear,SeriesName',
         'Limit': 400,
       },
       options: _authed(session),
@@ -169,16 +171,19 @@ class JellyfinClient {
         if (season != null) 'S${season.toString().padLeft(2, '0')}',
         if (episode != null) 'E${episode.toString().padLeft(2, '0')}',
       ].join('');
+      final resolvedSeries =
+          seriesTitle ?? item['SeriesName'] as String? ?? libraryName;
       return Tape(
         id: id,
         title: item['Name'] as String? ?? 'Episode',
-        subtitle: label.isEmpty ? item['SeriesName'] as String? : label,
+        subtitle: label.isEmpty ? resolvedSeries : label,
         streamUrl: streamUrl(session, id),
         imageUrl: primaryImageUrl(session, id),
         boxImageUrl: boxImageUrl(session, id, item),
         duration: _durationFromTicks(item['RunTimeTicks'] as int?),
         kind: TapeKind.episode,
         seriesId: seriesId,
+        seriesTitle: resolvedSeries,
         libraryName: libraryName,
         productionYear: item['ProductionYear'] as int?,
       );

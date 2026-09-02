@@ -23,6 +23,7 @@ def title_slugs(title: str) -> list[str]:
     t = title.strip().lower()
     t = re.sub(r"\s*\(\d{4}\)\s*$", "", t)
     t = t.replace("'", "").replace("'", "")
+    t = t.replace("&", " and ")
     t = re.sub(r"[^a-z0-9]+", "-", t).strip("-")
     if not t:
         return []
@@ -30,6 +31,10 @@ def title_slugs(title: str) -> list[str]:
     bare = re.sub(r"^(the|a|an)-", "", t)
     if bare and bare != t:
         out.append(bare)
+    # Collapse "and" for alternate slugs used by some catalog pages.
+    collapsed = t.replace("-and-", "-")
+    if collapsed != t:
+        out.append(collapsed)
     # de-dupe preserve order
     seen: set[str] = set()
     uniq: list[str] = []
