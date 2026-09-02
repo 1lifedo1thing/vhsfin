@@ -133,6 +133,9 @@ class _RealSpine extends StatelessWidget {
 }
 
 /// Shows only the centered vertical strip of a flat VHS sleeve scan.
+///
+/// Scales so the **full sleeve height** fits the spine, then clips to the
+/// center [widthFraction] (the spine panel) — never crops top/bottom.
 class _SpineScanCrop extends StatelessWidget {
   const _SpineScanCrop({
     required this.url,
@@ -153,32 +156,30 @@ class _SpineScanCrop extends StatelessWidget {
         if (fraction >= 0.99) {
           return Image.network(
             url,
-            fit: BoxFit.cover,
+            fit: BoxFit.fitHeight,
             width: w,
             height: h,
-            cacheWidth: (w * dpr).ceil().clamp(64, 512),
+            alignment: Alignment.center,
+            cacheHeight: (h * dpr).ceil().clamp(64, 1600),
             filterQuality: FilterQuality.medium,
             errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black),
           );
         }
 
-        final srcW = w / fraction;
         return ClipRect(
-          child: OverflowBox(
+          child: Align(
             alignment: Alignment.center,
-            minWidth: srcW,
-            maxWidth: srcW,
-            minHeight: h,
-            maxHeight: h,
+            widthFactor: fraction,
+            heightFactor: 1,
             child: SizedBox(
-              width: srcW,
               height: h,
               child: Image.network(
                 url,
-                fit: BoxFit.cover,
+                height: h,
+                fit: BoxFit.fitHeight,
                 alignment: Alignment.center,
-                // Decode near display size so 10MB sleeve scans stay light.
-                cacheWidth: (srcW * dpr).ceil().clamp(160, 1400),
+                // Decode for full sleeve height; width follows aspect.
+                cacheHeight: (h * dpr).ceil().clamp(160, 1600),
                 filterQuality: FilterQuality.medium,
                 errorBuilder: (_, _, _) =>
                     const ColoredBox(color: Colors.black),
