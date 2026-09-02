@@ -255,6 +255,8 @@ class VhsCoverResolver {
   List<String> _collectorSlugs(String cleaned) {
     final base = cleaned
         .toLowerCase()
+        .replaceAll("'", '')
+        .replaceAll('’', '')
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
     if (base.isEmpty) return const [];

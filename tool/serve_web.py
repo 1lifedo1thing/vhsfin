@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1] / "build" / "web"
 def title_slugs(title: str) -> list[str]:
     t = title.strip().lower()
     t = re.sub(r"\s*\(\d{4}\)\s*$", "", t)
+    t = t.replace("'", "").replace("'", "")
     t = re.sub(r"[^a-z0-9]+", "-", t).strip("-")
     if not t:
         return []
