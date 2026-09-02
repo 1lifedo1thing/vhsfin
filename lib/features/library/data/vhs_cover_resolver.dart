@@ -39,10 +39,10 @@ class VhsSpineArt {
   }
 }
 
-/// Looks up period VHS sleeve scans on Internet Archive and caches hits.
+/// Looks up period VHS sleeve scans (Internet Archive, then vhsplus.com.br).
 ///
 /// Flutter web cannot `fetch` archive.org (no CORS) — we use JSONP instead.
-/// VHSCollector.com has no API and is mid-rebuild — not used.
+/// vhsplus.com.br exposes a CORS-friendly WordPress REST API.
 class VhsCoverResolver {
   VhsCoverResolver({Dio? dio})
       : _dio = dio ??
@@ -58,11 +58,42 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.ia_spine_art.v3';
+  static const _cacheKey = 'vhsfin.ia_spine_art.v4';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
   static const missTtl = Duration(hours: 12);
+  static const _vhsPlusApi = 'https://vhsplus.com.br/wp-json/wp/v2';
+
+  /// English → Portuguese search hints for Brazilian VHS PLUS catalog.
+  static const _ptHints = <String, List<String>>{
+    'the lion king': ['o rei leao', 'rei leao'],
+    'lion king': ['o rei leao', 'rei leao'],
+    'beauty and the beast': ['a bela e a fera', 'bela e a fera'],
+    'the little mermaid': ['a pequena sereia', 'pequena sereia'],
+    'little mermaid': ['a pequena sereia', 'pequena sereia'],
+    'lady and the tramp': ['a dama e o vagabundo', 'dama e o vagabundo'],
+    '101 dalmatians': ['101 dalmatas', 'cento e um dalmatas'],
+    'one hundred and one dalmatians': ['101 dalmatas'],
+    'snow white': ['branca de neve'],
+    'sleeping beauty': ['a bela adormecida', 'bela adormecida'],
+    'cinderella': ['cinderela'],
+    'peter pan': ['peter pan'],
+    'pinocchio': ['pinocio', 'pinóquio'],
+    'bambi': ['bambi'],
+    'dumbo': ['dumbo'],
+    'aladdin': ['aladdin', 'alladin'],
+    'mulan': ['mulan'],
+    'hercules': ['hercules', 'hércules'],
+    'pocahontas': ['pocahontas'],
+    'tarzan': ['tarzan'],
+    'toy story': ['toy story'],
+    'a bug\'s life': ['vida de inseto'],
+    'monsters, inc': ['monstros s.a', 'monstros sa'],
+    'finding nemo': ['procurando nemo'],
+    'the incredibles': ['os incriveis', 'os incríveis'],
+    'home alone': ['esqueca-me se for capaz', 'escondidos no sofá', 'home alone'],
+  };
 
   final Map<String, String> _memory = {};
 
@@ -166,6 +197,19 @@ class VhsCoverResolver {
     final cleaned = _normalizeTitle(title);
     if (cleaned.isEmpty) return null;
 
+    final fromIa = await _searchInternetArchive(cleaned, year);
+    if (fromIa != null) return fromIa;
+
+    final fromPlus = await _searchVhsPlus(cleaned);
+    if (fromPlus != null) return fromPlus;
+
+    return null;
+  }
+
+  Future<VhsSpineArt?> _searchInternetArchive(
+    String cleaned,
+    int? year,
+  ) async {
     final softYear = year != null
         ? ' AND year:[${year - 1} TO ${year + 10}]'
         : ' AND year:[1975 TO $vhsEraLastYear]';
@@ -180,7 +224,7 @@ class VhsCoverResolver {
     for (final query in queries) {
       try {
         final docs = await _searchDocs(query);
-        debugPrint('vhs-spine query docs=${docs.length} for "$cleaned"');
+        debugPrint('vhs-spine IA docs=${docs.length} for "$cleaned"');
         final ranked = <({Map<String, dynamic> doc, double score})>[];
         for (final doc in docs) {
           final id = doc['identifier'] as String?;
@@ -198,10 +242,144 @@ class VhsCoverResolver {
           if (art != null) return art;
         }
       } catch (err) {
-        debugPrint('vhs-spine search error: $err');
+        debugPrint('vhs-spine IA search error: $err');
       }
     }
     return null;
+  }
+
+  Future<VhsSpineArt?> _searchVhsPlus(String cleaned) async {
+    final terms = <String>{
+      cleaned,
+      cleaned.replaceFirst(RegExp(r'^(the|a|an)\s+', caseSensitive: false), ''),
+      ...?_ptHints[cleaned.toLowerCase()],
+    };
+
+    final ranked = <({Map<String, dynamic> post, double score})>[];
+    for (final term in terms) {
+      if (term.trim().isEmpty) continue;
+      try {
+        final response = await _dio.get<List<dynamic>>(
+          '$_vhsPlusApi/posts',
+          queryParameters: {
+            'search': term,
+            'per_page': 8,
+            '_embed': '1',
+          },
+        );
+        final posts = response.data ?? const [];
+        for (final raw in posts) {
+          if (raw is! Map<String, dynamic>) continue;
+          final slug = (raw['slug'] as String? ?? '').toLowerCase();
+          final titleHtml = raw['title'];
+          final title = titleHtml is Map
+              ? (titleHtml['rendered'] as String? ?? '')
+              : '$titleHtml';
+          final plain = _stripHtml(title).toLowerCase();
+          if (_looksLikeVhsPlusShop(slug, plain)) continue;
+          final score = _vhsPlusScore(
+            slug: slug,
+            title: plain,
+            wanted: cleaned.toLowerCase(),
+            term: term.toLowerCase(),
+          );
+          if (score < 0.4) continue;
+          ranked.add((post: raw, score: score));
+        }
+      } catch (err) {
+        debugPrint('vhs-spine vhsplus error for "$term": $err');
+      }
+    }
+
+    if (ranked.isEmpty) return null;
+    ranked.sort((a, b) => b.score.compareTo(a.score));
+
+    for (final hit in ranked.take(5)) {
+      final url = await _vhsPlusImageUrl(hit.post);
+      if (url == null) continue;
+      final titleMap = hit.post['title'];
+      final label = titleMap is Map
+          ? _stripHtml(titleMap['rendered'] as String? ?? '')
+          : _stripHtml('$titleMap');
+      debugPrint('vhs-spine vhsplus hit "$label" → $url');
+      return VhsSpineArt(
+        imageUrl: url,
+        centerWidthFraction: wraparoundSpineFraction,
+      );
+    }
+    return null;
+  }
+
+  Future<String?> _vhsPlusImageUrl(Map<String, dynamic> post) async {
+    final embedded = post['_embedded'];
+    if (embedded is Map) {
+      final media = embedded['wp:featuredmedia'];
+      if (media is List && media.isNotEmpty && media.first is Map) {
+        final full = media.first['source_url'] as String?;
+        if (full != null && full.isNotEmpty) return full;
+      }
+    }
+
+    final mediaId = post['featured_media'];
+    if (mediaId is! int || mediaId <= 0) return null;
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '$_vhsPlusApi/media/$mediaId',
+      );
+      final url = response.data?['source_url'] as String?;
+      if (url != null && url.isNotEmpty) return url;
+    } catch (err) {
+      debugPrint('vhs-spine vhsplus media error: $err');
+    }
+    return null;
+  }
+
+  bool _looksLikeVhsPlusShop(String slug, String title) {
+    const bad = [
+      'loja',
+      'lojavhsplus',
+      'catalogo-de-filmes',
+      'mercado',
+      'pirataria',
+      'wishlist',
+    ];
+    for (final token in bad) {
+      if (slug.contains(token) || title.contains(token)) return true;
+    }
+    return false;
+  }
+
+  double _vhsPlusScore({
+    required String slug,
+    required String title,
+    required String wanted,
+    required String term,
+  }) {
+    var score = _score('$title $slug', wanted);
+    if (title.contains(term) || slug.contains(term.replaceAll(' ', '-'))) {
+      score += 0.2;
+    }
+    if (slug.contains('capa') ||
+        slug.contains('capavhs') ||
+        slug.endsWith('-vhs') ||
+        title.contains('capa')) {
+      score += 0.25;
+    }
+    // Prefer dedicated cover posts over blog noise.
+    if (slug == wanted.replaceAll(' ', '-') ||
+        slug == term.replaceAll(' ', '-')) {
+      score += 0.2;
+    }
+    return score.clamp(0.0, 1.0);
+  }
+
+  String _stripHtml(String value) {
+    return value
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&#8211;', '-')
+        .replaceAll('&nbsp;', ' ')
+        .trim();
   }
 
   Future<List<Map<String, dynamic>>> _searchDocs(String query) async {
@@ -323,23 +501,44 @@ class VhsCoverResolver {
 
   double _score(String docTitle, String wanted) {
     var score = 0.0;
-    if (docTitle.contains(wanted)) score += 0.55;
+    final asciiWanted = _fold(wanted);
+    final asciiDoc = _fold(docTitle);
+    if (asciiDoc.contains(asciiWanted)) score += 0.55;
     final wantedParts =
-        wanted.split(RegExp(r'\s+')).where((w) => w.length > 2).toList();
+        asciiWanted.split(RegExp(r'\s+')).where((w) => w.length > 2).toList();
     if (wantedParts.isNotEmpty) {
       var hits = 0;
       for (final part in wantedParts) {
-        if (docTitle.contains(part)) hits++;
+        if (asciiDoc.contains(part)) hits++;
       }
       score += 0.35 * (hits / wantedParts.length);
     }
-    if (docTitle.contains('vhs cover') || docTitle.contains('case cover')) {
+    if (asciiDoc.contains('vhs cover') || asciiDoc.contains('case cover')) {
       score += 0.25;
-    } else if (docTitle.contains('cover') || docTitle.contains('sleeve')) {
+    } else if (asciiDoc.contains('cover') ||
+        asciiDoc.contains('sleeve') ||
+        asciiDoc.contains('capa')) {
       score += 0.1;
     }
-    if (docTitle.contains('spine')) score += 0.15;
+    if (asciiDoc.contains('spine')) score += 0.15;
     return score.clamp(0.0, 1.0);
+  }
+
+  String _fold(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ç', 'c');
   }
 
   String _key(String title, int? year) =>
@@ -361,8 +560,8 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
   return VhsCoverResolver();
 });
 
-/// Resolves spine art for a tape: Jellyfin Box image first, else IA lookup.
-/// IA hits are persisted back to Jellyfin as `Box` when the session allows.
+/// Resolves spine art for a tape: Jellyfin Box image first, else remote lookup.
+/// New hits may be saved as Jellyfin `Box` — never overwrites an existing Box.
 final vhsSpineArtProvider =
     FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
   if (tape.hasBoxImage) {
@@ -382,6 +581,7 @@ final vhsSpineArtProvider =
   if (session == null) return art;
 
   final client = ref.watch(jellyfinClientProvider);
+  // saveBoxImageFromUrl also re-checks ImageTags and refuses overwrite.
   final saved = await client.saveBoxImageFromUrl(
     session: session,
     itemId: tape.id,
@@ -389,7 +589,6 @@ final vhsSpineArtProvider =
   );
   if (saved) {
     debugPrint('vhs-spine saved Box to Jellyfin for "${tape.title}"');
-    // Prefer the library copy next time; URL without tag still works.
     return VhsSpineArt(
       imageUrl: '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
           '?maxHeight=1200&quality=90&api_key=${session.accessToken}',

@@ -247,13 +247,23 @@ class JellyfinClient {
   /// (same family as posters — lives in library metadata; also mirrors what
   /// dropping `box.jpg` next to the media file would do after a scan).
   ///
-  /// Requires an account that can manage images (elevation). Soft-fails otherwise.
+  /// Never overwrites an existing Box image. Requires elevation to upload.
   Future<bool> saveBoxImageFromUrl({
     required JellyfinSession session,
     required String itemId,
     required String imageUrl,
   }) async {
     try {
+      final existing = await _dio.get<Map<String, dynamic>>(
+        '${session.normalizedServerUrl}/Users/${session.userId}/Items/$itemId',
+        queryParameters: {'Fields': 'ImageTags'},
+        options: _authed(session),
+      );
+      final tags = existing.data?['ImageTags'];
+      if (tags is Map && tags['Box'] != null) {
+        return false;
+      }
+
       await _dio.post<void>(
         '${session.normalizedServerUrl}/Items/$itemId/RemoteImages/Download',
         queryParameters: {
