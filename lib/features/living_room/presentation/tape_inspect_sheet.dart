@@ -106,16 +106,8 @@ class _TapeInspectSheet extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _PopupHeader(),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                        child: _InfoBody(tape: tape, art: art),
-                      ),
-                    ),
-                    _ActionBar(
+                    _PopupHeader(
                       showWrongSleeve: art != null,
-                      onBack: () => Navigator.of(context).pop(),
                       onWrongSleeve: () async {
                         await rejectTapeSleeveArt(ref, tape);
                         if (!context.mounted) return;
@@ -128,6 +120,15 @@ class _TapeInspectSheet extends ConsumerWidget {
                           ),
                         );
                       },
+                    ),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: _InfoBody(tape: tape, art: art),
+                      ),
+                    ),
+                    _ActionBar(
+                      onBack: () => Navigator.of(context).pop(),
                       onInsert: () {
                         Navigator.of(context).pop();
                         onInsert();
@@ -145,12 +146,18 @@ class _TapeInspectSheet extends ConsumerWidget {
 }
 
 class _PopupHeader extends StatelessWidget {
-  const _PopupHeader();
+  const _PopupHeader({
+    required this.showWrongSleeve,
+    this.onWrongSleeve,
+  });
+
+  final bool showWrongSleeve;
+  final VoidCallback? onWrongSleeve;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 4, 10),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.28),
         border: Border(
@@ -184,6 +191,40 @@ class _PopupHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          if (showWrongSleeve && onWrongSleeve != null)
+            PopupMenuButton<_TapeMenuAction>(
+              tooltip: 'More',
+              padding: EdgeInsets.zero,
+              offset: const Offset(0, 36),
+              color: const Color(0xFF2A1810),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: VhsColors.brand.withValues(alpha: 0.7),
+                size: 22,
+              ),
+              onSelected: (action) {
+                if (action == _TapeMenuAction.wrongSleeve) {
+                  onWrongSleeve!();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _TapeMenuAction.wrongSleeve,
+                  child: Text(
+                    'Wrong sleeve',
+                    style: TextStyle(
+                      color: VhsColors.brand.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: () => Navigator.of(context).pop(),
@@ -198,6 +239,8 @@ class _PopupHeader extends StatelessWidget {
     );
   }
 }
+
+enum _TapeMenuAction { wrongSleeve }
 
 class _InfoBody extends StatelessWidget {
   const _InfoBody({required this.tape, required this.art});
@@ -750,98 +793,66 @@ class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.onBack,
     required this.onInsert,
-    required this.showWrongSleeve,
-    this.onWrongSleeve,
   });
 
   final VoidCallback onBack;
   final VoidCallback onInsert;
-  final bool showWrongSleeve;
-  final VoidCallback? onWrongSleeve;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
         color: const Color(0xFF1C1410),
         border: Border(
           top: BorderSide(color: Colors.black.withValues(alpha: 0.5)),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          if (showWrongSleeve && onWrongSleeve != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: onWrongSleeve,
-                style: TextButton.styleFrom(
-                  foregroundColor: VhsColors.brand.withValues(alpha: 0.55),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: VhsColors.brand,
+                side: BorderSide(
+                  color: VhsColors.brand.withValues(alpha: 0.35),
                 ),
-                child: const Text(
-                  'WRONG SLEEVE · not this tape',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              onPressed: onBack,
+              child: const Text(
+                'BACK',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-          ],
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: VhsColors.brand,
-                    side: BorderSide(
-                      color: VhsColors.brand.withValues(alpha: 0.35),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: onBack,
-                  child: const Text(
-                    'BACK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.4,
-                    ),
-                  ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 2,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: VhsColors.accent,
+                foregroundColor: VhsColors.brand,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: VhsColors.accent,
-                    foregroundColor: VhsColors.brand,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: onInsert,
-                  child: const Text(
-                    'INSERT TAPE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
+              onPressed: onInsert,
+              child: const Text(
+                'INSERT TAPE',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
