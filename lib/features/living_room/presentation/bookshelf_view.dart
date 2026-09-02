@@ -70,7 +70,8 @@ class _ShelfBlock extends ConsumerWidget {
   final bool embedded;
   final bool showTitle;
 
-  static const _spineSlotWidth = 44.0;
+  /// Pack at upright spine thickness; tipped tapes add their own lean overhang.
+  static const _spineSlotWidth = VhsSpine.nominalWidth;
   static const _rowHeight = 186.0;
 
   @override
@@ -102,9 +103,10 @@ class _ShelfBlock extends ConsumerWidget {
         else
           LayoutBuilder(
             builder: (context, constraints) {
-              final perRow = (constraints.maxWidth / _spineSlotWidth)
-                  .floor()
-                  .clamp(1, 100);
+              // Inner cavity width after padding (matches _cavity padding).
+              const padH = 16.0;
+              final inner = (constraints.maxWidth - padH).clamp(1.0, 4000.0);
+              final perRow = (inner / _spineSlotWidth).floor().clamp(1, 100);
               final rows = <List<Tape>>[];
               for (var i = 0; i < shelf.items.length; i += perRow) {
                 final end = (i + perRow < shelf.items.length)
@@ -118,18 +120,11 @@ class _ShelfBlock extends ConsumerWidget {
                   for (var r = 0; r < rows.length; r++) ...[
                     if (r > 0) const SizedBox(height: 12),
                     _cavity(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          for (final tape in rows[r])
-                            VhsSpine(
-                              tape: tape,
-                              selected: tape.id == loadedId ||
-                                  (tape.kind == TapeKind.series &&
-                                      tape.id == loadedSeriesId),
-                              onTap: () => _onTap(context, ref, tape),
-                            ),
-                        ],
+                      child: _ShelfTapeRow(
+                        tapes: rows[r],
+                        loadedId: loadedId,
+                        loadedSeriesId: loadedSeriesId,
+                        onTap: (tape) => _onTap(context, ref, tape),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -150,6 +145,7 @@ class _ShelfBlock extends ConsumerWidget {
     return Container(
       height: _rowHeight,
       width: double.infinity,
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: Colors.black.withValues(alpha: embedded ? 0.28 : 0.22),
@@ -169,6 +165,57 @@ class _ShelfBlock extends ConsumerWidget {
       context,
       tape: tape,
       onInsert: () => ref.read(vcrDeckProvider.notifier).insertTape(tape),
+    );
+  }
+}
+
+/// Packed left-aligned spines; trailing tape bookends left when space remains.
+class _ShelfTapeRow extends StatelessWidget {
+  const _ShelfTapeRow({
+    required this.tapes,
+    required this.loadedId,
+    required this.loadedSeriesId,
+    required this.onTap,
+  });
+
+  final List<Tape> tapes;
+  final String? loadedId;
+  final String? loadedSeriesId;
+  final ValueChanged<Tape> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var used = 0.0;
+        for (final tape in tapes) {
+          final selected = tape.id == loadedId ||
+              (tape.kind == TapeKind.series && tape.id == loadedSeriesId);
+          used += selected ? 34.0 : VhsSpine.nominalWidth;
+        }
+        final leftover = constraints.maxWidth - used;
+        final bookend = leftover > VhsSpine.nominalWidth * 0.75;
+        final bookendTip = bookend
+            ? VhsSpine.bookendTipFor(leftover: leftover, height: 168)
+            : 0.0;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (var i = 0; i < tapes.length; i++)
+              VhsSpine(
+                tape: tapes[i],
+                selected: tapes[i].id == loadedId ||
+                    (tapes[i].kind == TapeKind.series &&
+                        tapes[i].id == loadedSeriesId),
+                tipRadians: bookend && i == tapes.length - 1 && bookendTip != 0
+                    ? bookendTip
+                    : null,
+                onTap: () => onTap(tapes[i]),
+              ),
+          ],
+        );
+      },
     );
   }
 }

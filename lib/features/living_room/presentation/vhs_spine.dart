@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -12,23 +14,46 @@ class VhsSpine extends ConsumerWidget {
     this.selected = false,
     this.onTap,
     this.height = 168,
+    this.tipRadians,
   });
+
+  /// Upright (non-selected) spine thickness — used for shelf packing.
+  static const double nominalWidth = 28;
+
+  /// Strong left lean for a trailing bookend when a row has leftover shelf.
+  static const double bookendTip = -0.22; // ~12.5° into the stack
+
+  /// Left-lean tip whose base kick (`h·sinθ` to the right) fits in [leftover].
+  static double bookendTipFor({
+    required double leftover,
+    required double height,
+  }) {
+    if (leftover <= 0) return 0;
+    final maxSin = (leftover / height).clamp(0.0, 0.45);
+    final maxTip = math.asin(maxSin);
+    return -math.min(bookendTip.abs(), maxTip);
+  }
 
   final Tape tape;
   final bool selected;
   final VoidCallback? onTap;
   final double height;
 
+  /// When set, overrides the procedural tip (e.g. bookend lean).
+  final double? tipRadians;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = SpinePalette.fromTitle(tape.title);
     final artAsync = ref.watch(vhsSpineArtProvider(tape));
-    final width = selected ? 34.0 : 28.0;
-    final tip = selected ? 0.0 : _tipRadians(tape.id);
-    // Rotation around the bottom swings the top into neighbors — reserve that
-    // horizontal room so tipped spines don't overlap.
-    final swing = height * tip.abs();
-    final slotWidth = width + swing * 2 + 10;
+    final width = selected ? 34.0 : nominalWidth;
+    // Tip is visual only — layout width stays at [width] so rows never grow
+    // past the shelf from leaning.
+    final tip = selected ? 0.0 : (tipRadians ?? 0.0);
+    // Bookend lean (explicit tipRadians): top tips left, base kicks right into
+    // empty shelf — otherwise it would slide into the stack and overlap.
+    final leanX =
+        tipRadians != null ? -height * math.sin(tip) : 0.0;
 
     return Semantics(
       button: true,
@@ -37,43 +62,44 @@ class VhsSpine extends ConsumerWidget {
           : 'Play ${tape.title}',
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: slotWidth,
+        child: SizedBox(
+          width: width,
           height: height + 8,
-          alignment: Alignment.bottomCenter,
           child: Transform.translate(
-            offset: Offset(0, selected ? -14 : 0),
+            offset: Offset(leanX, selected ? -14 : 0),
             child: Transform.rotate(
               angle: tip,
               alignment: Alignment.bottomCenter,
-              child: Container(
-                width: width,
-                height: height,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          Colors.black.withValues(alpha: selected ? 0.55 : 0.35),
-                      blurRadius: selected ? 14 : 8,
-                      offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black
+                            .withValues(alpha: selected ? 0.55 : 0.35),
+                        blurRadius: selected ? 14 : 8,
+                        offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: artAsync.when(
+                      data: (art) {
+                        if (art != null) {
+                          return _RealSpine(art: art);
+                        }
+                        return _ProceduralSpine(tape: tape, palette: palette);
+                      },
+                      loading: () =>
+                          _ProceduralSpine(tape: tape, palette: palette),
+                      error: (_, _) =>
+                          _ProceduralSpine(tape: tape, palette: palette),
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: artAsync.when(
-                    data: (art) {
-                      if (art != null) {
-                        return _RealSpine(art: art);
-                      }
-                      return _ProceduralSpine(tape: tape, palette: palette);
-                    },
-                    loading: () =>
-                        _ProceduralSpine(tape: tape, palette: palette),
-                    error: (_, _) =>
-                        _ProceduralSpine(tape: tape, palette: palette),
                   ),
                 ),
               ),
@@ -82,14 +108,6 @@ class VhsSpine extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  /// A few spines lean slightly — kept small so neighbors don't collide.
-  static double _tipRadians(String id) {
-    final hash = id.codeUnits.fold<int>(0, (a, b) => (a * 33 + b) & 0xffff);
-    if (hash % 6 != 0) return 0;
-    final magnitude = 0.018 + (hash % 4) * 0.006; // ~1°–2.3°
-    return hash.isEven ? magnitude : -magnitude;
   }
 }
 class _RealSpine extends StatelessWidget {
@@ -232,7 +250,8 @@ class _ProceduralSpine extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(9, 10, 4, 10),
           child: RotatedBox(
-            quarterTurns: 3,
+            // US spines read top→bottom.
+            quarterTurns: 1,
             child: Text(
               tape.title.toUpperCase(),
               maxLines: 1,

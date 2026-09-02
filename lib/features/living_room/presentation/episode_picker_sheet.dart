@@ -141,38 +141,45 @@ class EpisodePickerSheet extends ConsumerWidget {
                         }
                         return LayoutBuilder(
                           builder: (context, constraints) {
-                            final count = (constraints.maxWidth / 58)
-                                .floor()
-                                .clamp(3, 8);
-                            return GridView.builder(
+                            const padH = 20.0;
+                            final inner =
+                                (constraints.maxWidth - padH).clamp(1.0, 4000.0);
+                            final perRow =
+                                (inner / VhsSpine.nominalWidth).floor().clamp(1, 100);
+                            final rows = <List<Tape>>[];
+                            for (var i = 0; i < episodes.length; i += perRow) {
+                              final end = (i + perRow < episodes.length)
+                                  ? i + perRow
+                                  : episodes.length;
+                              rows.add(episodes.sublist(i, end));
+                            }
+
+                            return ListView.separated(
                               padding:
                                   const EdgeInsets.fromLTRB(10, 0, 10, 16),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: count,
-                                mainAxisExtent: 196,
-                                crossAxisSpacing: 4,
-                                mainAxisSpacing: 10,
-                              ),
-                              itemCount: episodes.length,
-                              itemBuilder: (context, index) {
-                                final episode = episodes[index];
-                                final playing = episode.id == loadedId;
-                                return _EpisodeTapeCell(
-                                  episode: episode,
-                                  playing: playing,
-                                  onTap: () {
-                                    showTapeInspectSheet(
-                                      context,
-                                      tape: episode,
-                                      onInsert: () {
-                                        Navigator.pop(context);
-                                        ref
-                                            .read(vcrDeckProvider.notifier)
-                                            .insertTape(episode);
-                                      },
-                                    );
-                                  },
+                              itemCount: rows.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 14),
+                              itemBuilder: (context, rowIndex) {
+                                final row = rows[rowIndex];
+                                return SizedBox(
+                                  height: 196,
+                                  child: _EpisodeShelfRow(
+                                    episodes: row,
+                                    loadedId: loadedId,
+                                    onTap: (episode) {
+                                      showTapeInspectSheet(
+                                        context,
+                                        tape: episode,
+                                        onInsert: () {
+                                          Navigator.pop(context);
+                                          ref
+                                              .read(vcrDeckProvider.notifier)
+                                              .insertTape(episode);
+                                        },
+                                      );
+                                    },
+                                  ),
                                 );
                               },
                             );
@@ -191,41 +198,79 @@ class EpisodePickerSheet extends ConsumerWidget {
   }
 }
 
-class _EpisodeTapeCell extends StatelessWidget {
-  const _EpisodeTapeCell({
-    required this.episode,
-    required this.playing,
+class _EpisodeShelfRow extends StatelessWidget {
+  const _EpisodeShelfRow({
+    required this.episodes,
+    required this.loadedId,
     required this.onTap,
   });
 
-  final Tape episode;
-  final bool playing;
-  final VoidCallback onTap;
+  final List<Tape> episodes;
+  final String? loadedId;
+  final ValueChanged<Tape> onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        VhsSpine(
-          tape: episode,
-          selected: playing,
-          height: 148,
-          onTap: onTap,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          episode.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: playing ? VhsColors.phosphor : VhsColors.brand,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var used = 0.0;
+        for (final episode in episodes) {
+          used += episode.id == loadedId ? 34.0 : VhsSpine.nominalWidth;
+        }
+        final leftover = constraints.maxWidth - used;
+        final bookend = leftover > VhsSpine.nominalWidth * 0.75;
+        const spineHeight = 148.0;
+        final bookendTip = bookend
+            ? VhsSpine.bookendTipFor(leftover: leftover, height: spineHeight)
+            : 0.0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < episodes.length; i++)
+                  VhsSpine(
+                    tape: episodes[i],
+                    height: spineHeight,
+                    selected: episodes[i].id == loadedId,
+                    tipRadians:
+                        bookend && i == episodes.length - 1 && bookendTip != 0
+                            ? bookendTip
+                            : null,
+                    onTap: () => onTap(episodes[i]),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                for (final episode in episodes)
+                  SizedBox(
+                    width: episode.id == loadedId
+                        ? 34
+                        : VhsSpine.nominalWidth,
+                    child: Text(
+                      episode.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: episode.id == loadedId
+                            ? VhsColors.phosphor
+                            : VhsColors.brand,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -286,7 +286,7 @@ class _FallbackSpine extends StatelessWidget {
     return ColoredBox(
       color: palette.shell,
       child: RotatedBox(
-        quarterTurns: 3,
+        quarterTurns: 1,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),

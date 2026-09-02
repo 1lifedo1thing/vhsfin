@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_crt_screen.dart';
+import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
 /// Compact Zenith-style all-in-one TV/VCR — CRT hood, cassette door, deck keys.
@@ -141,7 +144,7 @@ class VcrBox extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: _CassetteSlot(
-              title: deck.loadedTape?.title,
+              tape: deck.loadedTape,
               inserting: deck.power == VcrPower.inserting,
               loaded: deck.isPowered,
             ),
@@ -192,19 +195,22 @@ class VcrBox extends ConsumerWidget {
   }
 }
 
-class _CassetteSlot extends StatelessWidget {
+class _CassetteSlot extends ConsumerWidget {
   const _CassetteSlot({
     required this.inserting,
     required this.loaded,
-    this.title,
+    this.tape,
   });
 
-  final String? title;
+  final Tape? tape;
   final bool inserting;
   final bool loaded;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final artAsync =
+        tape == null ? null : ref.watch(vhsSpineArtProvider(tape!));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -231,7 +237,7 @@ class _CassetteSlot extends StatelessWidget {
           ),
         ),
         Container(
-          height: 40,
+          height: 44,
           decoration: BoxDecoration(
             borderRadius:
                 const BorderRadius.vertical(bottom: Radius.circular(3)),
@@ -258,38 +264,9 @@ class _CassetteSlot extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   alignment:
                       inserting ? const Alignment(0, 1.5) : Alignment.center,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 7,
-                    ),
-                    height: 24,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      color: VhsColors.tapeShell,
-                      border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      (title ?? 'TAPE').toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF2A1810),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                  child: _SlotCassette(
+                    title: tape?.title,
+                    art: artAsync?.asData?.value,
                   ),
                 )
               else
@@ -308,6 +285,76 @@ class _CassetteSlot extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Horizontal cassette body in the bay — spine art rotated to read along the slot.
+class _SlotCassette extends StatelessWidget {
+  const _SlotCassette({this.title, this.art});
+
+  final String? title;
+  final VhsSpineArt? art;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      height: 28,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(2),
+        color: VhsColors.tapeShell,
+        border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: art != null
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                // Spine reads top→bottom on the shelf; rotate so top is left in the bay.
+                RotatedBox(
+                  quarterTurns: 3,
+                  child: VhsSleeveCrop(
+                    url: art!.imageUrl,
+                    widthFraction: art!.centerWidthFraction,
+                  ),
+                ),
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        bottom: BorderSide(
+                          color: Colors.black.withValues(alpha: 0.35),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Center(
+              child: Text(
+                (title ?? 'TAPE').toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF2A1810),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
     );
   }
 }
