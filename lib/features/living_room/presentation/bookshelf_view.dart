@@ -181,7 +181,7 @@ class _ShelfBlock extends ConsumerWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(8),
+                  top: Radius.circular(4),
                 ),
                 color: Colors.black.withValues(alpha: embedded ? 0.28 : 0.22),
                 border: Border.all(color: Colors.black.withValues(alpha: 0.35)),

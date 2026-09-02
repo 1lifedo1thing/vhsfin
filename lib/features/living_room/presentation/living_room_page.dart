@@ -41,15 +41,16 @@ class LivingRoomPage extends ConsumerWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final wide = constraints.maxWidth > 820;
-              final pad = wide ? constraints.maxWidth * 0.14 : 16.0;
+              // Keep the console wide — only a slim living-room margin.
+              final pad = wide ? 28.0 : 0.0;
 
               return SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(pad, 20, pad, 88),
+                padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const _EntertainmentCenter(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 128),
                     _BottomBar(
                       connected: session != null,
                       userName: session?.userName,
@@ -64,6 +65,7 @@ class LivingRoomPage extends ConsumerWidget {
                           .setVhsOnly(value),
                       onOpenSort: () => showShelfSortSheet(context),
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               );
@@ -102,14 +104,11 @@ class _EntertainmentCenter extends StatelessWidget {
         ],
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            child: VcrBox(),
-          ),
+          VcrBox(),
           SizedBox(height: 14),
           BookshelfView(embedded: true),
         ],
@@ -143,43 +142,121 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _VhsOnlySwitch(
-          value: vhsOnly,
-          onChanged: onVhsOnlyChanged,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF2E2E32),
+                Color(0xFF1A1A1E),
+                Color(0xFF121214),
+              ],
+            ),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.55)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.04),
+                blurRadius: 0,
+                offset: const Offset(0, 1),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: vhsOnly ? VhsColors.ledOn : VhsColors.ledOff,
+                      boxShadow: vhsOnly
+                          ? [
+                              BoxShadow(
+                                color: VhsColors.ledOn.withValues(alpha: 0.45),
+                                blurRadius: 6,
+                              ),
+                            ]
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'DECK SETTINGS',
+                    style: TextStyle(
+                      color: VhsColors.phosphor.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2.2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'VHSFIN',
+                    style: TextStyle(
+                      color: VhsColors.brand.withValues(alpha: 0.35),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _VhsOnlySwitch(
+                      value: vhsOnly,
+                      onChanged: onVhsOnlyChanged,
+                    ),
+                    _DeckKey(
+                      label: 'SORT',
+                      sublabel: sortLabel,
+                      onPressed: onOpenSort,
+                    ),
+                    _DeckKey(
+                      label: 'COLLECTION',
+                      onPressed: onCollection,
+                    ),
+                    _DeckKey(
+                      label: connected ? 'SIGN OUT' : 'CONNECT',
+                      sublabel: connected ? userName : null,
+                      dim: true,
+                      onPressed: connected ? onSignOut : onConnect,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        _dot(),
-        _BarLink(
-          label: 'SORT · $sortLabel ▾',
-          onPressed: onOpenSort,
-        ),
-        _dot(),
-        _BarLink(
-          label: 'COLLECTION',
-          onPressed: onCollection,
-        ),
-        _dot(),
-        _BarLink(
-          label: connected
-              ? 'SIGN OUT${userName != null ? ' ($userName)' : ''}'
-              : 'CONNECT',
-          dim: true,
-          onPressed: connected ? onSignOut : onConnect,
-        ),
-      ],
-    );
-  }
-
-  Widget _dot() {
-    return Text(
-      '·',
-      style: TextStyle(
-        color: VhsColors.brand.withValues(alpha: 0.35),
       ),
     );
   }
@@ -197,13 +274,21 @@ class _VhsOnlySwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.22),
-      borderRadius: BorderRadius.circular(20),
+      color: value ? const Color(0xFF243528) : const Color(0xFF222226),
+      borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: () => onChanged(!value),
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: value
+                  ? VhsColors.phosphor.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -211,26 +296,25 @@ class _VhsOnlySwitch extends StatelessWidget {
                 'VHS ONLY',
                 style: TextStyle(
                   color: value
-                      ? VhsColors.phosphor.withValues(alpha: 0.95)
+                      ? VhsColors.phosphor
                       : VhsColors.brand.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  letterSpacing: 1.1,
+                  fontSize: 11,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 value ? 'ON' : 'OFF',
                 style: TextStyle(
                   color: value
-                      ? VhsColors.phosphor.withValues(alpha: 0.7)
+                      ? VhsColors.phosphor.withValues(alpha: 0.75)
                       : VhsColors.brand.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w700,
-                  fontSize: 10,
+                  fontSize: 9,
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(width: 4),
               Switch(
                 value: value,
                 onChanged: onChanged,
@@ -248,32 +332,73 @@ class _VhsOnlySwitch extends StatelessWidget {
   }
 }
 
-class _BarLink extends StatelessWidget {
-  const _BarLink({
+class _DeckKey extends StatelessWidget {
+  const _DeckKey({
     required this.label,
     required this.onPressed,
+    this.sublabel,
     this.dim = false,
   });
 
   final String label;
+  final String? sublabel;
   final VoidCallback onPressed;
   final bool dim;
 
   @override
   Widget build(BuildContext context) {
-    final color = dim
+    final fg = dim
         ? VhsColors.brand.withValues(alpha: 0.55)
-        : VhsColors.phosphor.withValues(alpha: 0.85);
+        : VhsColors.phosphor.withValues(alpha: 0.9);
 
-    return TextButton(
-      onPressed: onPressed,
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
-          letterSpacing: 1.1,
+    return Material(
+      color: const Color(0xFF222226),
+      borderRadius: BorderRadius.circular(4),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 88),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: 1.3,
+                ),
+              ),
+              if (sublabel != null && sublabel!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  sublabel!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: VhsColors.brand.withValues(alpha: 0.45),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 9,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
