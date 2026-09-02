@@ -14,9 +14,13 @@ from pathlib import Path
 
 UA = "vhsfin-proxy/0.1 (kids jellyfin client)"
 IA = "https://archive.org"
+ROOT = Path(__file__).resolve().parents[1] / "build" / "web"
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
     def end_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -120,7 +124,8 @@ def main() -> None:
         print(f"missing web build at {root}; run flutter build web", file=sys.stderr)
         sys.exit(1)
 
-    Handler.directory = str(root)
+    global ROOT
+    ROOT = root
     server = ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
     print(f"Serving {root} on http://0.0.0.0:{args.port} (IA proxy /ia/*)", flush=True)
     try:
