@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:vhsfin/features/library/data/ia_jsonp_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/library/data/ia_jsonp_web.dart';
+import 'package:vhsfin/features/library/data/tape_library_provider.dart';
+import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Real VHS sleeve art for a bookshelf spine (IA scan), when available.
 class VhsSpineArt {
@@ -359,11 +361,40 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
   return VhsCoverResolver();
 });
 
+/// Resolves spine art for a tape: Jellyfin Box image first, else IA lookup.
+/// IA hits are persisted back to Jellyfin as `Box` when the session allows.
 final vhsSpineArtProvider =
-    FutureProvider.family<VhsSpineArt?, ({String title, int? year})>(
-        (ref, args) {
-  return ref.watch(vhsCoverResolverProvider).spineArtFor(
-        title: args.title,
-        year: args.year,
+    FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
+  if (tape.hasBoxImage) {
+    return VhsSpineArt(
+      imageUrl: tape.boxImageUrl!,
+      centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
+    );
+  }
+
+  final art = await ref.watch(vhsCoverResolverProvider).spineArtFor(
+        title: tape.title,
+        year: tape.productionYear,
       );
+  if (art == null || tape.isDemo) return art;
+
+  final session = ref.watch(sessionProvider);
+  if (session == null) return art;
+
+  final client = ref.watch(jellyfinClientProvider);
+  final saved = await client.saveBoxImageFromUrl(
+    session: session,
+    itemId: tape.id,
+    imageUrl: art.imageUrl,
+  );
+  if (saved) {
+    debugPrint('vhs-spine saved Box to Jellyfin for "${tape.title}"');
+    // Prefer the library copy next time; URL without tag still works.
+    return VhsSpineArt(
+      imageUrl: '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
+          '?maxHeight=1200&quality=90&api_key=${session.accessToken}',
+      centerWidthFraction: art.centerWidthFraction,
+    );
+  }
+  return art;
 });

@@ -22,9 +22,7 @@ class VhsSpine extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = SpinePalette.fromTitle(tape.title);
-    final artAsync = ref.watch(
-      vhsSpineArtProvider((title: tape.title, year: tape.productionYear)),
-    );
+    final artAsync = ref.watch(vhsSpineArtProvider(tape));
     final width = selected ? 34.0 : 28.0;
     final tip = _tipRadians(tape.id);
 

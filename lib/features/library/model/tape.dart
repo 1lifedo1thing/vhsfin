@@ -8,6 +8,7 @@ class Tape {
     required this.streamUrl,
     this.subtitle,
     this.imageUrl,
+    this.boxImageUrl,
     this.duration,
     this.isDemo = false,
     this.kind = TapeKind.movie,
@@ -23,6 +24,9 @@ class Tape {
   final String? subtitle;
   final String streamUrl;
   final String? imageUrl;
+
+  /// Jellyfin `Box` image (VHS sleeve scan), when the library already has one.
+  final String? boxImageUrl;
   final Duration? duration;
   final bool isDemo;
   final TapeKind kind;
@@ -34,12 +38,15 @@ class Tape {
 
   bool get isPlayable => kind != TapeKind.series;
 
+  bool get hasBoxImage => boxImageUrl != null && boxImageUrl!.isNotEmpty;
+
   Tape copyWith({
     String? id,
     String? title,
     String? subtitle,
     String? streamUrl,
     String? imageUrl,
+    String? boxImageUrl,
     Duration? duration,
     bool? isDemo,
     TapeKind? kind,
@@ -55,6 +62,7 @@ class Tape {
       subtitle: subtitle ?? this.subtitle,
       streamUrl: streamUrl ?? this.streamUrl,
       imageUrl: imageUrl ?? this.imageUrl,
+      boxImageUrl: boxImageUrl ?? this.boxImageUrl,
       duration: duration ?? this.duration,
       isDemo: isDemo ?? this.isDemo,
       kind: kind ?? this.kind,

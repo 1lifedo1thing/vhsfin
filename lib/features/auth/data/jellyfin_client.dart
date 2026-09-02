@@ -121,7 +121,8 @@ class JellyfinClient {
         'Recursive': true,
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
-        'Fields': 'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount',
+        'Fields':
+            'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount,ImageTags',
         'Limit': 300,
       },
       options: _authed(session),
@@ -174,6 +175,7 @@ class JellyfinClient {
         subtitle: label.isEmpty ? item['SeriesName'] as String? : label,
         streamUrl: streamUrl(session, id),
         imageUrl: primaryImageUrl(session, id),
+        boxImageUrl: boxImageUrl(session, id, item),
         duration: _durationFromTicks(item['RunTimeTicks'] as int?),
         kind: TapeKind.episode,
         seriesId: seriesId,
@@ -199,6 +201,7 @@ class JellyfinClient {
           : item['ProductionYear']?.toString(),
       streamUrl: isSeries ? '' : streamUrl(session, id),
       imageUrl: primaryImageUrl(session, id),
+      boxImageUrl: boxImageUrl(session, id, item),
       duration: _durationFromTicks(item['RunTimeTicks'] as int?),
       kind: isSeries ? TapeKind.series : TapeKind.movie,
       libraryId: source.id,
@@ -222,7 +225,47 @@ class JellyfinClient {
 
   String primaryImageUrl(JellyfinSession session, String itemId) {
     return '${session.normalizedServerUrl}/Items/$itemId/Images/Primary'
-        '?maxHeight=400&quality=80';
+        '?maxHeight=400&quality=80'
+        '&api_key=${session.accessToken}';
+  }
+
+  /// VHS sleeve / box art — Jellyfin's `Box` image type (also `box.jpg` on disk).
+  String? boxImageUrl(
+    JellyfinSession session,
+    String itemId,
+    Map<String, dynamic> item,
+  ) {
+    final tags = item['ImageTags'];
+    if (tags is! Map || tags['Box'] == null) return null;
+    final tag = tags['Box'];
+    return '${session.normalizedServerUrl}/Items/$itemId/Images/Box'
+        '?tag=$tag&maxHeight=1200&quality=90'
+        '&api_key=${session.accessToken}';
+  }
+
+  /// Ask Jellyfin to download a remote sleeve scan and store it as `Box`
+  /// (same family as posters — lives in library metadata; also mirrors what
+  /// dropping `box.jpg` next to the media file would do after a scan).
+  ///
+  /// Requires an account that can manage images (elevation). Soft-fails otherwise.
+  Future<bool> saveBoxImageFromUrl({
+    required JellyfinSession session,
+    required String itemId,
+    required String imageUrl,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '${session.normalizedServerUrl}/Items/$itemId/RemoteImages/Download',
+        queryParameters: {
+          'Type': 'Box',
+          'ImageUrl': imageUrl,
+        },
+        options: _authed(session),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   String _normalize(String url) {
