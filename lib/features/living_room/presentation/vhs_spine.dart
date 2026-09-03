@@ -18,6 +18,7 @@ class VhsSpine extends ConsumerWidget {
     this.onTap,
     this.height = 168,
     this.tipRadians,
+    this.ghosted = false,
   });
 
   /// Upright (non-selected) spine thickness — used for shelf packing.
@@ -125,6 +126,9 @@ class VhsSpine extends ConsumerWidget {
   /// When set, overrides upright (e.g. bookend / casual lean).
   final double? tipRadians;
 
+  /// Invisible but still laid out — overlay is flying this tape.
+  final bool ghosted;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final artAsync = ref.watch(vhsSpineArtProvider(tape));
@@ -151,43 +155,47 @@ class VhsSpine extends ConsumerWidget {
       child: SizedBox(
         width: width,
         height: height + 8,
-        child: _SpineTapTarget(
-          onTap: onTap,
-          expandLeft: expandLeft,
-          expandRight: expandRight,
-          expandTop: expandTop,
-          child: Transform.translate(
-            offset: Offset(leanX, popY),
-            child: Transform.rotate(
-              angle: tip,
-              alignment: Alignment.bottomCenter,
-              child: Align(
+        child: Opacity(
+          // Keep layout while the overlay flies this tape shelf ↔ slot.
+          opacity: ghosted ? 0 : 1,
+          child: _SpineTapTarget(
+            onTap: ghosted ? null : onTap,
+            expandLeft: expandLeft,
+            expandRight: expandRight,
+            expandTop: expandTop,
+            child: Transform.translate(
+              offset: Offset(leanX, popY),
+              child: Transform.rotate(
+                angle: tip,
                 alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: width,
-                  height: height,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black
-                            .withValues(alpha: selected ? 0.55 : 0.35),
-                        blurRadius: selected ? 14 : 8,
-                        offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: width,
+                    height: height,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: selected ? 0.55 : 0.35),
+                          blurRadius: selected ? 14 : 8,
+                          offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: artAsync.when(
+                        data: (art) {
+                          if (art != null) {
+                            return _RealSpine(art: art);
+                          }
+                          return ProceduralVhsSpine(tape: tape);
+                        },
+                        loading: () => ProceduralVhsSpine(tape: tape),
+                        error: (_, _) => ProceduralVhsSpine(tape: tape),
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: artAsync.when(
-                      data: (art) {
-                        if (art != null) {
-                          return _RealSpine(art: art);
-                        }
-                        return ProceduralVhsSpine(tape: tape);
-                      },
-                      loading: () => ProceduralVhsSpine(tape: tape),
-                      error: (_, _) => ProceduralVhsSpine(tape: tape),
                     ),
                   ),
                 ),

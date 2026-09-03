@@ -5,6 +5,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
+import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_crt_screen.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
@@ -144,12 +145,17 @@ class VcrBox extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: _CassetteSlot(
-              tape: deck.loadedTape,
-              inserting: deck.power == VcrPower.inserting,
-              loaded: deck.loadedTape != null &&
-                  (deck.power == VcrPower.playing ||
-                      deck.power == VcrPower.inserting),
+            child: KeyedSubtree(
+              key: ref.watch(tapeFlightAnchorsProvider).slotKey,
+              child: _CassetteSlot(
+                tape: deck.loadedTape,
+                inserting: deck.power == VcrPower.inserting,
+                ejecting: deck.power == VcrPower.ejecting,
+                loaded: deck.loadedTape != null &&
+                    (deck.power == VcrPower.playing ||
+                        deck.power == VcrPower.inserting ||
+                        deck.power == VcrPower.ejecting),
+              ),
             ),
           ),
           // Vent / speaker grille suggestion
@@ -213,18 +219,24 @@ class VcrBox extends ConsumerWidget {
 class _CassetteSlot extends ConsumerWidget {
   const _CassetteSlot({
     required this.inserting,
+    required this.ejecting,
     required this.loaded,
     this.tape,
   });
 
   final Tape? tape;
   final bool inserting;
+  final bool ejecting;
   final bool loaded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final artAsync =
         tape == null ? null : ref.watch(vhsSpineArtProvider(tape!));
+    final flyingId = ref.watch(flyingTapeIdProvider);
+    // Overlay owns the cassette while the tape is mid-flight.
+    final hideForFlight =
+        tape != null && flyingId != null && flyingId == tape!.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,18 +285,16 @@ class _CassetteSlot extends ConsumerWidget {
                   color: Colors.black.withValues(alpha: 0.65),
                 ),
               ),
-              if (loaded || inserting)
-                AnimatedAlign(
-                  duration: const Duration(milliseconds: 450),
-                  curve: Curves.easeOutCubic,
-                  alignment:
-                      inserting ? const Alignment(0, 1.5) : Alignment.center,
+              if ((loaded || inserting || ejecting) && !hideForFlight)
+                Align(
+                  // Flight overlay owns insert/eject motion; bay only holds.
+                  alignment: Alignment.center,
                   child: _SlotCassette(
                     title: tape?.title,
                     art: artAsync?.asData?.value,
                   ),
                 )
-              else
+              else if (!loaded && !inserting && !ejecting)
                 const Center(
                   child: Text(
                     'VHS',

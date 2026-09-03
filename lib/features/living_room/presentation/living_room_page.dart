@@ -5,6 +5,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/living_room/presentation/bookshelf_view.dart';
+import 'package:vhsfin/features/living_room/presentation/tape_flight_overlay.dart';
 import 'package:vhsfin/features/living_room/presentation/vcr_box.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_remote.dart';
 
@@ -24,54 +25,59 @@ class LivingRoomPage extends ConsumerWidget {
         tooltip: 'Remote',
         child: const Icon(Icons.settings_remote_rounded),
       ),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.4),
-            radius: 1.2,
-            colors: [
-              Color(0xFF3A2418),
-              VhsColors.woodDeep,
-              Color(0xFF070504),
-            ],
-            stops: [0, 0.55, 1],
-          ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final wide = constraints.maxWidth > 820;
-              // Keep the console wide — only a slim living-room margin.
-              final pad = wide ? 28.0 : 0.0;
+      body: Stack(
+        children: [
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.4),
+                radius: 1.2,
+                colors: [
+                  Color(0xFF3A2418),
+                  VhsColors.woodDeep,
+                  Color(0xFF070504),
+                ],
+                stops: [0, 0.55, 1],
+              ),
+            ),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth > 820;
+                  // Keep the console wide — only a slim living-room margin.
+                  final pad = wide ? 28.0 : 0.0;
 
-              return SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _EntertainmentCenter(),
-                    const SizedBox(height: 128),
-                    _BottomBar(
-                      connected: session != null,
-                      userName: session?.userName,
-                      vhsOnly: displayPrefs.vhsOnly,
-                      sortLabel: displayPrefs.sort.buttonLabel,
-                      onCollection: () => context.push('/libraries'),
-                      onConnect: () => context.push('/connect'),
-                      onSignOut: () =>
-                          ref.read(sessionProvider.notifier).signOut(),
-                      onVhsOnlyChanged: (value) => ref
-                          .read(shelfDisplayPrefsProvider.notifier)
-                          .setVhsOnly(value),
-                      onOpenSort: () => showShelfSortSheet(context),
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _EntertainmentCenter(),
+                        const SizedBox(height: 128),
+                        _BottomBar(
+                          connected: session != null,
+                          userName: session?.userName,
+                          vhsOnly: displayPrefs.vhsOnly,
+                          sortLabel: displayPrefs.sort.buttonLabel,
+                          onCollection: () => context.push('/libraries'),
+                          onConnect: () => context.push('/connect'),
+                          onSignOut: () =>
+                              ref.read(sessionProvider.notifier).signOut(),
+                          onVhsOnlyChanged: (value) => ref
+                              .read(shelfDisplayPrefsProvider.notifier)
+                              .setVhsOnly(value),
+                          onOpenSort: () => showShelfSortSheet(context),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+          const Positioned.fill(child: TapeFlightOverlay()),
+        ],
       ),
     );
   }

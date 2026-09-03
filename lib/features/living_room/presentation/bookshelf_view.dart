@@ -5,6 +5,7 @@ import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/model/vcr_state.dart';
 import 'package:vhsfin/features/living_room/presentation/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/presentation/episode_picker_sheet.dart';
@@ -151,11 +152,14 @@ class _ShelfBlock extends ConsumerWidget {
                     if (r > 0) const SizedBox(height: 10),
                     _shelfBay(
                       child: _ShelfTapeRow(
+                        shelfId: shelf.id,
+                        rowIndex: r,
                         tapes: rows[r],
                         loadedId: loadedId,
                         loadedSeriesId: loadedSeriesId,
                         gap: _spineGap,
-                        onTap: (tape) => _onTap(context, ref, tape),
+                        onTap: (tape, instanceKey) =>
+                            _onTap(context, ref, tape, instanceKey),
                       ),
                     ),
                   ],
@@ -207,7 +211,13 @@ class _ShelfBlock extends ConsumerWidget {
     );
   }
 
-  void _onTap(BuildContext context, WidgetRef ref, Tape tape) {
+  void _onTap(
+    BuildContext context,
+    WidgetRef ref,
+    Tape tape,
+    String instanceKey,
+  ) {
+    ref.read(flightSourceKeyProvider.notifier).select(instanceKey);
     if (tape.kind == TapeKind.series) {
       showEpisodePicker(context, series: tape);
       return;
@@ -221,8 +231,10 @@ class _ShelfBlock extends ConsumerWidget {
 }
 
 /// Packed left-aligned spines; trailing tape bookends left when space remains.
-class _ShelfTapeRow extends StatelessWidget {
+class _ShelfTapeRow extends ConsumerWidget {
   const _ShelfTapeRow({
+    required this.shelfId,
+    required this.rowIndex,
     required this.tapes,
     required this.loadedId,
     required this.loadedSeriesId,
@@ -230,14 +242,20 @@ class _ShelfTapeRow extends StatelessWidget {
     this.gap = 2,
   });
 
+  final String shelfId;
+  final int rowIndex;
   final List<Tape> tapes;
   final String? loadedId;
   final String? loadedSeriesId;
-  final ValueChanged<Tape> onTap;
+  final void Function(Tape tape, String instanceKey) onTap;
   final double gap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final anchors = ref.watch(tapeFlightAnchorsProvider);
+    final flyingId = ref.watch(flyingTapeIdProvider);
+    final sourceKey = ref.watch(flightSourceKeyProvider);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         var used = tapes.isEmpty ? 0.0 : (tapes.length - 1) * gap;
@@ -259,17 +277,33 @@ class _ShelfTapeRow extends StatelessWidget {
           children: [
             for (var i = 0; i < tapes.length; i++) ...[
               if (i > 0) SizedBox(width: gap),
-              RepaintBoundary(
-                child: VhsSpine(
-                  tape: tapes[i],
-                  height: baseHeight,
-                  selected: tapes[i].id == loadedId ||
-                      (tapes[i].kind == TapeKind.series &&
-                          tapes[i].id == loadedSeriesId),
-                  tipRadians: tips[i],
-                  onTap: () => onTap(tapes[i]),
-                ),
-              ),
+              () {
+                final instanceKey = TapeFlightAnchors.instanceKey(
+                  shelfId: shelfId,
+                  row: rowIndex,
+                  index: i,
+                  tapeId: tapes[i].id,
+                );
+                final isSource = sourceKey == instanceKey;
+                return RepaintBoundary(
+                  child: KeyedSubtree(
+                    // GlobalKey only on the tapped instance — duplicates stay put.
+                    key: isSource
+                        ? anchors.spineKeyFor(instanceKey)
+                        : ValueKey(instanceKey),
+                    child: VhsSpine(
+                      tape: tapes[i],
+                      height: baseHeight,
+                      selected: tapes[i].id == loadedId ||
+                          (tapes[i].kind == TapeKind.series &&
+                              tapes[i].id == loadedSeriesId),
+                      tipRadians: tips[i],
+                      ghosted: flyingId == tapes[i].id && isSource,
+                      onTap: () => onTap(tapes[i], instanceKey),
+                    ),
+                  ),
+                );
+              }(),
             ],
           ],
         );

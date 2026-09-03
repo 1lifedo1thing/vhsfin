@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
+import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
 import 'package:vhsfin/features/playback/data/deck_player.dart';
 
 enum VcrPower { off, inserting, playing, ejecting }
@@ -51,14 +52,15 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     Tape tape, {
     PlaybackStyle style = PlaybackStyle.vhsCrt,
   }) async {
+    // Wait until the clunk is actually playing, then fly.
+    await ref.read(deckSfxProvider).playInsert();
+    if (!ref.mounted) return;
     state = state.copyWith(
       power: VcrPower.inserting,
       loadedTape: tape,
       style: style,
     );
-    // Fire-and-forget — don't delay the insert animation on audio.
-    unawaited(ref.read(deckSfxProvider).playInsert());
-    await Future<void>.delayed(const Duration(milliseconds: 950));
+    await Future<void>.delayed(const Duration(milliseconds: 780));
     if (!ref.mounted) return;
     state = state.copyWith(power: VcrPower.playing);
   }
@@ -74,13 +76,14 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
   Future<void> eject() async {
     final sfx = ref.read(deckSfxProvider);
     unawaited(sfx.stopShuttle());
-    // Kick the clunk immediately — don't wait on deck teardown.
-    final ejectSound = sfx.playEject();
-    state = const VcrDeckState(power: VcrPower.ejecting);
     unawaited(ref.read(deckPlayerProvider).stop());
-    await ejectSound;
+    // Start the clunk, then fly out — don't wait for the whole clip.
+    await sfx.playEject();
     if (!ref.mounted) return;
-    // …then snow.
+    state = state.copyWith(power: VcrPower.ejecting);
+    await Future<void>.delayed(const Duration(milliseconds: 780));
+    if (!ref.mounted) return;
+    ref.read(flyingTapeIdProvider.notifier).set(null);
     state = const VcrDeckState();
   }
 

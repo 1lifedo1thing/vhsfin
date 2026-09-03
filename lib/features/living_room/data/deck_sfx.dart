@@ -20,12 +20,8 @@ class DeckSfx {
 
   Future<void> playInsert() => _playOneshot('sounds/vhs_insert.ogg');
 
-  /// Plays eject and completes when the clip ends (or after a short timeout).
-  Future<void> playEject() => _playOneshot(
-        'sounds/vhs_eject.ogg',
-        waitForCompletion: true,
-        fallbackMs: 2100,
-      );
+  /// Starts the eject clunk (does not wait for the clip to finish).
+  Future<void> playEject() => _playOneshot('sounds/vhs_eject.ogg');
 
   Future<void> startFastForward() => _playShuttle('sounds/vhs_ff.ogg');
 
