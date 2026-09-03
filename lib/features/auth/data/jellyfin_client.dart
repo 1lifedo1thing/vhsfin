@@ -187,6 +187,7 @@ class JellyfinClient {
         kind: TapeKind.episode,
         seriesId: seriesId,
         seriesTitle: resolvedSeries,
+        seasonNumber: season,
         libraryName: libraryName,
         productionYear: item['ProductionYear'] as int?,
         overview: _overview(item),

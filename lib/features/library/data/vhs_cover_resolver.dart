@@ -74,7 +74,7 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.spine_art.v8';
+  static const _cacheKey = 'vhsfin.spine_art.v10';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
@@ -83,14 +83,69 @@ class VhsCoverResolver {
 
   final Map<String, String> _memory = {};
 
+  /// Episodes remap to one `"Show Season N"` lookup so we don't stampede
+  /// VHSCollector / IA opening a long season. Year is cleared so every
+  /// episode in the season shares the cache entry.
+  static ({
+    String title,
+    int? year,
+    String? seriesTitle,
+    TapeKind kind,
+  }) lookupIdentity({
+    required String title,
+    int? year,
+    String? seriesTitle,
+    int? seasonNumber,
+    TapeKind kind = TapeKind.movie,
+  }) {
+    if (kind == TapeKind.episode) {
+      final show = seriesTitle?.trim();
+      if (show != null && show.isNotEmpty) {
+        if (seasonNumber != null) {
+          return (
+            title: 'Season $seasonNumber',
+            year: null,
+            seriesTitle: show,
+            kind: TapeKind.series,
+          );
+        }
+        return (
+          title: show,
+          year: null,
+          seriesTitle: null,
+          kind: TapeKind.series,
+        );
+      }
+    }
+    return (
+      title: title,
+      year: year,
+      seriesTitle: seriesTitle,
+      kind: kind,
+    );
+  }
+
   Future<VhsSpineArt?> spineArtFor({
     required String title,
     int? year,
     String? seriesTitle,
+    int? seasonNumber,
     TapeKind kind = TapeKind.movie,
   }) async {
-    // Movies past the VHS era are skipped; episodes/series still try —
-    // kids shows like VeggieTales often have per-episode VHS releases.
+    final id = lookupIdentity(
+      title: title,
+      year: year,
+      seriesTitle: seriesTitle,
+      seasonNumber: seasonNumber,
+      kind: kind,
+    );
+    title = id.title;
+    year = id.year;
+    seriesTitle = id.seriesTitle;
+    kind = id.kind;
+
+    // Movies past the VHS era are skipped; series still try — retail TV
+    // box sets often post-date 2005 airings.
     final relaxYear = kind == TapeKind.episode || kind == TapeKind.series;
     if (!relaxYear && year != null && year > vhsEraLastYear) {
       debugPrint('vhs-spine skip post-era "$title" ($year)');
@@ -141,12 +196,14 @@ class VhsCoverResolver {
     required String title,
     int? year,
     String? seriesTitle,
+    int? seasonNumber,
     TapeKind kind = TapeKind.movie,
   }) async {
     return (await spineArtFor(
       title: title,
       year: year,
       seriesTitle: seriesTitle,
+      seasonNumber: seasonNumber,
       kind: kind,
     ))
         ?.imageUrl;
@@ -158,9 +215,17 @@ class VhsCoverResolver {
     required String title,
     int? year,
     String? seriesTitle,
+    int? seasonNumber,
     TapeKind kind = TapeKind.movie,
   }) async {
-    final key = _key(title, year, seriesTitle, kind);
+    final id = lookupIdentity(
+      title: title,
+      year: year,
+      seriesTitle: seriesTitle,
+      seasonNumber: seasonNumber,
+      kind: kind,
+    );
+    final key = _key(id.title, id.year, id.seriesTitle, id.kind);
     final stored = jsonEncode({
       'miss': true,
       'at': DateTime.now().toUtc().toIso8601String(),
@@ -171,7 +236,9 @@ class VhsCoverResolver {
     final disk = _readDisk(prefs);
     disk[key] = stored;
     await prefs.setString(_cacheKey, jsonEncode(disk));
-    debugPrint('vhs-spine REJECT → miss "$title" ($year) kind=$kind');
+    debugPrint(
+      'vhs-spine REJECT → miss "${id.title}" (${id.year}) kind=${id.kind}',
+    );
   }
 
   /// Rejected sleeves stay missed longer than ordinary cache misses.
@@ -235,15 +302,16 @@ class VhsCoverResolver {
     if (cleaned.isEmpty) return null;
 
     final series = seriesTitle == null ? null : _normalizeTitle(seriesTitle);
+    // Prefer "Show Season N" before bare "Season N" (ambiguous / wasteful).
     final lookupTitles = <String>{
-      cleaned,
       if (series != null && series.isNotEmpty) ...[
         '$series $cleaned',
         '$series - $cleaned',
         '$series: $cleaned',
       ],
+      cleaned,
     };
-    // "VeggieTales - Dave and the Giant Pickle" → also try the bare episode.
+    // "Show - Episode Title" → also try the bare episode name.
     if (series != null &&
         cleaned.toLowerCase().startsWith(series.toLowerCase())) {
       final bare = cleaned
@@ -641,9 +709,10 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
 
 /// Resolves spine art for a tape: Jellyfin Box image first, else remote lookup.
 ///
-/// Auto-saves remote hits as Jellyfin `Box` for **movies only** — never for
-/// series/episodes (same-name film collisions like Arthur), and never
-/// overwrites an existing Box.
+/// Ordinary TV episodes reuse one season-level lookup (see
+/// [VhsCoverResolver.lookupIdentity]). Auto-saves remote hits as Jellyfin
+/// `Box` for **movies only** — never for series/episodes (same-name film
+/// collisions like Arthur), and never overwrites an existing Box.
 ///
 /// User rejections ([vhsArtRejectsProvider]) skip a bad Box tag and block the
 /// matched URL; the resolver title key is forced to a long-lived miss.
@@ -665,6 +734,7 @@ final vhsSpineArtProvider =
         title: tape.title,
         year: tape.productionYear,
         seriesTitle: tape.seriesTitle,
+        seasonNumber: tape.seasonNumber,
         kind: tape.kind,
       );
   if (art == null || tape.isDemo) return art;

@@ -103,7 +103,7 @@ class EpisodePickerSheet extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: Text(
-                      'Each episode is its own VHS — tap a spine for the art',
+                      'Tap a spine for the art',
                       style: TextStyle(
                         color: VhsColors.brand.withValues(alpha: 0.45),
                         fontSize: 12,

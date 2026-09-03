@@ -14,6 +14,7 @@ class Tape {
     this.kind = TapeKind.movie,
     this.seriesId,
     this.seriesTitle,
+    this.seasonNumber,
     this.libraryId,
     this.libraryName,
     this.productionYear,
@@ -37,8 +38,11 @@ class Tape {
   final TapeKind kind;
   final String? seriesId;
 
-  /// Parent series name — used to look up per-episode VHS releases.
+  /// Parent series name — used for season-level sleeve lookup on episodes.
   final String? seriesTitle;
+
+  /// Jellyfin season index (`ParentIndexNumber`) when [kind] is episode.
+  final int? seasonNumber;
   final String? libraryId;
   final String? libraryName;
   final int? productionYear;
@@ -71,6 +75,7 @@ class Tape {
     TapeKind? kind,
     String? seriesId,
     String? seriesTitle,
+    int? seasonNumber,
     String? libraryId,
     String? libraryName,
     int? productionYear,
@@ -92,6 +97,7 @@ class Tape {
       kind: kind ?? this.kind,
       seriesId: seriesId ?? this.seriesId,
       seriesTitle: seriesTitle ?? this.seriesTitle,
+      seasonNumber: seasonNumber ?? this.seasonNumber,
       libraryId: libraryId ?? this.libraryId,
       libraryName: libraryName ?? this.libraryName,
       productionYear: productionYear ?? this.productionYear,

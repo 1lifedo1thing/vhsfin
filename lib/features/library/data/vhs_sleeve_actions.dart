@@ -13,6 +13,7 @@ Future<void> rejectTapeSleeveArt(WidgetRef ref, Tape tape) async {
   if (art == null) return;
 
   final boxTag = boxTagFromUrl(tape.boxImageUrl);
+  final hadOwnBox = tape.hasBoxImage;
   await ref.read(vhsArtRejectsProvider.notifier).reject(
         tapeId: tape.id,
         imageUrl: art.imageUrl,
@@ -20,15 +21,21 @@ Future<void> rejectTapeSleeveArt(WidgetRef ref, Tape tape) async {
         boxTag: boxTag,
       );
 
-  await ref.read(vhsCoverResolverProvider).forceMiss(
-        title: tape.title,
-        year: tape.productionYear,
-        seriesTitle: tape.seriesTitle,
-        kind: tape.kind,
-      );
+  // Remapped TV episodes share a season-level cache key. Rejecting an episode's
+  // own Jellyfin Box must not mark the whole season as a miss.
+  final sharesSeasonLookup = tape.kind == TapeKind.episode;
+  if (!(hadOwnBox && sharesSeasonLookup)) {
+    await ref.read(vhsCoverResolverProvider).forceMiss(
+          title: tape.title,
+          year: tape.productionYear,
+          seriesTitle: tape.seriesTitle,
+          seasonNumber: tape.seasonNumber,
+          kind: tape.kind,
+        );
+  }
 
   final session = ref.read(sessionProvider);
-  if (session != null && tape.hasBoxImage) {
+  if (session != null && hadOwnBox) {
     await ref.read(jellyfinClientProvider).deleteBoxImage(
           session: session,
           itemId: tape.id,
