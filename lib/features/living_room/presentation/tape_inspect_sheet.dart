@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/data/vhs_sleeve_actions.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
@@ -14,8 +15,8 @@ Future<void> showTapeInspectSheet(
   required Tape tape,
   required VoidCallback onInsert,
 }) {
-  // Warm ImageCache with the *same* ResizeImage keys the shelf already used
-  // (sharedCacheHeight) so the popup spine doesn't re-decode from network.
+  // Warm memory with the same ResizeImage keys the shelf already used so the
+  // popup spine doesn't re-decode (disk cache still helps across launches).
   final container = ProviderScope.containerOf(context);
   final art = container.read(vhsSpineArtProvider(tape)).asData?.value;
   final images = <String>{
@@ -879,9 +880,10 @@ class _FrontArt extends StatelessWidget {
         ),
       );
     }
-    return Image.network(
-      url,
+    return VhsImageCache.image(
+      url: url,
       fit: BoxFit.cover,
+      memCacheHeight: null,
       errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF140E0A)),
     );
   }

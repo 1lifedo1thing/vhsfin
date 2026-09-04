@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Bookshelf VHS spine — real sleeve crop when IA has art, else procedural.
@@ -387,9 +388,9 @@ class VhsSleeveCrop extends StatelessWidget {
     this.alignment = Alignment.center,
   });
 
-  /// Decode height shared by shelf spines + inspect preview so [ImageCache]
-  /// hits instead of re-decoding when the popup opens taller than a shelf slot.
-  static const int sharedCacheHeight = 512;
+  /// Decode height shared by shelf spines + inspect preview so memory keys
+  /// match when the popup opens taller than a shelf slot.
+  static const int sharedCacheHeight = VhsImageCache.sharedDecodeHeight;
 
   final String url;
 
@@ -400,12 +401,9 @@ class VhsSleeveCrop extends StatelessWidget {
   /// centerRight ≈ front panel on a BACK|SPINE|FRONT wraparound).
   final Alignment alignment;
 
-  /// Same provider the [Image.network] widgets below use — for [precacheImage].
+  /// Same provider the widgets below use — for [precacheImage].
   static ImageProvider providerFor(String url) {
-    return ResizeImage(
-      NetworkImage(url),
-      height: sharedCacheHeight,
-    );
+    return VhsImageCache.provider(url);
   }
 
   @override
@@ -416,15 +414,13 @@ class VhsSleeveCrop extends StatelessWidget {
         final h = constraints.maxHeight;
         final fraction = widthFraction.clamp(0.02, 1.0);
         if (fraction >= 0.99) {
-          return Image.network(
-            url,
+          return VhsImageCache.image(
+            url: url,
             fit: BoxFit.fitHeight,
             width: w,
             height: h,
             alignment: Alignment.center,
-            cacheHeight: sharedCacheHeight,
             filterQuality: FilterQuality.medium,
-            errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black),
           );
         }
 
@@ -435,15 +431,12 @@ class VhsSleeveCrop extends StatelessWidget {
             heightFactor: 1,
             child: SizedBox(
               height: h,
-              child: Image.network(
-                url,
+              child: VhsImageCache.image(
+                url: url,
                 height: h,
                 fit: BoxFit.fitHeight,
                 alignment: Alignment.center,
-                cacheHeight: sharedCacheHeight,
                 filterQuality: FilterQuality.medium,
-                errorBuilder: (_, _, _) =>
-                    const ColoredBox(color: Colors.black),
               ),
             ),
           ),
@@ -472,10 +465,11 @@ class ProceduralVhsSpine extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (hasCover)
-          Image.network(
-            tape.imageUrl!,
+          VhsImageCache.image(
+            url: tape.imageUrl!,
             fit: BoxFit.cover,
             alignment: Alignment.center,
+            memCacheHeight: null,
             errorBuilder: (_, _, _) => ColoredBox(color: palette.shell),
           )
         else

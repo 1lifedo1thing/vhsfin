@@ -20,7 +20,7 @@ Future<void> showEpisodePicker(BuildContext context, {required Tape series}) {
 
 final seriesEpisodesProvider =
     FutureProvider.autoDispose.family<List<Tape>, Tape>((ref, series) async {
-  final session = ref.watch(sessionProvider);
+  final session = await ref.watch(sessionProvider.future);
   if (session == null) return const [];
   return ref.watch(jellyfinClientProvider).fetchEpisodes(
         session: session,

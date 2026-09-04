@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
+import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
@@ -120,7 +124,9 @@ class _ShelfBlock extends ConsumerWidget {
           _shelfBay(
             child: Center(
               child: Text(
-                shelf.id == 'empty'
+                shelf.id == 'connect'
+                    ? 'Connect to load your tapes'
+                    : shelf.id == 'empty'
                     ? 'Pick collections below'
                     : vhsOnly
                         ? 'No VHS titles on this shelf'
@@ -146,24 +152,27 @@ class _ShelfBlock extends ConsumerWidget {
                 rows.add(shelf.items.sublist(i, end));
               }
 
-              return Column(
-                children: [
-                  for (var r = 0; r < rows.length; r++) ...[
-                    if (r > 0) const SizedBox(height: 10),
-                    _shelfBay(
-                      child: _ShelfTapeRow(
-                        shelfId: shelf.id,
-                        rowIndex: r,
-                        tapes: rows[r],
-                        loadedId: loadedId,
-                        loadedSeriesId: loadedSeriesId,
-                        gap: _spineGap,
-                        onTap: (tape, instanceKey) =>
-                            _onTap(context, ref, tape, instanceKey),
+              return _ShelfArtReveal(
+                tapes: shelf.items,
+                child: Column(
+                  children: [
+                    for (var r = 0; r < rows.length; r++) ...[
+                      if (r > 0) const SizedBox(height: 10),
+                      _shelfBay(
+                        child: _ShelfTapeRow(
+                          shelfId: shelf.id,
+                          rowIndex: r,
+                          tapes: rows[r],
+                          loadedId: loadedId,
+                          loadedSeriesId: loadedSeriesId,
+                          gap: _spineGap,
+                          onTap: (tape, instanceKey) =>
+                              _onTap(context, ref, tape, instanceKey),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               );
             },
           ),
@@ -226,6 +235,163 @@ class _ShelfBlock extends ConsumerWidget {
       context,
       tape: tape,
       onInsert: () => ref.read(vcrDeckProvider.notifier).insertTape(tape),
+    );
+  }
+}
+
+/// Holds the shelf at opacity 0 until every tape's sleeve bytes are warmed,
+/// then fades the whole bay in together.
+class _ShelfArtReveal extends ConsumerStatefulWidget {
+  const _ShelfArtReveal({
+    required this.tapes,
+    required this.child,
+  });
+
+  final List<Tape> tapes;
+  final Widget child;
+
+  @override
+  ConsumerState<_ShelfArtReveal> createState() => _ShelfArtRevealState();
+}
+
+class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
+  static const _fade = Duration(milliseconds: 520);
+  static const _budget = Duration(seconds: 12);
+
+  var _visible = false;
+  String? _warmKey;
+  int _warmGen = 0;
+  Timer? _budgetTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleWarm();
+  }
+
+  @override
+  void dispose() {
+    _budgetTimer?.cancel();
+    _warmGen++;
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShelfArtReveal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_tapeKey(oldWidget.tapes) != _tapeKey(widget.tapes)) {
+      // Sync before the follow-up build so we never paint one frame of the
+      // previous (or next) shelf at full opacity.
+      _visible = false;
+      _budgetTimer?.cancel();
+      _budgetTimer = null;
+      _scheduleWarm();
+    }
+  }
+
+  String _tapeKey(List<Tape> tapes) => tapes.map((t) => t.id).join('|');
+
+  void _scheduleWarm() {
+    final key = _tapeKey(widget.tapes);
+    _warmKey = key;
+    final gen = ++_warmGen;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || gen != _warmGen) return;
+      _warm(key, gen);
+    });
+  }
+
+  Future<void> _warm(String key, int gen) async {
+    try {
+      await Future.any<void>([
+        _prefetch(widget.tapes),
+        _budgetGate(),
+      ]);
+    } catch (_) {
+      // Still reveal — procedural spines / errors shouldn't trap the bay.
+    } finally {
+      _budgetTimer?.cancel();
+      _budgetTimer = null;
+    }
+    if (!mounted || gen != _warmGen || _warmKey != key) return;
+    setState(() => _visible = true);
+  }
+
+  Future<void> _budgetGate() {
+    _budgetTimer?.cancel();
+    final gate = Completer<void>();
+    _budgetTimer = Timer(_budget, gate.complete);
+    return gate.future;
+  }
+
+  Future<void> _prefetch(List<Tape> tapes) async {
+    if (tapes.isEmpty) return;
+
+    final arts = await Future.wait(
+      tapes.map((tape) => ref.read(vhsSpineArtProvider(tape).future)),
+    );
+
+    final urls = <String>{};
+    for (var i = 0; i < tapes.length; i++) {
+      final art = arts[i];
+      if (art != null) {
+        urls.add(art.imageUrl);
+        final front = art.frontImageUrl;
+        if (front != null && front.isNotEmpty) urls.add(front);
+      } else {
+        final poster = tapes[i].imageUrl;
+        if (poster != null && poster.isNotEmpty) urls.add(poster);
+      }
+    }
+
+    if (!mounted || urls.isEmpty) return;
+
+    // One failure must not abort the rest — on web CORS/file-cache misses used
+    // to trip Future.wait and reveal a blank shelf while <img> loads continued.
+    await Future.wait(
+      urls.map((url) async {
+        try {
+          await VhsImageCache.warm(url, context: context);
+        } catch (error) {
+          debugPrint('vhs-art warm miss $url: $error');
+        }
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AnimatedOpacity(
+          opacity: _visible ? 1 : 0,
+          duration: _fade,
+          curve: Curves.easeOutCubic,
+          child: IgnorePointer(
+            ignoring: !_visible,
+            child: widget.child,
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: _visible,
+            child: AnimatedOpacity(
+              opacity: _visible ? 0 : 1,
+              duration: _fade,
+              curve: Curves.easeOutCubic,
+              child: const ColoredBox(
+                color: Color(0x66000000),
+                child: CrtLoadingIndicator(
+                  compact: true,
+                  style: CrtLoadStyle.tape,
+                  message: 'LOADING VHS ART',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

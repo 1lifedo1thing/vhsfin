@@ -33,7 +33,7 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(sessionProvider);
+    final session = ref.watch(sessionProvider).value;
     final stack = ref.watch(browseStackProvider);
     final childrenAsync = ref.watch(browseChildrenProvider);
     final selected = ref.watch(shelfSourcesProvider);

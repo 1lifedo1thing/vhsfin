@@ -34,7 +34,7 @@ Future<void> rejectTapeSleeveArt(WidgetRef ref, Tape tape) async {
         );
   }
 
-  final session = ref.read(sessionProvider);
+  final session = ref.read(sessionProvider).value;
   if (session != null && hadOwnBox) {
     await ref.read(jellyfinClientProvider).deleteBoxImage(
           session: session,

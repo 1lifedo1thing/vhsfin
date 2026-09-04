@@ -6,7 +6,15 @@ import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Minimal Jellyfin REST client — auth, views, shelves, streams.
 class JellyfinClient {
-  JellyfinClient({Dio? dio}) : _dio = dio ?? Dio();
+  JellyfinClient({Dio? dio})
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                connectTimeout: const Duration(seconds: 8),
+                receiveTimeout: const Duration(seconds: 20),
+                sendTimeout: const Duration(seconds: 20),
+              ),
+            );
 
   final Dio _dio;
   static const _appName = 'VHSFin';
@@ -279,7 +287,7 @@ class JellyfinClient {
     if (tags is! Map || tags['Box'] == null) return null;
     final tag = tags['Box'];
     return '${session.normalizedServerUrl}/Items/$itemId/Images/Box'
-        '?tag=$tag&maxHeight=1200&quality=90'
+        '?tag=$tag&maxHeight=900&quality=85'
         '&api_key=${session.accessToken}';
   }
 

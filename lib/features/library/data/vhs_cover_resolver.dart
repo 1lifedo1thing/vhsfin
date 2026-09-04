@@ -749,7 +749,7 @@ final vhsSpineArtProvider =
   // would otherwise keep resurrecting (Arthur PBS ← Arthur movie).
   if (tape.kind != TapeKind.movie) return art;
 
-  final session = ref.watch(sessionProvider);
+  final session = ref.watch(sessionProvider).value;
   if (session == null) return art;
 
   final client = ref.watch(jellyfinClientProvider);
@@ -763,7 +763,7 @@ final vhsSpineArtProvider =
     debugPrint('vhs-spine saved Box to Jellyfin for "${tape.title}"');
     return VhsSpineArt(
       imageUrl: '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
-          '?maxHeight=1200&quality=90&api_key=${session.accessToken}',
+          '?maxHeight=900&quality=85&api_key=${session.accessToken}',
       centerWidthFraction: art.centerWidthFraction,
     );
   }

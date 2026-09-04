@@ -14,7 +14,7 @@ class LivingRoomPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider);
+    final session = ref.watch(sessionProvider).value;
     final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
 
     return Scaffold(

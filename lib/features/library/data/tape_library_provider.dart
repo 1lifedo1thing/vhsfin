@@ -6,33 +6,31 @@ import 'package:vhsfin/features/auth/data/jellyfin_client.dart';
 import 'package:vhsfin/features/auth/model/session.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
-import 'package:vhsfin/features/library/model/tape.dart';
 
 final jellyfinClientProvider = Provider<JellyfinClient>((ref) {
   return JellyfinClient();
 });
 
 final sessionProvider =
-    NotifierProvider<SessionNotifier, JellyfinSession?>(SessionNotifier.new);
+    AsyncNotifierProvider<SessionNotifier, JellyfinSession?>(
+  SessionNotifier.new,
+);
 
-class SessionNotifier extends Notifier<JellyfinSession?> {
+class SessionNotifier extends AsyncNotifier<JellyfinSession?> {
   static const _key = 'vhsfin.session';
 
   @override
-  JellyfinSession? build() {
-    _restore();
-    return null;
-  }
-
-  Future<void> _restore() async {
+  Future<JellyfinSession?> build() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
-    if (raw == null) return;
+    if (raw == null) return null;
     try {
-      final json = jsonDecode(raw) as Map<String, dynamic>;
-      state = JellyfinSession.fromJson(json);
+      return JellyfinSession.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       await prefs.remove(_key);
+      return null;
     }
   }
 
@@ -49,18 +47,18 @@ class SessionNotifier extends Notifier<JellyfinSession?> {
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(session.toJson()));
-    state = session;
+    state = AsyncData(session);
   }
 
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
-    state = null;
+    state = const AsyncData(null);
   }
 }
 
 final librariesProvider = FutureProvider<List<LibraryNode>>((ref) async {
-  final session = ref.watch(sessionProvider);
+  final session = await ref.watch(sessionProvider.future);
   if (session == null) return const [];
   return ref.watch(jellyfinClientProvider).fetchLibraries(session);
 });
@@ -95,7 +93,7 @@ class BrowseStackNotifier extends Notifier<List<LibraryNode>> {
 
 final browseChildrenProvider =
     FutureProvider.autoDispose<List<LibraryNode>>((ref) async {
-  final session = ref.watch(sessionProvider);
+  final session = await ref.watch(sessionProvider.future);
   if (session == null) return const [];
 
   final stack = ref.watch(browseStackProvider);
@@ -202,10 +200,14 @@ class ShelfSourcesNotifier extends Notifier<List<ShelfSource>> {
 }
 
 final shelvesProvider = FutureProvider<List<Shelf>>((ref) async {
-  final session = ref.watch(sessionProvider);
+  final session = await ref.watch(sessionProvider.future);
   if (session == null) {
     return [
-      const Shelf(id: 'demo', title: 'Demo Reels', items: demoTapes),
+      const Shelf(
+        id: 'connect',
+        title: 'Jellyfin',
+        items: [],
+      ),
     ];
   }
 
