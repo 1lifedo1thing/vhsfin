@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ class VhsArtRejection {
     required this.tapeId,
     this.blockedUrls = const {},
     this.ignoredBoxTag,
+    this.suppressArt = true,
   });
 
   final String tapeId;
@@ -18,10 +20,16 @@ class VhsArtRejection {
   /// A newly uploaded correct Box (new tag) is allowed through.
   final String? ignoredBoxTag;
 
+  /// After "Wrong sleeve", never show remote/Box art for this tape — printed
+  /// spine only. URL/tag blocks alone are not enough: the same sleeve can
+  /// return under a collector URL after a Box is ignored.
+  final bool suppressArt;
+
   Map<String, dynamic> toJson() => {
         'id': tapeId,
         'urls': blockedUrls.toList(),
         if (ignoredBoxTag != null) 'boxTag': ignoredBoxTag,
+        'suppress': suppressArt,
       };
 
   factory VhsArtRejection.fromJson(Map<String, dynamic> json) {
@@ -34,6 +42,9 @@ class VhsArtRejection {
             if (u is String && u.isNotEmpty) normalizeArtUrl(u),
       },
       ignoredBoxTag: json['boxTag'] as String?,
+      // Older records omit `suppress` — any stored rejection still means
+      // the user rejected art for this tape.
+      suppressArt: json['suppress'] as bool? ?? true,
     );
   }
 
@@ -41,12 +52,14 @@ class VhsArtRejection {
     Set<String>? blockedUrls,
     String? ignoredBoxTag,
     bool clearIgnoredBoxTag = false,
+    bool? suppressArt,
   }) {
     return VhsArtRejection(
       tapeId: tapeId,
       blockedUrls: blockedUrls ?? this.blockedUrls,
       ignoredBoxTag:
           clearIgnoredBoxTag ? null : (ignoredBoxTag ?? this.ignoredBoxTag),
+      suppressArt: suppressArt ?? this.suppressArt,
     );
   }
 }
@@ -79,30 +92,40 @@ class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
   static const _key = 'vhsfin.spine_rejects.v1';
 
   int _epoch = 0;
+  Completer<void> _ready = Completer<void>();
+
+  /// Completes after the first prefs restore (or immediately if already done).
+  Future<void> get ready => _ready.future;
 
   @override
   Map<String, VhsArtRejection> build() {
+    _ready = Completer<void>();
     _restore();
     return const {};
   }
 
   Future<void> _restore() async {
     final epoch = _epoch;
-    final prefs = await SharedPreferences.getInstance();
-    if (epoch != _epoch) return;
-    final raw = prefs.getString(_key);
-    if (raw == null) return;
+    final ready = _ready;
     try {
-      final list = jsonDecode(raw) as List<dynamic>;
-      final map = <String, VhsArtRejection>{};
-      for (final entry in list) {
-        if (entry is! Map<String, dynamic>) continue;
-        final rejection = VhsArtRejection.fromJson(entry);
-        map[rejection.tapeId] = rejection;
+      final prefs = await SharedPreferences.getInstance();
+      if (epoch != _epoch) return;
+      final raw = prefs.getString(_key);
+      if (raw == null) return;
+      try {
+        final list = jsonDecode(raw) as List<dynamic>;
+        final map = <String, VhsArtRejection>{};
+        for (final entry in list) {
+          if (entry is! Map<String, dynamic>) continue;
+          final rejection = VhsArtRejection.fromJson(entry);
+          map[rejection.tapeId] = rejection;
+        }
+        state = map;
+      } catch (_) {
+        await prefs.remove(_key);
       }
-      state = map;
-    } catch (_) {
-      await prefs.remove(_key);
+    } finally {
+      if (!ready.isCompleted) ready.complete();
     }
   }
 
@@ -112,7 +135,8 @@ class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
     await prefs.setString(_key, jsonEncode(list));
   }
 
-  /// Record a mismatch: block this sleeve URL and optionally the current Box tag.
+  /// Record a mismatch: suppress all sleeve art for this tape, and remember
+  /// the bad URLs / Box tag so a resurrected Box with the same tag stays out.
   Future<void> reject({
     required String tapeId,
     required String imageUrl,
@@ -130,9 +154,16 @@ class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
           normalizeArtUrl(boxImageUrl),
       },
       ignoredBoxTag: boxTag ?? existing?.ignoredBoxTag,
+      suppressArt: true,
     );
     state = {...state, tapeId: next};
     await _persist();
+  }
+
+  /// User marked this tape's sleeve wrong — use the printed spine only.
+  bool shouldSuppressArt(String tapeId) {
+    final rejection = state[tapeId];
+    return rejection != null && rejection.suppressArt;
   }
 
   bool isUrlBlocked(String tapeId, String imageUrl) {
@@ -146,6 +177,7 @@ class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
     if (rejection == null || boxImageUrl == null || boxImageUrl.isEmpty) {
       return false;
     }
+    if (rejection.suppressArt) return true;
     if (rejection.blockedUrls.contains(normalizeArtUrl(boxImageUrl))) {
       return true;
     }

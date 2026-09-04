@@ -720,6 +720,13 @@ final vhsSpineArtProvider =
     FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
   final rejectsNotifier = ref.watch(vhsArtRejectsProvider.notifier);
   ref.watch(vhsArtRejectsProvider);
+  await rejectsNotifier.ready;
+
+  // "Wrong sleeve" — never resurrect via Box, season cache, or collector HIT.
+  if (rejectsNotifier.shouldSuppressArt(tape.id)) {
+    return null;
+  }
+
   final ignoreBox =
       rejectsNotifier.shouldIgnoreBox(tape.id, tape.boxImageUrl);
 
@@ -739,15 +746,19 @@ final vhsSpineArtProvider =
       );
   if (art == null || tape.isDemo) return art;
 
-  if (ref
-      .read(vhsArtRejectsProvider.notifier)
-      .isUrlBlocked(tape.id, art.imageUrl)) {
+  if (rejectsNotifier.isUrlBlocked(tape.id, art.imageUrl)) {
     return null;
   }
 
   // Don't write series/episode Box back to Jellyfin — a deleted wrong match
   // would otherwise keep resurrecting (Arthur PBS ← Arthur movie).
   if (tape.kind != TapeKind.movie) return art;
+
+  // Re-check after the await — a reject may have landed during lookup/save.
+  if (rejectsNotifier.shouldSuppressArt(tape.id) ||
+      rejectsNotifier.isUrlBlocked(tape.id, art.imageUrl)) {
+    return null;
+  }
 
   final session = ref.watch(sessionProvider).value;
   if (session == null) return art;
@@ -760,6 +771,11 @@ final vhsSpineArtProvider =
     imageUrl: art.imageUrl,
   );
   if (saved) {
+    if (rejectsNotifier.shouldSuppressArt(tape.id)) {
+      // Race: user rejected while the upload was in flight — drop the Box.
+      await client.deleteBoxImage(session: session, itemId: tape.id);
+      return null;
+    }
     debugPrint('vhs-spine saved Box to Jellyfin for "${tape.title}"');
     return VhsSpineArt(
       imageUrl: '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'

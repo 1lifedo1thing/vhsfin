@@ -62,6 +62,18 @@ class VhsImageCache {
     await precacheImage(provider(url), context);
   }
 
+  /// Drop memory + disk copies after a sleeve is marked wrong.
+  static Future<void> evict(String url) async {
+    await CachedNetworkImage.evictFromCache(
+      url,
+      cacheManager: manager,
+    );
+    imageCache.evict(provider(url));
+    try {
+      await manager.removeFile(url);
+    } catch (_) {}
+  }
+
   static Widget image({
     required String url,
     BoxFit fit = BoxFit.fitHeight,

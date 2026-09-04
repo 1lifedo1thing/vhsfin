@@ -3,6 +3,7 @@ import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/data/vhs_art_rejects.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Reject the sleeve currently shown for [tape] — local blacklist + optional
@@ -40,6 +41,12 @@ Future<void> rejectTapeSleeveArt(WidgetRef ref, Tape tape) async {
           session: session,
           itemId: tape.id,
         );
+  }
+
+  // Drop decoded/disk copies so a later URL reuse doesn't flash the old sleeve.
+  await VhsImageCache.evict(art.imageUrl);
+  if (tape.boxImageUrl != null && tape.boxImageUrl!.isNotEmpty) {
+    await VhsImageCache.evict(tape.boxImageUrl!);
   }
 
   ref.read(vhsArtIndexProvider.notifier).mark(tape.id, hasVhsArt: false);
