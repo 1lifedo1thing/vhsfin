@@ -1,6 +1,10 @@
 # VHSFin
 
-Bare-bones Jellyfin client for kids. Living-room VCR up top (static when idle), pull a VHS spine off the shelf, watch it slide in and play with a CRT/VHS look. Tap the deck for clean fullscreen.
+Bare-bones Jellyfin client for kids — living-room VCR up top (static when idle), pull a VHS spine off the shelf, watch it slide in and play with a CRT/VHS look. Tap the deck for clean fullscreen.
+
+> **WIP / open-source ready:** usable core loop works; polish and edge cases are still evolving. Issues and PRs welcome.
+
+Screenshots: drop a still or GIF at [`docs/screenshots/living-room.png`](docs/screenshots/) (or `.gif`) when you have a capture of the living room.
 
 ## Run
 
@@ -9,34 +13,67 @@ flutter pub get
 flutter run -d chrome    # or macos / android / ios
 ```
 
+Web release with Internet Archive proxy:
+
+```bash
+make web                 # build + serve on :8080
+```
+
 ## Flow
 
 1. Open app → CRT shows static (standby).
 2. **CONNECT** to Jellyfin, then **SHELVES** to pick which libraries appear (e.g. kids movies only).
-3. Each library is a horizontal bookshelf of **spines**. Movies play on tap; TV shows expand an episode shelf underneath.
-4. Insert animation → VHS-style playback in the bezel; **FULL** for clean fullscreen.
+3. First time with titles on the shelves, a **VHS art grab** popup runs (progress bar + poster count).
+4. Each library is a horizontal bookshelf of **spines**. Movies play on tap; TV shows expand an episode shelf underneath.
+5. Insert animation → VHS-style playback in the bezel; **FULL** for clean fullscreen.
+6. Hold **REW** for a CRT fast-rewind look; optional **Save on eject** remembers position per tape.
 
-## Layout
+## Architecture sketch
 
 ```
 lib/
 ├── data/repositories/     # Shared API clients (Jellyfin)
 ├── features/
 │   ├── auth/              # Connect + session
-│   ├── library/           # Shelves, cover art, collection picker
-│   ├── living_room/       # VCR, bookshelf, spines, remote
-│   └── playback/          # Clean fullscreen player
+│   ├── library/           # Shelves, cover art, collection picker, art onboarding
+│   ├── living_room/       # VCR, bookshelf, spines, remote, experience prefs
+│   └── playback/          # Clean fullscreen + shared deck player
 └── router/
 ```
 
-Feature folders follow page / `state/` / `views/` / `widgets/` where it helps. Prefer specific props and callbacks on widgets; keep pages as thin coordinators.
+Feature folders follow **page / `state/` / `views/` / `widgets/`**:
+
+- **Pages** coordinate Riverpod and pass props/callbacks.
+- **Views & widgets** have **no Riverpod** — props and callbacks only.
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+## Features (current)
+
+- Jellyfin auth + multi-shelf collection picker
+- Living-room VCR with insert/eject flight + SFX
+- CRT glass overlay and fast-rewind visual
+- VHS sleeve art lookup (Internet Archive), disk cache, wrong-sleeve reject
+- First-time art-grab onboarding (progress + found count)
+- Deck settings: VHS-only filter, sort, save timestamp on eject, replay art grab
+- Desktop-friendly wide layouts (max widths, larger hit targets)
+
+## Demo the art-grab onboarding
+
+Without wiping the whole app:
+
+1. In the living room, open **DECK SETTINGS**.
+2. Tap **REPLAY ART GRAB** — clears the onboarding flag and re-runs the warm pass with the popup.
+3. Or from a terminal: `make demo-onboarding` (prints the same steps + prefs key).
+
+Prefs key: `vhsfin.art_onboarding_done.v1`
 
 ## Cover art
 
 - Spines are procedural (plastic color + vertical title from metadata).
-- Best-effort **Internet Archive** VHS cover lookup (`advancedsearch` + `services/img/{id}`), cached in SharedPreferences.
+- Best-effort **Internet Archive** VHS cover lookup, cached on disk / SharedPreferences.
 - Falls back to Jellyfin primary art as a spine stripe.
-- **VHSCollector** has no public API — skipped for now (would need scraping or a manual mapping).
+- **VHSCollector** has no public API — skipped for now.
 
 ## Scope (intentionally tiny)
 
