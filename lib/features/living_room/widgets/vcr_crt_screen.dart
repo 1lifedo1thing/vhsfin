@@ -3,6 +3,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_glass_overlay.dart';
+import 'package:vhsfin/features/living_room/widgets/crt_rewind_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
 import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
@@ -16,6 +17,8 @@ class VcrCrtScreen extends StatefulWidget {
     required this.player,
     required this.surfaceEpoch,
     this.tape,
+    this.resumeAt,
+    this.rewinding = false,
   });
 
   final VcrPower power;
@@ -23,6 +26,8 @@ class VcrCrtScreen extends StatefulWidget {
   final Tape? tape;
   final DeckPlayerController player;
   final int surfaceEpoch;
+  final Duration? resumeAt;
+  final bool rewinding;
 
   @override
   State<VcrCrtScreen> createState() => _VcrCrtScreenState();
@@ -81,14 +86,22 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
         _insertController.value = 0;
       case VcrPower.inserting:
         if (tape != null && tape.streamUrl.isNotEmpty) {
-          await deck.load(tape.streamUrl, play: false);
+          await deck.load(
+            tape.streamUrl,
+            play: false,
+            seekTo: widget.resumeAt,
+          );
         }
         if (!mounted || gen != _syncGen) return;
         await _insertController.forward(from: 0);
       case VcrPower.playing:
         _insertController.value = 1;
         if (tape == null || tape.streamUrl.isEmpty) return;
-        await deck.load(tape.streamUrl, play: true);
+        await deck.load(
+          tape.streamUrl,
+          play: true,
+          seekTo: widget.resumeAt,
+        );
     }
   }
 
@@ -133,6 +146,8 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
             if (widget.power == VcrPower.playing &&
                 widget.style == PlaybackStyle.vhsCrt)
               const CrtGlassOverlay(),
+            if (widget.rewinding && widget.power == VcrPower.playing)
+              const CrtRewindOverlay(),
             IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
