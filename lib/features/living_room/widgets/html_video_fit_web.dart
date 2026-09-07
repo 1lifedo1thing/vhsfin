@@ -5,8 +5,10 @@ import 'dart:js_interop_unsafe';
 import 'package:media_kit/media_kit.dart';
 import 'package:web/web.dart' as web;
 
-/// Force letterboxing on the real DOM <video> — Flutter's BoxFit / FittedBox
-/// are ignored by HtmlElementView on web (platform views size independently).
+/// Force the real DOM <video> to fill CRT **height** inside the 4:3 frame.
+///
+/// Flutter's BoxFit / FittedBox are ignored by HtmlElementView on web
+/// (platform views size independently).
 Future<void> applyHtmlVideoObjectFitContain(Player player) async {
   _ensureGlobalContainStyle();
   try {
@@ -36,18 +38,19 @@ Future<void> applyHtmlVideoObjectFitContain(Player player) async {
 }
 
 void _styleVideo(web.HTMLVideoElement video) {
-  // cssText wins over piecemeal sets Flutter may overwrite next frame.
+  // Fill the CRT box height; crop sides for widescreen, pillarbox if narrower.
+  // object-fit: cover in a 4:3 frame ≈ fitHeight for typical 16:9 streams.
   video.style.cssText = [
     'width: 100%',
     'height: 100%',
     'max-width: 100%',
     'max-height: 100%',
-    'object-fit: contain !important',
+    'object-fit: cover !important',
     'object-position: center center',
     'background-color: #000000',
     'border: none',
   ].join(';');
-  video.style.setProperty('object-fit', 'contain', 'important');
+  video.style.setProperty('object-fit', 'cover', 'important');
 }
 
 var _injectedStyle = false;
@@ -55,12 +58,14 @@ var _injectedStyle = false;
 void _ensureGlobalContainStyle() {
   if (_injectedStyle) return;
   _injectedStyle = true;
-  final style = web.HTMLStyleElement()..id = 'vhsfin-video-contain';
+  final style = web.HTMLStyleElement()..id = 'vhsfin-video-fit-height';
   style.textContent = '''
 video,
 flt-platform-view video,
 flt-semantics video {
-  object-fit: contain !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
   object-position: center center !important;
   background-color: #000 !important;
 }

@@ -6,10 +6,11 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
 
-/// CRT video that letterboxes inside a 4:3 frame.
+/// CRT video inside a 4:3 frame — fills the screen **height**, pillarboxing
+/// narrower content or cropping wider (16:9) on the sides.
 ///
-/// On web, Flutter layout/`BoxFit` cannot letterbox HtmlElementView — the real
-/// DOM `<video>` must use `object-fit: contain` while filling the CRT.
+/// On web, Flutter layout/`BoxFit` cannot size HtmlElementView — the real
+/// DOM `<video>` must use height-filling object-fit while filling the CRT.
 class LetterboxedVideo extends StatefulWidget {
   const LetterboxedVideo({
     super.key,
@@ -56,17 +57,21 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
 
   @override
   Widget build(BuildContext context) {
-    // Web: fill the 4:3 CRT; browser letterboxes via object-fit:contain.
-    // Native: FittedBox/BoxFit.contain works — still fill parent.
+    // Fill the 4:3 CRT box; fitHeight matches screen height (pillarbox / side crop).
     return ColoredBox(
       color: Colors.black,
       child: Opacity(
         opacity: widget.opacity,
-        child: Video(
-          controller: widget.controller,
-          controls: NoVideoControls,
-          fill: Colors.black,
-          fit: BoxFit.contain,
+        child: SizedBox.expand(
+          child: ClipRect(
+            child: Video(
+              controller: widget.controller,
+              controls: NoVideoControls,
+              fill: Colors.black,
+              fit: BoxFit.fitHeight,
+              alignment: Alignment.center,
+            ),
+          ),
         ),
       ),
     );
