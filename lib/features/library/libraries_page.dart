@@ -5,6 +5,7 @@ import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
 import 'package:vhsfin/features/library/views/libraries_view.dart';
+import 'package:vhsfin/user_facing_error.dart';
 
 /// Drill into libraries → folders → toggle multiple collections onto shelves.
 class LibrariesPage extends ConsumerStatefulWidget {
@@ -54,7 +55,9 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
       breadcrumb: breadcrumb,
       selected: selected,
       childrenLoading: childrenAsync.isLoading && !childrenAsync.hasValue,
-      childrenError: childrenAsync.hasError ? '${childrenAsync.error}' : null,
+      childrenError: childrenAsync.hasError
+          ? userFacingError(childrenAsync.error)
+          : null,
       children: childrenAsync.asData?.value,
       currentName: current?.name,
       currentSelected: currentSelected,

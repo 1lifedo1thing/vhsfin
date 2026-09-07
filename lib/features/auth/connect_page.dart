@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/auth/views/connect_view.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
+import 'package:vhsfin/user_facing_error.dart';
 
 class ConnectPage extends ConsumerStatefulWidget {
   const ConnectPage({super.key});
@@ -42,7 +43,7 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
       ref.invalidate(librariesProvider);
       if (mounted) context.go('/');
     } catch (error) {
-      setState(() => _error = error.toString());
+      setState(() => _error = userFacingError(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

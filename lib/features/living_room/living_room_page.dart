@@ -20,6 +20,7 @@ import 'package:vhsfin/features/living_room/widgets/episode_picker_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_remote.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
+import 'package:vhsfin/user_facing_error.dart';
 
 class LivingRoomPage extends ConsumerWidget {
   const LivingRoomPage({super.key});
@@ -109,7 +110,9 @@ class LivingRoomPage extends ConsumerWidget {
       flightSourceKey: flightSourceKey,
       slotArt: slotArt,
       shelvesLoading: shelvesAsync.isLoading && !shelvesAsync.hasValue,
-      shelvesError: shelvesAsync.hasError ? '${shelvesAsync.error}' : null,
+      shelvesError: shelvesAsync.hasError
+          ? userFacingError(shelvesAsync.error)
+          : null,
       shelves: filteredShelves,
       vhsOnly: displayPrefs.vhsOnly,
       connected: session != null,

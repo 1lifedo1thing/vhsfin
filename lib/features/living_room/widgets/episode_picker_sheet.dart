@@ -5,6 +5,7 @@ import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
+import 'package:vhsfin/user_facing_error.dart';
 
 /// VCR-themed episode catalog for a TV series box set.
 Future<void> showEpisodePicker(
@@ -87,7 +88,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error.toString();
+        _error = userFacingError(error);
         _busy = false;
       });
     }
