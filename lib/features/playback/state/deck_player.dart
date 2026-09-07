@@ -6,6 +6,12 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 enum DeckShuttle { idle, rewind, fastForward }
 
+/// Who may mount a [Video] on the shared deck controller.
+///
+/// Exactly one surface at a time — two [Video]s on one controller blanks the
+/// web texture (audio keeps going). Use [none] while transferring ownership.
+enum DeckSurfaceOwner { none, crt, fullscreen }
+
 /// One shared deck player for the CRT bezel and fullscreen.
 ///
 /// Only one [Video] should bind to [controller] at a time — hide the CRT
@@ -16,6 +22,7 @@ class DeckPlayerController {
   String? _loadedUrl;
   Timer? _shuttleTimer;
   var _surfaceEpoch = 0;
+  var _surfaceOwner = DeckSurfaceOwner.crt;
   DeckShuttle _shuttle = DeckShuttle.idle;
   void Function(int epoch)? onSurfaceChanged;
   void Function(DeckShuttle shuttle)? onShuttleChanged;
@@ -24,6 +31,7 @@ class DeckPlayerController {
   VideoController? get controllerOrNull => _controller;
   String? get loadedUrl => _loadedUrl;
   int get surfaceEpoch => _surfaceEpoch;
+  DeckSurfaceOwner get surfaceOwner => _surfaceOwner;
   DeckShuttle get shuttle => _shuttle;
   Duration get position =>
       _player?.state.position ?? Duration.zero;
@@ -49,13 +57,22 @@ class DeckPlayerController {
     _controller = VideoController(_player!);
   }
 
+  /// Drop ownership so every [Video] unmounts before a transfer.
+  void releaseSurface() {
+    if (_surfaceOwner == DeckSurfaceOwner.none) return;
+    _surfaceOwner = DeckSurfaceOwner.none;
+    onSurfaceChanged?.call(_surfaceEpoch);
+  }
+
   /// Fresh video surface after fullscreen — web loses the old texture otherwise.
   ///
-  /// Call only after the fullscreen [Video] has been disposed (no second
-  /// [Video] mounted yet). Then bump [surfaceEpoch] so the CRT remounts.
-  void reattachSurface() {
-    if (_player == null) return;
+  /// Call only after every [Video] has been disposed (owner [none]). Then bump
+  /// [surfaceEpoch] so the CRT remounts on a new [VideoController].
+  void reattachSurface(DeckSurfaceOwner owner) {
+    assert(owner != DeckSurfaceOwner.none, 'reattach needs a real owner');
+    _ensure();
     _controller = VideoController(_player!);
+    _surfaceOwner = owner;
     _surfaceEpoch++;
     onSurfaceChanged?.call(_surfaceEpoch);
   }
@@ -158,6 +175,18 @@ class DeckSurfaceEpochNotifier extends Notifier<int> {
   void bump(int epoch) => state = epoch;
 }
 
+final deckSurfaceOwnerProvider =
+    NotifierProvider<DeckSurfaceOwnerNotifier, DeckSurfaceOwner>(
+  DeckSurfaceOwnerNotifier.new,
+);
+
+class DeckSurfaceOwnerNotifier extends Notifier<DeckSurfaceOwner> {
+  @override
+  DeckSurfaceOwner build() => DeckSurfaceOwner.crt;
+
+  void set(DeckSurfaceOwner owner) => state = owner;
+}
+
 final deckShuttleProvider =
     NotifierProvider<DeckShuttleNotifier, DeckShuttle>(DeckShuttleNotifier.new);
 
@@ -172,6 +201,7 @@ final deckPlayerProvider = Provider<DeckPlayerController>((ref) {
   final deck = DeckPlayerController();
   deck.onSurfaceChanged = (epoch) {
     ref.read(deckSurfaceEpochProvider.notifier).bump(epoch);
+    ref.read(deckSurfaceOwnerProvider.notifier).set(deck.surfaceOwner);
   };
   deck.onShuttleChanged = (shuttle) {
     ref.read(deckShuttleProvider.notifier).set(shuttle);

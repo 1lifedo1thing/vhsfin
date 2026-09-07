@@ -16,6 +16,7 @@ class VcrCrtScreen extends StatefulWidget {
     required this.style,
     required this.player,
     required this.surfaceEpoch,
+    required this.surfaceOwner,
     this.tape,
     this.resumeAt,
     this.rewinding = false,
@@ -26,6 +27,7 @@ class VcrCrtScreen extends StatefulWidget {
   final Tape? tape;
   final DeckPlayerController player;
   final int surfaceEpoch;
+  final DeckSurfaceOwner surfaceOwner;
   final Duration? resumeAt;
   final bool rewinding;
 
@@ -63,11 +65,17 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
       _syncPlayback();
     }
     // Coming back from fullscreen — CRT just remounted; nudge play after paint.
-    if (oldWidget.style == PlaybackStyle.cleanFullscreen &&
-        widget.style == PlaybackStyle.vhsCrt &&
-        widget.power == VcrPower.playing) {
+    final regainedSurface =
+        oldWidget.surfaceOwner != DeckSurfaceOwner.crt &&
+            widget.surfaceOwner == DeckSurfaceOwner.crt;
+    final leftFullscreen = oldWidget.style == PlaybackStyle.cleanFullscreen &&
+        widget.style == PlaybackStyle.vhsCrt;
+    if ((regainedSurface || leftFullscreen) &&
+        widget.power == VcrPower.playing &&
+        widget.surfaceOwner == DeckSurfaceOwner.crt) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
+        if (widget.surfaceOwner != DeckSurfaceOwner.crt) return;
         await widget.player.play();
       });
     }
@@ -115,8 +123,9 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
   Widget build(BuildContext context) {
     final deck = widget.player;
     final surfaceEpoch = widget.surfaceEpoch;
-    // Don't bind a second Video while fullscreen owns the surface.
-    final showVideo = widget.style != PlaybackStyle.cleanFullscreen &&
+    // Don't bind a second Video while fullscreen (or nobody) owns the surface.
+    final showVideo = widget.surfaceOwner == DeckSurfaceOwner.crt &&
+        widget.style != PlaybackStyle.cleanFullscreen &&
         (widget.power == VcrPower.playing ||
             (widget.power == VcrPower.inserting && widget.tape != null));
     final controller = deck.controllerOrNull;

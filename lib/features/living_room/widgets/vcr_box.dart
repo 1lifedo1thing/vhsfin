@@ -14,6 +14,7 @@ class VcrBox extends StatelessWidget {
     required this.deck,
     required this.player,
     required this.surfaceEpoch,
+    required this.surfaceOwner,
     required this.slotKey,
     required this.flyingTapeId,
     required this.slotArt,
@@ -30,6 +31,7 @@ class VcrBox extends StatelessWidget {
   final VcrDeckState deck;
   final DeckPlayerController player;
   final int surfaceEpoch;
+  final DeckSurfaceOwner surfaceOwner;
   final GlobalKey slotKey;
   final String? flyingTapeId;
   final VhsSpineArt? slotArt;
@@ -150,6 +152,7 @@ class VcrBox extends StatelessWidget {
                 tape: deck.loadedTape,
                 player: player,
                 surfaceEpoch: surfaceEpoch,
+                surfaceOwner: surfaceOwner,
                 resumeAt: deck.resumeAt,
                 rewinding: rewinding,
               ),

@@ -21,6 +21,7 @@ class LivingRoomView extends StatelessWidget {
     required this.deck,
     required this.player,
     required this.surfaceEpoch,
+    required this.surfaceOwner,
     required this.flightAnchors,
     required this.flyingTapeId,
     required this.flightSourceKey,
@@ -61,6 +62,7 @@ class LivingRoomView extends StatelessWidget {
   final VcrDeckState deck;
   final DeckPlayerController player;
   final int surfaceEpoch;
+  final DeckSurfaceOwner surfaceOwner;
   final TapeFlightAnchors flightAnchors;
   final String? flyingTapeId;
   final String? flightSourceKey;
@@ -142,6 +144,7 @@ class LivingRoomView extends StatelessWidget {
                             deck: deck,
                             player: player,
                             surfaceEpoch: surfaceEpoch,
+                            surfaceOwner: surfaceOwner,
                             slotKey: flightAnchors.slotKey,
                             flyingTapeId: flyingTapeId,
                             slotArt: slotArt,

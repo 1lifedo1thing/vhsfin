@@ -8,13 +8,13 @@ class CleanPlayerView extends StatelessWidget {
     super.key,
     required this.title,
     required this.surfaceEpoch,
-    required this.controller,
     required this.onBack,
+    this.controller,
   });
 
   final String title;
   final int surfaceEpoch;
-  final VideoController controller;
+  final VideoController? controller;
   final VoidCallback onBack;
 
   @override
@@ -24,12 +24,15 @@ class CleanPlayerView extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Video(
-            key: ValueKey('full-$surfaceEpoch'),
-            controller: controller,
-            fit: BoxFit.contain,
-            fill: Colors.black,
-          ),
+          if (controller != null)
+            Video(
+              key: ValueKey('full-$surfaceEpoch'),
+              controller: controller!,
+              fit: BoxFit.contain,
+              fill: Colors.black,
+            )
+          else
+            const ColoredBox(color: Colors.black),
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,
