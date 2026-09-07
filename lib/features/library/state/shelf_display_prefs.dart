@@ -1,9 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vhsfin/features/library/state/tape_library.dart';
-import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 enum ShelfSortMode {
@@ -180,29 +176,4 @@ List<Tape> applyShelfDisplayPrefs(
   }
   return out;
 }
-
-/// Resolve sleeve art for every shelf tape so VHS-only filtering isn't limited
-/// to currently mounted spines.
-final vhsArtWarmProvider = FutureProvider.autoDispose<void>((ref) async {
-  final shelves = await ref.watch(shelvesProvider.future);
-  final tapes = shelves.expand((s) => s.items).toList();
-  final index = ref.read(vhsArtIndexProvider.notifier);
-  index.seedFromTapes(tapes);
-
-  // Bound concurrency so we don't stampede VHSCollector / the IA proxy.
-  const chunk = 8;
-  for (var i = 0; i < tapes.length; i += chunk) {
-    final slice = tapes.sublist(i, math.min(i + chunk, tapes.length));
-    final batch = <String, bool>{};
-    await Future.wait(slice.map((tape) async {
-      try {
-        final art = await ref.read(vhsSpineArtProvider(tape).future);
-        batch[tape.id] = art != null || tape.hasBoxImage || tape.isDemo;
-      } catch (_) {
-        batch[tape.id] = tape.hasBoxImage || tape.isDemo;
-      }
-    }));
-    index.markMany(batch);
-  }
-});
 
