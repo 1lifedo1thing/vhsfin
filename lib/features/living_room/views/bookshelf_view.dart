@@ -1,89 +1,72 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
-import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/living_room/presentation/crt_loading_indicator.dart';
-import 'package:vhsfin/features/living_room/presentation/episode_picker_sheet.dart';
-import 'package:vhsfin/features/living_room/presentation/tape_inspect_sheet.dart';
-import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
+import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
+import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
-class BookshelfView extends ConsumerWidget {
-  const BookshelfView({super.key, this.embedded = false});
+/// Bookshelf content — props only; page owns Riverpod.
+class BookshelfView extends StatelessWidget {
+  const BookshelfView({
+    super.key,
+    required this.shelves,
+    required this.loadedId,
+    required this.loadedSeriesId,
+    required this.vhsOnly,
+    required this.flightAnchors,
+    required this.flyingTapeId,
+    required this.flightSourceKey,
+    required this.resolveSpineArt,
+    required this.onTapeTap,
+    this.embedded = false,
+  });
 
   /// When true, sits inside the wooden entertainment center.
   final bool embedded;
+  final List<Shelf> shelves;
+  final String? loadedId;
+  final String? loadedSeriesId;
+  final bool vhsOnly;
+  final TapeFlightAnchors flightAnchors;
+  final String? flyingTapeId;
+  final String? flightSourceKey;
+  final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
+  final void Function(Tape tape, String instanceKey) onTapeTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final shelvesAsync = ref.watch(shelvesProvider);
-    final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
-    // Art-index warm only matters for VHS-only filtering — skip the extra
-    // rebuild storm while browsing the full shelf.
-    final vhsArtIds = displayPrefs.vhsOnly
-        ? ref.watch(vhsArtIndexProvider)
-        : const <String>{};
-    if (displayPrefs.vhsOnly) {
-      ref.watch(vhsArtWarmProvider);
+  Widget build(BuildContext context) {
+    if (shelves.isEmpty) {
+      return const Text('No tapes on these shelves yet.');
     }
-    final loadedId = ref.watch(vcrDeckProvider).loadedTape?.id;
-    final loadedSeriesId = ref.watch(vcrDeckProvider).loadedTape?.seriesId;
-
-    return shelvesAsync.when(
-      // Keep prior shelves visible while refreshing so episode picks don't
-      // blank the console with a spinner.
-      skipLoadingOnReload: true,
-      loading: () => const SizedBox(
-        height: 180,
-        child: CrtLoadingIndicator(
-          compact: true,
-          style: CrtLoadStyle.tape,
-          message: 'STAND BY',
-        ),
-      ),
-      error: (error, _) => Text('Could not load shelves: $error'),
-      data: (shelves) {
-        if (shelves.isEmpty) {
-          return const Text('No tapes on these shelves yet.');
-        }
-        return Column(
-          children: [
-            for (var i = 0; i < shelves.length; i++) ...[
-              if (i > 0) const SizedBox(height: 14),
-              _ShelfBlock(
-                shelf: Shelf(
-                  id: shelves[i].id,
-                  title: shelves[i].title,
-                  items: applyShelfDisplayPrefs(
-                    shelves[i].items,
-                    displayPrefs,
-                    vhsArtIds: vhsArtIds,
-                  ),
-                  parentSeriesId: shelves[i].parentSeriesId,
-                ),
-                loadedId: loadedId,
-                loadedSeriesId: loadedSeriesId,
-                embedded: embedded,
-                showTitle: !embedded || shelves.length > 1,
-                vhsOnly: displayPrefs.vhsOnly,
-              ),
-            ],
-          ],
-        );
-      },
+    return Column(
+      children: [
+        for (var i = 0; i < shelves.length; i++) ...[
+          if (i > 0) const SizedBox(height: 14),
+          _ShelfBlock(
+            shelf: shelves[i],
+            loadedId: loadedId,
+            loadedSeriesId: loadedSeriesId,
+            embedded: embedded,
+            showTitle: !embedded || shelves.length > 1,
+            vhsOnly: vhsOnly,
+            flightAnchors: flightAnchors,
+            flyingTapeId: flyingTapeId,
+            flightSourceKey: flightSourceKey,
+            resolveSpineArt: resolveSpineArt,
+            onTapeTap: onTapeTap,
+          ),
+        ],
+      ],
     );
   }
 }
 
-class _ShelfBlock extends ConsumerWidget {
+class _ShelfBlock extends StatelessWidget {
   const _ShelfBlock({
     required this.shelf,
     required this.loadedId,
@@ -91,6 +74,11 @@ class _ShelfBlock extends ConsumerWidget {
     required this.embedded,
     required this.showTitle,
     required this.vhsOnly,
+    required this.flightAnchors,
+    required this.flyingTapeId,
+    required this.flightSourceKey,
+    required this.resolveSpineArt,
+    required this.onTapeTap,
   });
 
   final Shelf shelf;
@@ -99,6 +87,11 @@ class _ShelfBlock extends ConsumerWidget {
   final bool embedded;
   final bool showTitle;
   final bool vhsOnly;
+  final TapeFlightAnchors flightAnchors;
+  final String? flyingTapeId;
+  final String? flightSourceKey;
+  final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
+  final void Function(Tape tape, String instanceKey) onTapeTap;
 
   /// Pack at upright spine thickness + a hair of air between tapes.
   static const _spineGap = 2.0;
@@ -108,7 +101,7 @@ class _ShelfBlock extends ConsumerWidget {
   static const _lipHeight = 8.0;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -154,7 +147,8 @@ class _ShelfBlock extends ConsumerWidget {
 
               return _ShelfArtReveal(
                 tapes: shelf.items,
-                child: Column(
+                resolveSpineArt: resolveSpineArt,
+                builder: (arts) => Column(
                   children: [
                     for (var r = 0; r < rows.length; r++) ...[
                       if (r > 0) const SizedBox(height: 10),
@@ -163,11 +157,14 @@ class _ShelfBlock extends ConsumerWidget {
                           shelfId: shelf.id,
                           rowIndex: r,
                           tapes: rows[r],
+                          arts: arts,
                           loadedId: loadedId,
                           loadedSeriesId: loadedSeriesId,
                           gap: _spineGap,
-                          onTap: (tape, instanceKey) =>
-                              _onTap(context, ref, tape, instanceKey),
+                          flightAnchors: flightAnchors,
+                          flyingTapeId: flyingTapeId,
+                          flightSourceKey: flightSourceKey,
+                          onTap: onTapeTap,
                         ),
                       ),
                     ],
@@ -219,42 +216,26 @@ class _ShelfBlock extends ConsumerWidget {
       ),
     );
   }
-
-  void _onTap(
-    BuildContext context,
-    WidgetRef ref,
-    Tape tape,
-    String instanceKey,
-  ) {
-    ref.read(flightSourceKeyProvider.notifier).select(instanceKey);
-    if (tape.kind == TapeKind.series) {
-      showEpisodePicker(context, series: tape);
-      return;
-    }
-    showTapeInspectSheet(
-      context,
-      tape: tape,
-      onInsert: () => ref.read(vcrDeckProvider.notifier).insertTape(tape),
-    );
-  }
 }
 
 /// Holds the shelf at opacity 0 until every tape's sleeve bytes are warmed,
 /// then fades the whole bay in together.
-class _ShelfArtReveal extends ConsumerStatefulWidget {
+class _ShelfArtReveal extends StatefulWidget {
   const _ShelfArtReveal({
     required this.tapes,
-    required this.child,
+    required this.resolveSpineArt,
+    required this.builder,
   });
 
   final List<Tape> tapes;
-  final Widget child;
+  final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
+  final Widget Function(Map<String, VhsSpineArt?> arts) builder;
 
   @override
-  ConsumerState<_ShelfArtReveal> createState() => _ShelfArtRevealState();
+  State<_ShelfArtReveal> createState() => _ShelfArtRevealState();
 }
 
-class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
+class _ShelfArtRevealState extends State<_ShelfArtReveal> {
   static const _fade = Duration(milliseconds: 520);
   static const _budget = Duration(seconds: 12);
 
@@ -262,6 +243,7 @@ class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
   String? _warmKey;
   int _warmGen = 0;
   Timer? _budgetTimer;
+  Map<String, VhsSpineArt?> _arts = const {};
 
   @override
   void initState() {
@@ -328,12 +310,14 @@ class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
     if (tapes.isEmpty) return;
 
     final arts = await Future.wait(
-      tapes.map((tape) => ref.read(vhsSpineArtProvider(tape).future)),
+      tapes.map(widget.resolveSpineArt),
     );
 
+    final byId = <String, VhsSpineArt?>{};
     final urls = <String>{};
     for (var i = 0; i < tapes.length; i++) {
       final art = arts[i];
+      byId[tapes[i].id] = art;
       if (art != null) {
         urls.add(art.imageUrl);
         final front = art.frontImageUrl;
@@ -343,6 +327,8 @@ class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
         if (poster != null && poster.isNotEmpty) urls.add(poster);
       }
     }
+
+    if (mounted) setState(() => _arts = byId);
 
     if (!mounted || urls.isEmpty) return;
 
@@ -370,7 +356,7 @@ class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
           curve: Curves.easeOutCubic,
           child: IgnorePointer(
             ignoring: !_visible,
-            child: widget.child,
+            child: widget.builder(_arts),
           ),
         ),
         Positioned.fill(
@@ -397,13 +383,17 @@ class _ShelfArtRevealState extends ConsumerState<_ShelfArtReveal> {
 }
 
 /// Packed left-aligned spines; trailing tape bookends left when space remains.
-class _ShelfTapeRow extends ConsumerWidget {
+class _ShelfTapeRow extends StatelessWidget {
   const _ShelfTapeRow({
     required this.shelfId,
     required this.rowIndex,
     required this.tapes,
+    required this.arts,
     required this.loadedId,
     required this.loadedSeriesId,
+    required this.flightAnchors,
+    required this.flyingTapeId,
+    required this.flightSourceKey,
     required this.onTap,
     this.gap = 2,
   });
@@ -411,17 +401,17 @@ class _ShelfTapeRow extends ConsumerWidget {
   final String shelfId;
   final int rowIndex;
   final List<Tape> tapes;
+  final Map<String, VhsSpineArt?> arts;
   final String? loadedId;
   final String? loadedSeriesId;
+  final TapeFlightAnchors flightAnchors;
+  final String? flyingTapeId;
+  final String? flightSourceKey;
   final void Function(Tape tape, String instanceKey) onTap;
   final double gap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final anchors = ref.watch(tapeFlightAnchorsProvider);
-    final flyingId = ref.watch(flyingTapeIdProvider);
-    final sourceKey = ref.watch(flightSourceKeyProvider);
-
+  Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         var used = tapes.isEmpty ? 0.0 : (tapes.length - 1) * gap;
@@ -450,21 +440,22 @@ class _ShelfTapeRow extends ConsumerWidget {
                   index: i,
                   tapeId: tapes[i].id,
                 );
-                final isSource = sourceKey == instanceKey;
+                final isSource = flightSourceKey == instanceKey;
                 return RepaintBoundary(
                   child: KeyedSubtree(
                     // GlobalKey only on the tapped instance — duplicates stay put.
                     key: isSource
-                        ? anchors.spineKeyFor(instanceKey)
+                        ? flightAnchors.spineKeyFor(instanceKey)
                         : ValueKey(instanceKey),
                     child: VhsSpine(
                       tape: tapes[i],
+                      art: arts[tapes[i].id],
                       height: baseHeight,
                       selected: tapes[i].id == loadedId ||
                           (tapes[i].kind == TapeKind.series &&
                               tapes[i].id == loadedSeriesId),
                       tipRadians: tips[i],
-                      ghosted: flyingId == tapes[i].id && isSource,
+                      ghosted: flyingTapeId == tapes[i].id && isSource,
                       onTap: () => onTap(tapes[i], instanceKey),
                     ),
                   ),

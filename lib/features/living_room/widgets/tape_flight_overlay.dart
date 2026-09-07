@@ -2,13 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
+import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
 enum _FlightKind { insert, eject }
 
@@ -29,14 +28,27 @@ class _FlightSpec {
 }
 
 /// Full-screen overlay — simple cassette flight shelf ↔ bay.
-class TapeFlightOverlay extends ConsumerStatefulWidget {
-  const TapeFlightOverlay({super.key});
+class TapeFlightOverlay extends StatefulWidget {
+  const TapeFlightOverlay({
+    super.key,
+    required this.deck,
+    required this.anchors,
+    required this.flightSourceKey,
+    required this.onFlyingTapeIdChanged,
+    required this.artFor,
+  });
+
+  final VcrDeckState deck;
+  final TapeFlightAnchors anchors;
+  final String? flightSourceKey;
+  final ValueChanged<String?> onFlyingTapeIdChanged;
+  final VhsSpineArt? Function(Tape tape) artFor;
 
   @override
-  ConsumerState<TapeFlightOverlay> createState() => _TapeFlightOverlayState();
+  State<TapeFlightOverlay> createState() => _TapeFlightOverlayState();
 }
 
-class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
+class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   final GlobalKey _layerKey = GlobalKey(debugLabel: 'tapeFlightLayer');
@@ -55,7 +67,7 @@ class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
         final kind = _flight?.kind;
         setState(() => _flight = null);
         if (kind != _FlightKind.eject) {
-          ref.read(flyingTapeIdProvider.notifier).set(null);
+          widget.onFlyingTapeIdChanged(null);
         }
       });
   }
@@ -64,6 +76,28 @@ class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant TapeFlightOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previous = oldWidget.deck;
+    final next = widget.deck;
+    if (previous.power == next.power &&
+        previous.loadedTape?.id == next.loadedTape?.id) {
+      return;
+    }
+    final tape = next.loadedTape;
+    if (tape == null) return;
+    if (next.power == VcrPower.inserting &&
+        previous.power != VcrPower.inserting) {
+      widget.onFlyingTapeIdChanged(tape.id);
+      _beginFlight(tape: tape, kind: _FlightKind.insert);
+    } else if (next.power == VcrPower.ejecting &&
+        previous.power != VcrPower.ejecting) {
+      widget.onFlyingTapeIdChanged(tape.id);
+      _beginFlight(tape: tape, kind: _FlightKind.eject);
+    }
   }
 
   Rect? _localRect(Rect? global) {
@@ -102,8 +136,8 @@ class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
     await Future<void>.delayed(const Duration(milliseconds: 24));
     if (!mounted || gen != _flightGen) return;
 
-    final anchors = ref.read(tapeFlightAnchorsProvider);
-    final sourceKey = ref.read(flightSourceKeyProvider);
+    final anchors = widget.anchors;
+    final sourceKey = widget.flightSourceKey;
     final slotGlobal = anchors.globalRectOf(anchors.slotKey);
     final spineGlobal = anchors.spineRectForTape(
       tape.id,
@@ -124,10 +158,10 @@ class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
       height: math.min(spine.height, 168),
     );
 
-    final art = ref.read(vhsSpineArtProvider(tape)).asData?.value;
+    final art = widget.artFor(tape);
     if (!mounted || gen != _flightGen) return;
 
-    ref.read(flyingTapeIdProvider.notifier).set(tape.id);
+    widget.onFlyingTapeIdChanged(tape.id);
     setState(() {
       _flight = _FlightSpec(
         tape: tape,
@@ -143,24 +177,6 @@ class _TapeFlightOverlayState extends ConsumerState<TapeFlightOverlay>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<VcrDeckState>(vcrDeckProvider, (previous, next) {
-      if (previous?.power == next.power &&
-          previous?.loadedTape?.id == next.loadedTape?.id) {
-        return;
-      }
-      final tape = next.loadedTape;
-      if (tape == null) return;
-      if (next.power == VcrPower.inserting &&
-          previous?.power != VcrPower.inserting) {
-        ref.read(flyingTapeIdProvider.notifier).set(tape.id);
-        _beginFlight(tape: tape, kind: _FlightKind.insert);
-      } else if (next.power == VcrPower.ejecting &&
-          previous?.power != VcrPower.ejecting) {
-        ref.read(flyingTapeIdProvider.notifier).set(tape.id);
-        _beginFlight(tape: tape, kind: _FlightKind.eject);
-      }
-    });
-
     final flight = _flight;
     return IgnorePointer(
       child: Stack(

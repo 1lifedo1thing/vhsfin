@@ -1,25 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
-import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/living_room/presentation/vcr_crt_screen.dart';
-import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
-import 'package:vhsfin/features/playback/data/deck_player.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/widgets/vcr_crt_screen.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
+import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 /// Compact Zenith-style all-in-one TV/VCR — CRT hood, cassette door, deck keys.
-class VcrBox extends ConsumerWidget {
-  const VcrBox({super.key});
+class VcrBox extends StatelessWidget {
+  const VcrBox({
+    super.key,
+    required this.deck,
+    required this.player,
+    required this.surfaceEpoch,
+    required this.slotKey,
+    required this.flyingTapeId,
+    required this.slotArt,
+    required this.onRew,
+    required this.onRewEnd,
+    required this.onPlay,
+    required this.onFf,
+    required this.onFfEnd,
+    required this.onEject,
+    required this.onFull,
+  });
+
+  final VcrDeckState deck;
+  final DeckPlayerController player;
+  final int surfaceEpoch;
+  final GlobalKey slotKey;
+  final String? flyingTapeId;
+  final VhsSpineArt? slotArt;
+  final VoidCallback onRew;
+  final VoidCallback onRewEnd;
+  final VoidCallback onPlay;
+  final VoidCallback onFf;
+  final VoidCallback onFfEnd;
+  final VoidCallback onEject;
+  final VoidCallback onFull;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final deck = ref.watch(vcrDeckProvider);
+  Widget build(BuildContext context) {
     final ledOn = deck.isPowered;
-    final player = ref.watch(deckPlayerProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -123,6 +146,8 @@ class VcrBox extends ConsumerWidget {
                 power: deck.power,
                 style: deck.style,
                 tape: deck.loadedTape,
+                player: player,
+                surfaceEpoch: surfaceEpoch,
               ),
             ),
           ),
@@ -146,9 +171,11 @@ class VcrBox extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: KeyedSubtree(
-              key: ref.watch(tapeFlightAnchorsProvider).slotKey,
+              key: slotKey,
               child: _CassetteSlot(
                 tape: deck.loadedTape,
+                art: slotArt,
+                flyingTapeId: flyingTapeId,
                 inserting: deck.power == VcrPower.inserting,
                 ejecting: deck.power == VcrPower.ejecting,
                 loaded: deck.loadedTape != null &&
@@ -183,31 +210,13 @@ class VcrBox extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
             child: _DeckButtons(
               enabled: deck.isPowered,
-              onRew: () {
-                player.startRewind();
-                ref.read(deckSfxProvider).startRewind();
-              },
-              onRewEnd: () {
-                player.stopShuttle();
-                ref.read(deckSfxProvider).stopShuttle();
-              },
-              onPlay: () => player.togglePlayPause(),
-              onFf: () {
-                player.startFastForward();
-                ref.read(deckSfxProvider).startFastForward();
-              },
-              onFfEnd: () {
-                player.stopShuttle();
-                ref.read(deckSfxProvider).stopShuttle();
-              },
-              onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
-              onFull: () {
-                if (!deck.isPlaying) return;
-                ref
-                    .read(vcrDeckProvider.notifier)
-                    .setStyle(PlaybackStyle.cleanFullscreen);
-                context.push('/play');
-              },
+              onRew: onRew,
+              onRewEnd: onRewEnd,
+              onPlay: onPlay,
+              onFf: onFf,
+              onFfEnd: onFfEnd,
+              onEject: onEject,
+              onFull: onFull,
             ),
           ),
         ],
@@ -216,27 +225,28 @@ class VcrBox extends ConsumerWidget {
   }
 }
 
-class _CassetteSlot extends ConsumerWidget {
+class _CassetteSlot extends StatelessWidget {
   const _CassetteSlot({
     required this.inserting,
     required this.ejecting,
     required this.loaded,
+    required this.flyingTapeId,
     this.tape,
+    this.art,
   });
 
   final Tape? tape;
+  final VhsSpineArt? art;
+  final String? flyingTapeId;
   final bool inserting;
   final bool ejecting;
   final bool loaded;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final artAsync =
-        tape == null ? null : ref.watch(vhsSpineArtProvider(tape!));
-    final flyingId = ref.watch(flyingTapeIdProvider);
+  Widget build(BuildContext context) {
     // Overlay owns the cassette while the tape is mid-flight.
     final hideForFlight =
-        tape != null && flyingId != null && flyingId == tape!.id;
+        tape != null && flyingTapeId != null && flyingTapeId == tape!.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -291,7 +301,7 @@ class _CassetteSlot extends ConsumerWidget {
                   alignment: Alignment.center,
                   child: _SlotCassette(
                     title: tape?.title,
-                    art: artAsync?.asData?.value,
+                    art: art,
                   ),
                 )
               else if (!loaded && !inserting && !ejecting)

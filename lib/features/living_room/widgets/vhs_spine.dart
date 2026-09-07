@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
@@ -11,10 +10,11 @@ import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Bookshelf VHS spine — real sleeve crop when IA has art, else procedural.
-class VhsSpine extends ConsumerWidget {
+class VhsSpine extends StatelessWidget {
   const VhsSpine({
     super.key,
     required this.tape,
+    this.art,
     this.selected = false,
     this.onTap,
     this.height = 168,
@@ -120,6 +120,9 @@ class VhsSpine extends ConsumerWidget {
   }
 
   final Tape tape;
+
+  /// Resolved sleeve art from the parent; null → procedural spine.
+  final VhsSpineArt? art;
   final bool selected;
   final VoidCallback? onTap;
   final double height;
@@ -131,8 +134,7 @@ class VhsSpine extends ConsumerWidget {
   final bool ghosted;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final artAsync = ref.watch(vhsSpineArtProvider(tape));
+  Widget build(BuildContext context) {
     final width = selected ? 34.0 : nominalWidth;
     // Tip is visual only — layout width stays at [width] so rows never grow
     // past the shelf from leaning.
@@ -187,16 +189,9 @@ class VhsSpine extends ConsumerWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(2),
-                      child: artAsync.when(
-                        data: (art) {
-                          if (art != null) {
-                            return _RealSpine(art: art);
-                          }
-                          return ProceduralVhsSpine(tape: tape);
-                        },
-                        loading: () => ProceduralVhsSpine(tape: tape),
-                        error: (_, _) => ProceduralVhsSpine(tape: tape),
-                      ),
+                      child: art != null
+                          ? _RealSpine(art: art!)
+                          : ProceduralVhsSpine(tape: tape),
                     ),
                   ),
                 ),
@@ -208,7 +203,6 @@ class VhsSpine extends ConsumerWidget {
     );
   }
 }
-
 /// Packing-sized box whose hit region covers lean/pop overhang.
 ///
 /// [Transform] moves the paint, but parent [SizedBox] still owns layout width —
@@ -253,13 +247,10 @@ class _SpineTapTarget extends SingleChildRenderObjectWidget {
 class RenderSpineTapTarget extends RenderProxyBox {
   RenderSpineTapTarget({
     VoidCallback? onTap,
-    required double expandLeft,
-    required double expandRight,
-    required double expandTop,
-  })  : _onTap = onTap,
-        _expandLeft = expandLeft,
-        _expandRight = expandRight,
-        _expandTop = expandTop {
+    required this._expandLeft,
+    required this._expandRight,
+    required this._expandTop,
+  }) : _onTap = onTap {
     _tap.onTap = onTap;
   }
 

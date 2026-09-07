@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
-import 'package:vhsfin/features/living_room/data/tape_flight_anchors.dart';
-import 'package:vhsfin/features/playback/data/deck_player.dart';
+import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
+import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
+import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 enum VcrPower { off, inserting, playing, ejecting }
 

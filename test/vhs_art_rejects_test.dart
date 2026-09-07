@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vhsfin/features/library/data/vhs_art_rejects.dart';
+import 'package:vhsfin/features/library/state/vhs_art_rejects.dart';
 
 void main() {
   test('normalizeArtUrl keeps Jellyfin box tag and drops volatile params', () {

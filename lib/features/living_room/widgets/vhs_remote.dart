@@ -1,30 +1,67 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/living_room/data/deck_sfx.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/playback/data/deck_player.dart';
 
 /// Chunky 90s IR remote — fullscreen, wind, play/pause, eject. No skips.
-Future<void> showVhsRemote(BuildContext context) {
+Future<void> showVhsRemote(
+  BuildContext context, {
+  required String? title,
+  required bool live,
+  required bool powered,
+  required VoidCallback onRewStart,
+  required VoidCallback onRewEnd,
+  required VoidCallback onPlay,
+  required VoidCallback onFfStart,
+  required VoidCallback onFfEnd,
+  required VoidCallback onFullScreen,
+  required VoidCallback onEject,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (context) => const VhsRemoteSheet(),
+    builder: (context) => VhsRemoteSheet(
+      title: title,
+      live: live,
+      powered: powered,
+      onRewStart: onRewStart,
+      onRewEnd: onRewEnd,
+      onPlay: onPlay,
+      onFfStart: onFfStart,
+      onFfEnd: onFfEnd,
+      onFullScreen: onFullScreen,
+      onEject: onEject,
+    ),
   );
 }
 
-class VhsRemoteSheet extends ConsumerWidget {
-  const VhsRemoteSheet({super.key});
+class VhsRemoteSheet extends StatelessWidget {
+  const VhsRemoteSheet({
+    super.key,
+    required this.title,
+    required this.live,
+    required this.powered,
+    required this.onRewStart,
+    required this.onRewEnd,
+    required this.onPlay,
+    required this.onFfStart,
+    required this.onFfEnd,
+    required this.onFullScreen,
+    required this.onEject,
+  });
+
+  final String? title;
+  final bool live;
+  final bool powered;
+  final VoidCallback onRewStart;
+  final VoidCallback onRewEnd;
+  final VoidCallback onPlay;
+  final VoidCallback onFfStart;
+  final VoidCallback onFfEnd;
+  final VoidCallback onFullScreen;
+  final VoidCallback onEject;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final deck = ref.watch(vcrDeckProvider);
-    final player = ref.watch(deckPlayerProvider);
-    final live = deck.isPlaying;
-
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       child: Align(
@@ -64,9 +101,7 @@ class VhsRemoteSheet extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    live
-                        ? (deck.loadedTape?.title ?? 'PLAYING')
-                        : 'NO TAPE',
+                    live ? (title ?? 'PLAYING') : 'NO TAPE',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -82,42 +117,24 @@ class VhsRemoteSheet extends ConsumerWidget {
                         label: 'REW',
                         icon: Icons.fast_rewind_rounded,
                         enabled: live,
-                        onTapDown: (_) {
-                          player.startRewind();
-                          ref.read(deckSfxProvider).startRewind();
-                        },
-                        onTapUp: (_) {
-                          player.stopShuttle();
-                          ref.read(deckSfxProvider).stopShuttle();
-                        },
-                        onTapCancel: () {
-                          player.stopShuttle();
-                          ref.read(deckSfxProvider).stopShuttle();
-                        },
+                        onTapDown: (_) => onRewStart(),
+                        onTapUp: (_) => onRewEnd(),
+                        onTapCancel: onRewEnd,
                       ),
                       _RemoteKey(
                         label: 'PLAY',
                         icon: Icons.play_arrow_rounded,
                         enabled: live,
                         large: true,
-                        onTap: () => player.togglePlayPause(),
+                        onTap: onPlay,
                       ),
                       _RemoteKey(
                         label: 'FF',
                         icon: Icons.fast_forward_rounded,
                         enabled: live,
-                        onTapDown: (_) {
-                          player.startFastForward();
-                          ref.read(deckSfxProvider).startFastForward();
-                        },
-                        onTapUp: (_) {
-                          player.stopShuttle();
-                          ref.read(deckSfxProvider).stopShuttle();
-                        },
-                        onTapCancel: () {
-                          player.stopShuttle();
-                          ref.read(deckSfxProvider).stopShuttle();
-                        },
+                        onTapDown: (_) => onFfStart(),
+                        onTapUp: (_) => onFfEnd(),
+                        onTapCancel: onFfEnd,
                       ),
                     ],
                   ),
@@ -130,10 +147,7 @@ class VhsRemoteSheet extends ConsumerWidget {
                           enabled: live,
                           onTap: () {
                             Navigator.pop(context);
-                            ref
-                                .read(vcrDeckProvider.notifier)
-                                .setStyle(PlaybackStyle.cleanFullscreen);
-                            context.push('/play');
+                            onFullScreen();
                           },
                         ),
                       ),
@@ -141,9 +155,9 @@ class VhsRemoteSheet extends ConsumerWidget {
                       Expanded(
                         child: _RemoteWideButton(
                           label: 'EJECT',
-                          enabled: deck.isPowered,
+                          enabled: powered,
                           onTap: () {
-                            ref.read(vcrDeckProvider.notifier).eject();
+                            onEject();
                             Navigator.pop(context);
                           },
                         ),

@@ -1,0 +1,244 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+---
+description: Flutter feature organization pattern
+globs: ["lib/features/**/*.dart"]
+alwaysApply: false
+---
+
+# Flutter Feature Architecture Pattern
+
+**⚠️ Important: Below there are examples included that may or may not be
+applicable to your feature. The goal is to write clean, readable code that can
+be tested in isolation.**
+
+- UI should be able to be tested in isolation via widgetbook
+- Code is clear and readable
+- Keep things as simple as possible, never overengineer. Do not create more
+  files than necessary.
+- Gain context from the codebase before creating new files
+
+---
+
+When creating or refactoring complex Flutter features, keep in mind this
+structure and the key principles. Review requirements and existing code before
+deciding the best structure. Always work step by step, getting core pieces in
+place before adding more complexity.
+
+## Folder Structure
+
+```
+features/
+└── feature_name/
+    ├── state/
+    │   └── feature_notifier.dart     // Interface + Notifier/AsyncNotifier implementation
+    ├── views/
+    │   ├── feature_view.dart         // Main content view
+    │   ├── feature_loading_view.dart // Loading state (only if applicable)
+    │   └── feature_error_view.dart   // Error state (only if applicable)
+    ├── widgets/
+    │   └── complex_widget/           // Use folders for complex widgets
+    │       ├── complex_widget.dart   // Public API
+    │   └── simple_widget.dart        // Simple widget
+    └── feature_page.dart             // Main page (simple coordinator)
+
+data/
+└── repositories/
+```
+
+## Key Principles For New Pages & Features
+
+1. **Page as Coordinator**: Main page only handles state watching and delegates
+   to views
+2. **Interface Pattern**: Create abstract interface for notifier for type safety
+3. **View Separation**: Only create seperate views when needed.
+4. **Private Widget Convention**: Use underscore prefix for private widget files
+5. **State Management**: Use Notifier/AsyncNotifier (Riverpod 2.0+ api) without
+   riverpod annotations
+6. **Generated Models**: Use OpenAPI generated model classes, define APIs in
+   repository (in lib/data/repositories/). Repositories are shared and do not
+   need to be created for new features.
+7. **Specific Props**: Pass specific properties AND specific callbacks to
+   widgets. Ideally stateless widgets only import material and theme. Do not
+   eagerly create parameters that don't need to change (ie. titles, etc)
+8. **Single Responsibility**: Each file/widget has one clear purpose
+
+## Below are examples of how new pages may be implemented depending on requirements. Examples are not exhaustive, but should give you a good idea of how to structure your code.
+
+### Example Pattern 1: AsyncValue.when() - For Data-Dependent UIs
+
+Use when the entire UI depends on async data loading (dashboards, lists, detail
+screens):
+
+```dart
+class FeaturePage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final feature = ref.watch(featureProvider);
+    final notifier = ref.read(featureProvider.notifier);
+    
+    return Scaffold(
+      body: feature.when(
+        loading: () => const FeatureLoadingView(),
+        error: (error, _) => FeatureErrorView(
+          error: error.toString(),
+          onRetry: () => ref.invalidate(featureProvider),
+        ),
+        data: (data) => FeatureView(
+          firstName: data.firstName,                    
+          isActive: data.isActive,
+          onSomething: notifier.performAction,  
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Example Pattern 2: Simple State Conditional - For Forms & Simple Interactions
+
+Use for forms, simple state management, or when loading/error states are handled
+inline:
+
+```dart
+class BasketPage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final basket = ref.watch(basketProvider);
+    final notifier = ref.read(basketProvider.notifier);
+
+    return Scaffold(
+      body: basket.isEmpty
+          ? BasketEmptyView(
+              onStartShopping: () => context.go('/shop'),
+            )
+          : BasketDataView(
+              items: basket.items,
+              delivery: basket.deliveryFees,
+              subTotal: basket.subTotal,
+              onFruitAdded: notifier.addFruit,
+              onFruitRemoved: notifier.removeFruit,
+              onContinueToShipping: notifier.clear,
+            ),
+    );
+  }
+}
+
+// Corresponding simple Notifier (not AsyncNotifier)
+class BasketNotifier extends Notifier<Basket> {
+  @override
+  Basket build() => const Basket.empty();
+
+  void addFruit(Fruit fruit) {
+    state = state.copyWithIncreasedQuantity(fruit);
+  }
+
+  void clear() {
+    state = const Basket.empty();
+  }
+}
+```
+
+## Example Implementation - Notifier Interface
+
+```dart
+abstract interface class IFeatureNotifier {
+  Future<void> updateSomething(String value);
+  void performAction();
+}
+
+class FeatureNotifier extends AsyncNotifier<FeatureModel> implements IFeatureNotifier {
+  
+  @override
+  Future<FeatureModel> build() async {
+    return ref.read(featureRepositoryProvider).getFeatureData();
+  }
+  
+  @override
+  Future<void> updateSomething(String value) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      return ref.read(featureRepositoryProvider).updateFeature(value);
+    });
+  }
+}
+```
+
+This pattern allows views & widgets to be tested in isolation in widgetbook,
+pages go in widgetbook with minimal dependency overrides. Create widgetbook
+files for testing UI in widgetbook/ follow the same directory structure as lib/
+
+## Testing & Mocking Guidelines
+
+- Use Mocktail for mocking dependencies and notifiers
+- Mock interfaces, not concrete implementations when possible
+
+```dart
+// Mock pattern
+class MockFeatureNotifier extends Mock implements FeatureNotifier {}
+
+// Provider override pattern
+phoneEntryNotifierProvider.overrideWith(MockPhoneEntryNotifier.new)
+```
+
+### Widgetbook Examples
+
+Widgetbook is for testing UI in isolation - focus on visual states, not
+behavior. Mocks should be very simple. By default, only write one use case for
+views and utilize knobs.
+
+#### Page-level Widgetbook (widgetbook/lib/features/feature_name/feature_page.widgetbook.dart)
+
+```dart
+@UseCase(name: 'Default', type: FeaturePage)
+Widget buildFeaturePageUseCase(BuildContext context) {
+  return ProviderScope(
+    overrides: [
+      featureProvider.overrideWith(() {
+        final state = context.knobs.viewState(
+          allowedValues: [
+            ViewState.loading,
+            ViewState.error,
+            ViewState.data,
+          ],
+        );
+
+        return FeatureNotifier(mockData: state == ViewState.data);
+      }),
+    ],
+    child: AppShell(
+      activeRoute: AppRoute.feature,
+      onRouteTap: (_) {},
+      child: const FeaturePage(),
+    ),
+  );
+}
+```
+
+#### View-level Widgetbook (widgetbook/lib/features/feature_name/views/feature_view.widgetbook.dart)
+
+```dart
+@UseCase(
+  name: 'Default',
+  type: FeatureView,
+)
+Widget buildFeatureViewUseCase(BuildContext context) {
+  return FeatureView(
+    title: context.knobs.string(
+      label: 'Title',
+      initialValue: 'Feature Title',
+    ),
+    isActive: context.knobs.boolean(
+      label: 'Is Active',
+      initialValue: true,
+    ),
+    onSomething: () {},
+  );
+}
+```
+
+#### Widgets/ - etc

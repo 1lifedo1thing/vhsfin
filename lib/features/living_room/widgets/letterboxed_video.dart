@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-import 'package:vhsfin/features/living_room/presentation/html_video_fit_stub.dart'
-    if (dart.library.js_interop) 'package:vhsfin/features/living_room/presentation/html_video_fit_web.dart';
+import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
+    if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
 
 /// CRT video that letterboxes inside a 4:3 frame.
 ///

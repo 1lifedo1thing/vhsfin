@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vhsfin/features/library/data/tape_library_provider.dart';
-import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/state/tape_library.dart';
+import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 enum ShelfSortMode {

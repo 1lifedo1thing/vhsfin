@@ -1,8 +1,8 @@
 import 'package:go_router/go_router.dart';
-import 'package:vhsfin/features/auth/presentation/connect_page.dart';
-import 'package:vhsfin/features/library/presentation/libraries_page.dart';
-import 'package:vhsfin/features/living_room/presentation/living_room_page.dart';
-import 'package:vhsfin/features/playback/presentation/clean_player_page.dart';
+import 'package:vhsfin/features/auth/connect_page.dart';
+import 'package:vhsfin/features/library/libraries_page.dart';
+import 'package:vhsfin/features/living_room/living_room_page.dart';
+import 'package:vhsfin/features/playback/clean_player_page.dart';
 
 final appRouter = GoRouter(
   routes: [

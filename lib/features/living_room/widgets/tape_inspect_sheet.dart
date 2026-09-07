@@ -1,24 +1,23 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
-import 'package:vhsfin/features/library/data/vhs_sleeve_actions.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/presentation/vhs_spine.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
 /// Movie-info style popup: front poster + spine, then insert.
 Future<void> showTapeInspectSheet(
   BuildContext context, {
   required Tape tape,
   required VoidCallback onInsert,
+  required Future<void> Function() onRejectSleeve,
+  VhsSpineArt? art,
+  Future<VhsSpineArt?> Function()? loadArt,
 }) {
   // Warm memory with the same ResizeImage keys the shelf already used so the
   // popup spine doesn't re-decode (disk cache still helps across launches).
-  final container = ProviderScope.containerOf(context);
-  final art = container.read(vhsSpineArtProvider(tape)).asData?.value;
   final images = <String>{
     if (tape.imageUrl != null && tape.imageUrl!.isNotEmpty) tape.imageUrl!,
     if (tape.boxImageUrl != null && tape.boxImageUrl!.isNotEmpty)
@@ -35,24 +34,53 @@ Future<void> showTapeInspectSheet(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.72),
-    builder: (context) => _TapeInspectSheet(tape: tape, onInsert: onInsert),
+    builder: (context) => _TapeInspectSheet(
+      tape: tape,
+      onInsert: onInsert,
+      onRejectSleeve: onRejectSleeve,
+      initialArt: art,
+      loadArt: loadArt,
+    ),
   );
 }
 
-class _TapeInspectSheet extends ConsumerWidget {
+class _TapeInspectSheet extends StatefulWidget {
   const _TapeInspectSheet({
     required this.tape,
     required this.onInsert,
+    required this.onRejectSleeve,
+    this.initialArt,
+    this.loadArt,
   });
 
   final Tape tape;
   final VoidCallback onInsert;
+  final Future<void> Function() onRejectSleeve;
+  final VhsSpineArt? initialArt;
+  final Future<VhsSpineArt?> Function()? loadArt;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final artAsync = ref.watch(vhsSpineArtProvider(tape));
+  State<_TapeInspectSheet> createState() => _TapeInspectSheetState();
+}
+
+class _TapeInspectSheetState extends State<_TapeInspectSheet> {
+  late VhsSpineArt? _art = widget.initialArt;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_art == null && widget.loadArt != null) {
+      widget.loadArt!().then((art) {
+        if (!mounted || art == null) return;
+        setState(() => _art = art);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final art = _art;
     // Prefer already-resolved art — don't blank to procedural while refreshing.
-    final art = artAsync.asData?.value;
     final spineUrl = art?.imageUrl;
     if (spineUrl != null) {
       precacheImage(VhsSleeveCrop.providerFor(spineUrl), context);
@@ -110,7 +138,9 @@ class _TapeInspectSheet extends ConsumerWidget {
                     _PopupHeader(
                       showWrongSleeve: art != null,
                       onWrongSleeve: () async {
-                        await rejectTapeSleeveArt(ref, tape);
+                        await widget.onRejectSleeve();
+                        if (!mounted) return;
+                        setState(() => _art = null);
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -125,14 +155,14 @@ class _TapeInspectSheet extends ConsumerWidget {
                     Flexible(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                        child: _InfoBody(tape: tape, art: art),
+                        child: _InfoBody(tape: widget.tape, art: art),
                       ),
                     ),
                     _ActionBar(
                       onBack: () => Navigator.of(context).pop(),
                       onInsert: () {
                         Navigator.of(context).pop();
-                        onInsert();
+                        widget.onInsert();
                       },
                     ),
                   ],

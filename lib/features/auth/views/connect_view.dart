@@ -1,51 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/library/data/tape_library_provider.dart';
 
-class ConnectPage extends ConsumerStatefulWidget {
-  const ConnectPage({super.key});
+/// Dumb connect form — page owns controllers and submit.
+class ConnectView extends StatelessWidget {
+  const ConnectView({
+    super.key,
+    required this.serverController,
+    required this.userController,
+    required this.passwordController,
+    required this.busy,
+    required this.onSubmit,
+    required this.onBack,
+    this.error,
+  });
 
-  @override
-  ConsumerState<ConnectPage> createState() => _ConnectPageState();
-}
-
-class _ConnectPageState extends ConsumerState<ConnectPage> {
-  final _serverController = TextEditingController();
-  final _userController = TextEditingController();
-  final _passwordController = TextEditingController();
-  var _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _serverController.dispose();
-    _userController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await ref.read(sessionProvider.notifier).signIn(
-            serverUrl: _serverController.text,
-            username: _userController.text,
-            password: _passwordController.text,
-          );
-      ref.invalidate(shelvesProvider);
-      ref.invalidate(librariesProvider);
-      if (mounted) context.go('/');
-    } catch (error) {
-      setState(() => _error = error.toString());
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
+  final TextEditingController serverController;
+  final TextEditingController userController;
+  final TextEditingController passwordController;
+  final bool busy;
+  final String? error;
+  final VoidCallback onSubmit;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +29,7 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
         title: const Text('CONNECT'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: onBack,
         ),
       ),
       body: DecoratedBox(
@@ -84,7 +59,7 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
                   ),
                   const SizedBox(height: 24),
                   TextField(
-                    controller: _serverController,
+                    controller: serverController,
                     decoration: const InputDecoration(
                       labelText: 'Server URL',
                       hintText: 'http://jellyfin.local:8096',
@@ -94,28 +69,28 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _userController,
+                    controller: userController,
                     decoration: const InputDecoration(labelText: 'Username'),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _passwordController,
+                    controller: passwordController,
                     decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
-                    onSubmitted: (_) => _submit(),
+                    onSubmitted: (_) => onSubmit(),
                   ),
-                  if (_error != null) ...[
+                  if (error != null) ...[
                     const SizedBox(height: 12),
                     Text(
-                      _error!,
+                      error!,
                       style: const TextStyle(color: VhsColors.accent),
                     ),
                   ],
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _busy ? null : _submit,
-                    child: Text(_busy ? 'TUNING…' : 'POWER ON'),
+                    onPressed: busy ? null : onSubmit,
+                    child: Text(busy ? 'TUNING…' : 'POWER ON'),
                   ),
                 ],
               ),

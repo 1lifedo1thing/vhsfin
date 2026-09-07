@@ -1,130 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/library/data/shelf_display_prefs.dart';
-import 'package:vhsfin/features/library/data/tape_library_provider.dart';
-import 'package:vhsfin/features/living_room/presentation/bookshelf_view.dart';
-import 'package:vhsfin/features/living_room/presentation/tape_flight_overlay.dart';
-import 'package:vhsfin/features/living_room/presentation/vcr_box.dart';
-import 'package:vhsfin/features/living_room/presentation/vhs_remote.dart';
+import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 
-class LivingRoomPage extends ConsumerWidget {
-  const LivingRoomPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider).value;
-    final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
-
-    return Scaffold(
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: () => showVhsRemote(context),
-        backgroundColor: const Color(0xFF2A2A28),
-        foregroundColor: VhsColors.brand,
-        tooltip: 'Remote',
-        child: const Icon(Icons.settings_remote_rounded),
-      ),
-      body: Stack(
-        children: [
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.4),
-                radius: 1.2,
-                colors: [
-                  Color(0xFF3A2418),
-                  VhsColors.woodDeep,
-                  Color(0xFF070504),
-                ],
-                stops: [0, 0.55, 1],
-              ),
-            ),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final wide = constraints.maxWidth > 820;
-                  // Keep the console wide — only a slim living-room margin.
-                  final pad = wide ? 28.0 : 0.0;
-
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _EntertainmentCenter(),
-                        const SizedBox(height: 128),
-                        _BottomBar(
-                          connected: session != null,
-                          userName: session?.userName,
-                          vhsOnly: displayPrefs.vhsOnly,
-                          sortLabel: displayPrefs.sort.buttonLabel,
-                          onCollection: () => context.push('/libraries'),
-                          onConnect: () => context.push('/connect'),
-                          onSignOut: () =>
-                              ref.read(sessionProvider.notifier).signOut(),
-                          onVhsOnlyChanged: (value) => ref
-                              .read(shelfDisplayPrefsProvider.notifier)
-                              .setVhsOnly(value),
-                          onOpenSort: () => showShelfSortSheet(context),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          const Positioned.fill(child: TapeFlightOverlay()),
-        ],
-      ),
-    );
-  }
-}
-
-/// VCR sitting on a wooden console with the tape shelf built into it.
-class _EntertainmentCenter extends StatelessWidget {
-  const _EntertainmentCenter();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF5A3A24),
-            Color(0xFF3A2416),
-            Color(0xFF24160E),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 28,
-            offset: const Offset(0, 16),
-          ),
-        ],
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          VcrBox(),
-          SizedBox(height: 14),
-          BookshelfView(embedded: true),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({
+/// Deck chrome under the entertainment center — VHS filter, sort, collection.
+class DeckSettingsBar extends StatelessWidget {
+  const DeckSettingsBar({
+    super.key,
     required this.connected,
     required this.onCollection,
     required this.onConnect,
@@ -411,20 +292,32 @@ class _DeckKey extends StatelessWidget {
   }
 }
 
-Future<void> showShelfSortSheet(BuildContext context) {
+Future<void> showShelfSortSheet(
+  BuildContext context, {
+  required ShelfSortMode current,
+  required ValueChanged<ShelfSortMode> onSelect,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (context) => const _ShelfSortSheet(),
+    builder: (context) => _ShelfSortSheet(
+      current: current,
+      onSelect: onSelect,
+    ),
   );
 }
 
-class _ShelfSortSheet extends ConsumerWidget {
-  const _ShelfSortSheet();
+class _ShelfSortSheet extends StatelessWidget {
+  const _ShelfSortSheet({
+    required this.current,
+    required this.onSelect,
+  });
+
+  final ShelfSortMode current;
+  final ValueChanged<ShelfSortMode> onSelect;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final current = ref.watch(shelfDisplayPrefsProvider).sort;
+  Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
 
     return Padding(
@@ -481,9 +374,7 @@ class _ShelfSortSheet extends ConsumerWidget {
                       label: mode.menuTitle,
                       selected: mode == current,
                       onTap: () {
-                        ref
-                            .read(shelfDisplayPrefsProvider.notifier)
-                            .setSort(mode);
+                        onSelect(mode);
                         Navigator.of(context).pop();
                       },
                     ),

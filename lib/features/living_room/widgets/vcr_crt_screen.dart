@@ -1,31 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/living_room/presentation/crt_glass_overlay.dart';
-import 'package:vhsfin/features/living_room/presentation/letterboxed_video.dart';
-import 'package:vhsfin/features/living_room/presentation/static_screen.dart';
-import 'package:vhsfin/features/playback/data/deck_player.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/widgets/crt_glass_overlay.dart';
+import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
+import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
+import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 /// The CRT screen inside the VCR bezel — static, insert anim, or playback.
-class VcrCrtScreen extends ConsumerStatefulWidget {
+class VcrCrtScreen extends StatefulWidget {
   const VcrCrtScreen({
     super.key,
     required this.power,
     required this.style,
+    required this.player,
+    required this.surfaceEpoch,
     this.tape,
   });
 
   final VcrPower power;
   final PlaybackStyle style;
   final Tape? tape;
+  final DeckPlayerController player;
+  final int surfaceEpoch;
 
   @override
-  ConsumerState<VcrCrtScreen> createState() => _VcrCrtScreenState();
+  State<VcrCrtScreen> createState() => _VcrCrtScreenState();
 }
 
-class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
+class _VcrCrtScreenState extends State<VcrCrtScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _insertController;
   late final Animation<Offset> _insertSlide;
@@ -60,15 +63,14 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
         widget.power == VcrPower.playing) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        final deck = ref.read(deckPlayerProvider);
-        await deck.play();
+        await widget.player.play();
       });
     }
   }
 
   Future<void> _syncPlayback() async {
     final gen = ++_syncGen;
-    final deck = ref.read(deckPlayerProvider);
+    final deck = widget.player;
     final tape = widget.tape;
 
     switch (widget.power) {
@@ -98,8 +100,8 @@ class _VcrCrtScreenState extends ConsumerState<VcrCrtScreen>
 
   @override
   Widget build(BuildContext context) {
-    final deck = ref.watch(deckPlayerProvider);
-    final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
+    final deck = widget.player;
+    final surfaceEpoch = widget.surfaceEpoch;
     // Don't bind a second Video while fullscreen owns the surface.
     final showVideo = widget.style != PlaybackStyle.cleanFullscreen &&
         (widget.power == VcrPower.playing ||

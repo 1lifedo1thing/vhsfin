@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/living_room/model/vcr_state.dart';
-import 'package:vhsfin/features/playback/data/deck_player.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/playback/state/deck_player.dart';
+import 'package:vhsfin/features/playback/views/clean_player_view.dart';
 
 /// Clean fullscreen playback using the same shared deck player.
 class CleanPlayerPage extends ConsumerStatefulWidget {
@@ -68,57 +67,11 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
         if (didPop) return;
         _backToVcr();
       },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Video(
-              key: ValueKey('full-$surfaceEpoch'),
-              controller: player.controller,
-              fit: BoxFit.contain,
-              fill: Colors.black,
-            ),
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: _backToVcr,
-                        icon: const Icon(Icons.close, color: Colors.white),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          tape?.title ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: VhsColors.brand,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _backToVcr,
-                        child: const Text(
-                          'BACK TO VCR',
-                          style: TextStyle(
-                            color: VhsColors.phosphor,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+      child: CleanPlayerView(
+        title: tape?.title ?? '',
+        surfaceEpoch: surfaceEpoch,
+        controller: player.controller,
+        onBack: _backToVcr,
       ),
     );
   }

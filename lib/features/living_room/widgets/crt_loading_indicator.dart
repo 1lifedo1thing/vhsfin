@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/living_room/presentation/static_screen.dart';
+import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
 
 enum CrtLoadStyle {
   /// Tiny CRT static + STAND BY.
