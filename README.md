@@ -55,16 +55,17 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md).
 - CRT glass overlay and fast-rewind visual
 - VHS sleeve art lookup (Internet Archive), disk cache, wrong-sleeve reject
 - First-time art-grab onboarding (progress + found count)
-- Deck settings: VHS-only filter, sort, save timestamp on eject, replay art grab
+- Settings sheet (tune FAB): VHS-only (on by default), sort, save on eject, CRT look, collection / connect
+- Selectable CRT bezels (Zenith, cream, portable, wood)
 - Desktop-friendly wide layouts (max widths, larger hit targets)
 
 ## Demo the art-grab onboarding
 
 Without wiping the whole app:
 
-1. In the living room, open **DECK SETTINGS**.
-2. Tap **REPLAY ART GRAB** — clears the onboarding flag and re-runs the warm pass with the popup.
-3. Or from a terminal: `make demo-onboarding` (prints the same steps + prefs key).
+1. Clear SharedPreferences key `vhsfin.art_onboarding_done.v1` (browser site data, or app prefs).
+2. Reload with titles on the shelves — the art-grab popup runs again.
+3. Or from a terminal: `make demo-onboarding` (prints the prefs key + steps).
 
 Prefs key: `vhsfin.art_onboarding_done.v1`
 

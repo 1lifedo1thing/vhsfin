@@ -5,10 +5,10 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/widgets/art_grab_onboarding_dialog.dart';
+import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
-import 'package:vhsfin/features/living_room/widgets/_deck_settings_bar.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_flight_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_box.dart';
@@ -22,15 +22,13 @@ class LivingRoomView extends StatelessWidget {
     required this.player,
     required this.surfaceEpoch,
     required this.surfaceOwner,
+    required this.crtSkin,
     required this.flightAnchors,
     required this.flyingTapeId,
     required this.flightSourceKey,
     required this.slotArt,
     required this.shelvesLoading,
     required this.vhsOnly,
-    required this.connected,
-    required this.sortLabel,
-    required this.saveTimestampOnEject,
     required this.rewinding,
     required this.onRew,
     required this.onRewEnd,
@@ -44,25 +42,20 @@ class LivingRoomView extends StatelessWidget {
     required this.onFlyingTapeIdChanged,
     required this.artForFlight,
     required this.onShowRemote,
-    required this.onCollection,
-    required this.onConnect,
-    required this.onSignOut,
-    required this.onVhsOnlyChanged,
-    required this.onOpenSort,
-    required this.onSaveTimestampChanged,
-    required this.onReplayArtGrab,
+    required this.onShowSettings,
+    required this.onConnectPrompt,
     required this.onArtOnboardingDone,
     this.showArtOnboarding = false,
     this.artWarmProgress = const ArtWarmProgress(),
     this.shelvesError,
     this.shelves,
-    this.userName,
   });
 
   final VcrDeckState deck;
   final DeckPlayerController player;
   final int surfaceEpoch;
   final DeckSurfaceOwner surfaceOwner;
+  final CrtTvSkin crtSkin;
   final TapeFlightAnchors flightAnchors;
   final String? flyingTapeId;
   final String? flightSourceKey;
@@ -71,10 +64,6 @@ class LivingRoomView extends StatelessWidget {
   final String? shelvesError;
   final List<Shelf>? shelves;
   final bool vhsOnly;
-  final bool connected;
-  final String? userName;
-  final String sortLabel;
-  final bool saveTimestampOnEject;
   final bool rewinding;
   final bool showArtOnboarding;
   final ArtWarmProgress artWarmProgress;
@@ -91,24 +80,34 @@ class LivingRoomView extends StatelessWidget {
   final ValueChanged<String?> onFlyingTapeIdChanged;
   final VhsSpineArt? Function(Tape tape) artForFlight;
   final VoidCallback onShowRemote;
-  final VoidCallback onCollection;
-  final VoidCallback onConnect;
-  final VoidCallback onSignOut;
-  final ValueChanged<bool> onVhsOnlyChanged;
-  final VoidCallback onOpenSort;
-  final ValueChanged<bool> onSaveTimestampChanged;
-  final VoidCallback onReplayArtGrab;
+  final VoidCallback onShowSettings;
+  final VoidCallback onConnectPrompt;
   final VoidCallback onArtOnboardingDone;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: onShowRemote,
-        backgroundColor: const Color(0xFF2A2A28),
-        foregroundColor: VhsColors.brand,
-        tooltip: 'Remote',
-        child: const Icon(Icons.settings_remote_rounded),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'vhsfin_settings',
+            onPressed: onShowSettings,
+            backgroundColor: const Color(0xFF2A2A28),
+            foregroundColor: VhsColors.brand,
+            tooltip: 'Settings',
+            child: const Icon(Icons.tune_rounded),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.small(
+            heroTag: 'vhsfin_remote',
+            onPressed: onShowRemote,
+            backgroundColor: const Color(0xFF2A2A28),
+            foregroundColor: VhsColors.brand,
+            tooltip: 'Remote',
+            child: const Icon(Icons.settings_remote_rounded),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -145,6 +144,7 @@ class LivingRoomView extends StatelessWidget {
                             player: player,
                             surfaceEpoch: surfaceEpoch,
                             surfaceOwner: surfaceOwner,
+                            crtSkin: crtSkin,
                             slotKey: flightAnchors.slotKey,
                             flyingTapeId: flyingTapeId,
                             slotArt: slotArt,
@@ -168,22 +168,7 @@ class LivingRoomView extends StatelessWidget {
                             flightSourceKey: flightSourceKey,
                             resolveSpineArt: resolveSpineArt,
                             onTapeTap: onTapeTap,
-                            onConnectPrompt: onConnect,
-                          ),
-                          settings: DeckSettingsBar(
-                            embedded: true,
-                            connected: connected,
-                            userName: userName,
-                            vhsOnly: vhsOnly,
-                            sortLabel: sortLabel,
-                            saveTimestampOnEject: saveTimestampOnEject,
-                            onCollection: onCollection,
-                            onConnect: onConnect,
-                            onSignOut: onSignOut,
-                            onVhsOnlyChanged: onVhsOnlyChanged,
-                            onOpenSort: onOpenSort,
-                            onSaveTimestampChanged: onSaveTimestampChanged,
-                            onReplayArtGrab: onReplayArtGrab,
+                            onConnectPrompt: onConnectPrompt,
                           ),
                         ),
                       ),
@@ -278,17 +263,15 @@ class _BookshelfBody extends StatelessWidget {
   }
 }
 
-/// VCR + shelf bay + deck drawer as one wooden entertainment center.
+/// VCR + shelf bay as one wooden entertainment center (no fat settings drawer).
 class _EntertainmentCenter extends StatelessWidget {
   const _EntertainmentCenter({
     required this.vcr,
     required this.bookshelf,
-    required this.settings,
   });
 
   final Widget vcr;
   final Widget bookshelf;
-  final Widget settings;
 
   @override
   Widget build(BuildContext context) {
@@ -313,15 +296,13 @@ class _EntertainmentCenter extends StatelessWidget {
         ],
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           vcr,
           const SizedBox(height: 14),
           bookshelf,
-          const SizedBox(height: 12),
-          settings,
         ],
       ),
     );

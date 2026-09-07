@@ -2,20 +2,29 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 
 /// User-tunable living-room behavior (persisted).
 class ExperiencePrefs {
   const ExperiencePrefs({
     this.saveTimestampOnEject = false,
+    this.crtSkin = CrtTvSkin.zenith,
   });
 
   /// Remember playback position on eject; seek there on next insert.
   final bool saveTimestampOnEject;
 
-  ExperiencePrefs copyWith({bool? saveTimestampOnEject}) {
+  /// Classic CRT bezel / cabinet look.
+  final CrtTvSkin crtSkin;
+
+  ExperiencePrefs copyWith({
+    bool? saveTimestampOnEject,
+    CrtTvSkin? crtSkin,
+  }) {
     return ExperiencePrefs(
       saveTimestampOnEject:
           saveTimestampOnEject ?? this.saveTimestampOnEject,
+      crtSkin: crtSkin ?? this.crtSkin,
     );
   }
 }
@@ -27,6 +36,7 @@ final experiencePrefsProvider =
 
 class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _saveTsKey = 'vhsfin.save_timestamp_on_eject';
+  static const _crtSkinKey = 'vhsfin.crt_tv_skin.v1';
 
   int _epoch = 0;
 
@@ -39,9 +49,15 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   Future<void> _restore() async {
     final epoch = _epoch;
     final prefs = await SharedPreferences.getInstance();
-    if (epoch != _epoch) return;
+    if (!ref.mounted || epoch != _epoch) return;
+    final skinName = prefs.getString(_crtSkinKey);
+    final skin = CrtTvSkin.values.firstWhere(
+      (s) => s.name == skinName,
+      orElse: () => CrtTvSkin.zenith,
+    );
     state = ExperiencePrefs(
       saveTimestampOnEject: prefs.getBool(_saveTsKey) ?? false,
+      crtSkin: skin,
     );
   }
 
@@ -50,6 +66,14 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     state = state.copyWith(saveTimestampOnEject: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_saveTsKey, value);
+  }
+
+  Future<void> setCrtSkin(CrtTvSkin skin) async {
+    if (state.crtSkin == skin) return;
+    _epoch++;
+    state = state.copyWith(crtSkin: skin);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_crtSkinKey, skin.name);
   }
 }
 

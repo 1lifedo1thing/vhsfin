@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_crt_screen.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
-/// Compact Zenith-style all-in-one TV/VCR — CRT hood, cassette door, deck keys.
+/// Compact all-in-one TV/VCR — CRT hood, cassette door, deck keys.
+///
+/// Visual chrome follows [crtSkin] (Zenith, cream, portable, wood).
 class VcrBox extends StatelessWidget {
   const VcrBox({
     super.key,
@@ -15,6 +18,7 @@ class VcrBox extends StatelessWidget {
     required this.player,
     required this.surfaceEpoch,
     required this.surfaceOwner,
+    required this.crtSkin,
     required this.slotKey,
     required this.flyingTapeId,
     required this.slotArt,
@@ -32,6 +36,7 @@ class VcrBox extends StatelessWidget {
   final DeckPlayerController player;
   final int surfaceEpoch;
   final DeckSurfaceOwner surfaceOwner;
+  final CrtTvSkin crtSkin;
   final GlobalKey slotKey;
   final String? flyingTapeId;
   final VhsSpineArt? slotArt;
@@ -47,187 +52,363 @@ class VcrBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ledOn = deck.isPowered;
+    final chrome = _VcrSkinChrome.of(crtSkin);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF4A4A4E),
-            Color(0xFF2E2E32),
-            Color(0xFF1A1A1E),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-          if (ledOn)
-            BoxShadow(
-              color: VhsColors.phosphor.withValues(alpha: 0.12),
-              blurRadius: 18,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (crtSkin == CrtTvSkin.portable) const _PortableHandle(),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(chrome.radius),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: chrome.bodyGradient,
             ),
-        ],
-        border: Border.all(color: const Color(0xFF5A5A60)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Brand badge row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-            child: Row(
-              children: [
-                Text(
-                  'VHSFIN',
-                  style: vhsBrandStyle(size: 12).copyWith(letterSpacing: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+              if (ledOn)
+                BoxShadow(
+                  color: VhsColors.phosphor.withValues(alpha: 0.12),
+                  blurRadius: 18,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: VhsColors.brand.withValues(alpha: 0.25),
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: Text(
-                    'COLOR TV · VCR',
-                    style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.5),
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                _Led(on: ledOn),
-                const SizedBox(width: 6),
-                Text(
-                  ledOn ? 'PLAY' : 'OFF',
-                  style: TextStyle(
-                    color: ledOn ? VhsColors.phosphor : VhsColors.phosphorDim,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
+            ],
+            border: Border.all(color: chrome.border),
           ),
-          // CRT with deep hood / bezel
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF0E0E10),
-                    Color(0xFF18181C),
-                    Color(0xFF0A0A0C),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                child: Row(
+                  children: [
+                    Text(
+                      'VHSFIN',
+                      style: vhsBrandStyle(size: 12).copyWith(
+                        letterSpacing: 3,
+                        color: chrome.brandColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: chrome.brandColor.withValues(alpha: 0.25),
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Text(
+                        chrome.badge,
+                        style: TextStyle(
+                          color: chrome.brandColor.withValues(alpha: 0.55),
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    _Led(on: ledOn),
+                    const SizedBox(width: 6),
+                    Text(
+                      ledOn ? 'PLAY' : 'OFF',
+                      style: TextStyle(
+                        color:
+                            ledOn ? VhsColors.phosphor : VhsColors.phosphorDim,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ],
                 ),
-                border: Border.all(color: const Color(0xFF2A2A2E), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(
+                    chrome.bezelPad,
+                    chrome.bezelPad,
+                    chrome.bezelPad,
+                    chrome.bezelPad + 2,
                   ),
-                ],
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(chrome.bezelRadius),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: chrome.bezelGradient,
+                    ),
+                    border: Border.all(color: chrome.bezelBorder, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: VcrCrtScreen(
+                    power: deck.power,
+                    style: deck.style,
+                    tape: deck.loadedTape,
+                    player: player,
+                    surfaceEpoch: surfaceEpoch,
+                    surfaceOwner: surfaceOwner,
+                    resumeAt: deck.resumeAt,
+                    rewinding: rewinding,
+                  ),
+                ),
               ),
-              child: VcrCrtScreen(
-                power: deck.power,
-                style: deck.style,
-                tape: deck.loadedTape,
-                player: player,
-                surfaceEpoch: surfaceEpoch,
-                surfaceOwner: surfaceOwner,
-                resumeAt: deck.resumeAt,
-                rewinding: rewinding,
+              Container(
+                margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                height: 6,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(1),
+                  gradient: LinearGradient(colors: chrome.chromeStrip),
+                ),
               ),
-            ),
-          ),
-          // Chrome strip
-          Container(
-            margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
-            height: 6,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(1),
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF6A6A70),
-                  Color(0xFFC8C8D0),
-                  Color(0xFF7A7A80),
-                  Color(0xFFB0B0B8),
-                  Color(0xFF5A5A60),
-                ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: KeyedSubtree(
+                  key: slotKey,
+                  child: _CassetteSlot(
+                    tape: deck.loadedTape,
+                    art: slotArt,
+                    flyingTapeId: flyingTapeId,
+                    inserting: deck.power == VcrPower.inserting,
+                    ejecting: deck.power == VcrPower.ejecting,
+                    loaded: deck.loadedTape != null &&
+                        (deck.power == VcrPower.playing ||
+                            deck.power == VcrPower.inserting ||
+                            deck.power == VcrPower.ejecting),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: KeyedSubtree(
-              key: slotKey,
-              child: _CassetteSlot(
-                tape: deck.loadedTape,
-                art: slotArt,
-                flyingTapeId: flyingTapeId,
-                inserting: deck.power == VcrPower.inserting,
-                ejecting: deck.power == VcrPower.ejecting,
-                loaded: deck.loadedTape != null &&
-                    (deck.power == VcrPower.playing ||
-                        deck.power == VcrPower.inserting ||
-                        deck.power == VcrPower.ejecting),
-              ),
-            ),
-          ),
-          // Vent / speaker grille suggestion
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: List.generate(
-                18,
-                (i) => Expanded(
-                  child: Container(
-                    height: 10,
-                    margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: BoxDecoration(
-                      color: i.isEven
-                          ? const Color(0xFF121214)
-                          : const Color(0xFF2A2A2E),
-                      borderRadius: BorderRadius.circular(1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: List.generate(
+                    18,
+                    (i) => Expanded(
+                      child: Container(
+                        height: 10,
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        decoration: BoxDecoration(
+                          color: i.isEven
+                              ? chrome.ventDark
+                              : chrome.ventLight,
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+                child: _DeckButtons(
+                  enabled: deck.isPowered,
+                  rewinding: rewinding,
+                  onRew: onRew,
+                  onRewEnd: onRewEnd,
+                  onPlay: onPlay,
+                  onFf: onFf,
+                  onFfEnd: onFfEnd,
+                  onEject: onEject,
+                  onFull: onFull,
+                ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
-            child: _DeckButtons(
-              enabled: deck.isPowered,
-              rewinding: rewinding,
-              onRew: onRew,
-              onRewEnd: onRewEnd,
-              onPlay: onPlay,
-              onFf: onFf,
-              onFfEnd: onFfEnd,
-              onEject: onEject,
-              onFull: onFull,
-            ),
+        ),
+      ],
+    );
+  }
+}
+
+class _VcrSkinChrome {
+  const _VcrSkinChrome({
+    required this.bodyGradient,
+    required this.border,
+    required this.bezelGradient,
+    required this.bezelBorder,
+    required this.chromeStrip,
+    required this.ventDark,
+    required this.ventLight,
+    required this.brandColor,
+    required this.badge,
+    required this.radius,
+    required this.bezelRadius,
+    required this.bezelPad,
+  });
+
+  final List<Color> bodyGradient;
+  final Color border;
+  final List<Color> bezelGradient;
+  final Color bezelBorder;
+  final List<Color> chromeStrip;
+  final Color ventDark;
+  final Color ventLight;
+  final Color brandColor;
+  final String badge;
+  final double radius;
+  final double bezelRadius;
+  final double bezelPad;
+
+  static _VcrSkinChrome of(CrtTvSkin skin) => switch (skin) {
+        CrtTvSkin.zenith => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFF4A4A4E),
+              Color(0xFF2E2E32),
+              Color(0xFF1A1A1E),
+            ],
+            border: Color(0xFF5A5A60),
+            bezelGradient: [
+              Color(0xFF0E0E10),
+              Color(0xFF18181C),
+              Color(0xFF0A0A0C),
+            ],
+            bezelBorder: Color(0xFF2A2A2E),
+            chromeStrip: [
+              Color(0xFF6A6A70),
+              Color(0xFFC8C8D0),
+              Color(0xFF7A7A80),
+              Color(0xFFB0B0B8),
+              Color(0xFF5A5A60),
+            ],
+            ventDark: Color(0xFF121214),
+            ventLight: Color(0xFF2A2A2E),
+            brandColor: VhsColors.brand,
+            badge: 'COLOR TV · VCR',
+            radius: 6,
+            bezelRadius: 4,
+            bezelPad: 14,
           ),
-        ],
+        CrtTvSkin.consumerCream => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFFE8DCC8),
+              Color(0xFFD2C4A8),
+              Color(0xFFB8A888),
+            ],
+            border: Color(0xFF9A8A6E),
+            bezelGradient: [
+              Color(0xFF2A2218),
+              Color(0xFF1A1410),
+              Color(0xFF0C0A08),
+            ],
+            bezelBorder: Color(0xFF4A3A28),
+            chromeStrip: [
+              Color(0xFFC8B898),
+              Color(0xFFF0E6D4),
+              Color(0xFFB0A080),
+              Color(0xFFE0D4BC),
+              Color(0xFFA09070),
+            ],
+            ventDark: Color(0xFF8A7A60),
+            ventLight: Color(0xFFC8B898),
+            brandColor: Color(0xFF3A2A18),
+            badge: 'STEREO · VHS',
+            radius: 10,
+            bezelRadius: 8,
+            bezelPad: 16,
+          ),
+        CrtTvSkin.portable => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFF3A4850),
+              Color(0xFF243038),
+              Color(0xFF141C22),
+            ],
+            border: Color(0xFF5A6A72),
+            bezelGradient: [
+              Color(0xFF0A1014),
+              Color(0xFF12181C),
+              Color(0xFF060A0C),
+            ],
+            bezelBorder: Color(0xFF2A3438),
+            chromeStrip: [
+              Color(0xFF4A5A62),
+              Color(0xFF8A9AA2),
+              Color(0xFF5A6A72),
+              Color(0xFF7A8A92),
+              Color(0xFF3A4A52),
+            ],
+            ventDark: Color(0xFF0E1418),
+            ventLight: Color(0xFF2A3438),
+            brandColor: Color(0xFFD8E4E8),
+            badge: 'PORTABLE TV',
+            radius: 14,
+            bezelRadius: 10,
+            bezelPad: 12,
+          ),
+        CrtTvSkin.woodConsole => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFF6A4228),
+              Color(0xFF4A2E18),
+              Color(0xFF2E1A0E),
+            ],
+            border: Color(0xFF8A5A38),
+            bezelGradient: [
+              Color(0xFF1A1008),
+              Color(0xFF241810),
+              Color(0xFF100A06),
+            ],
+            bezelBorder: Color(0xFF3A2818),
+            chromeStrip: [
+              Color(0xFF8A6238),
+              Color(0xFFC8A070),
+              Color(0xFF7A5230),
+              Color(0xFFB89060),
+              Color(0xFF5A3A20),
+            ],
+            ventDark: Color(0xFF1A1008),
+            ventLight: Color(0xFF4A2E18),
+            brandColor: Color(0xFFE8D4B0),
+            badge: 'CONSOLE · VCR',
+            radius: 4,
+            bezelRadius: 3,
+            bezelPad: 18,
+          ),
+      };
+}
+
+class _PortableHandle extends StatelessWidget {
+  const _PortableHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Center(
+        child: Container(
+          width: 120,
+          height: 14,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF4A5860), Color(0xFF2A3438)],
+            ),
+            border: Border.all(color: const Color(0xFF1A2226)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

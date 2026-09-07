@@ -38,7 +38,7 @@ Prefer:
 
 ## Demo / QA helpers
 
-- **Replay art grab:** Deck Settings → **REPLAY ART GRAB**, or `make demo-onboarding`
+- **Replay art grab:** clear prefs key `vhsfin.art_onboarding_done.v1`, or `make demo-onboarding`
 - Prefer not to wipe SharedPreferences wholesale when testing a single flow
 
 ## Pull requests

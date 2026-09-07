@@ -16,7 +16,7 @@ import 'package:vhsfin/features/living_room/state/series_episodes.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/living_room_view.dart';
-import 'package:vhsfin/features/living_room/widgets/_deck_settings_bar.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_settings_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/episode_picker_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_remote.dart';
@@ -39,9 +39,39 @@ class LivingRoomPage extends ConsumerWidget {
     context.push('/play');
   }
 
+  void _showSettings(BuildContext context, WidgetRef ref) {
+    final session = ref.read(sessionProvider).value;
+    final displayPrefs = ref.read(shelfDisplayPrefsProvider);
+    final experience = ref.read(experiencePrefsProvider);
+    showDeckSettingsSheet(
+      context,
+      connected: session != null,
+      userName: session?.userName,
+      vhsOnly: displayPrefs.vhsOnly,
+      sortLabel: displayPrefs.sort.buttonLabel,
+      saveTimestampOnEject: experience.saveTimestampOnEject,
+      crtSkin: experience.crtSkin,
+      onCollection: () => context.push('/libraries'),
+      onConnect: () => context.push('/connect'),
+      onSignOut: () => ref.read(sessionProvider.notifier).signOut(),
+      onVhsOnlyChanged: (value) =>
+          ref.read(shelfDisplayPrefsProvider.notifier).setVhsOnly(value),
+      onOpenSort: () => showShelfSortSheet(
+        context,
+        current: ref.read(shelfDisplayPrefsProvider).sort,
+        onSelect: (mode) =>
+            ref.read(shelfDisplayPrefsProvider.notifier).setSort(mode),
+      ),
+      onSaveTimestampChanged: (value) => ref
+          .read(experiencePrefsProvider.notifier)
+          .setSaveTimestampOnEject(value),
+      onCrtSkinChanged: (skin) =>
+          ref.read(experiencePrefsProvider.notifier).setCrtSkin(skin),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider).value;
     final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
     final experience = ref.watch(experiencePrefsProvider);
     final shelvesAsync = ref.watch(shelvesProvider);
@@ -121,6 +151,7 @@ class LivingRoomPage extends ConsumerWidget {
       player: player,
       surfaceEpoch: surfaceEpoch,
       surfaceOwner: surfaceOwner,
+      crtSkin: experience.crtSkin,
       flightAnchors: flightAnchors,
       flyingTapeId: flyingTapeId,
       flightSourceKey: flightSourceKey,
@@ -131,10 +162,6 @@ class LivingRoomPage extends ConsumerWidget {
           : null,
       shelves: filteredShelves,
       vhsOnly: displayPrefs.vhsOnly,
-      connected: session != null,
-      userName: session?.userName,
-      sortLabel: displayPrefs.sort.buttonLabel,
-      saveTimestampOnEject: experience.saveTimestampOnEject,
       rewinding: shuttle == DeckShuttle.rewind,
       showArtOnboarding: showArtOnboarding,
       artWarmProgress: artWarm,
@@ -165,24 +192,8 @@ class LivingRoomPage extends ConsumerWidget {
       artForFlight: (tape) =>
           ref.read(vhsSpineArtProvider(tape)).asData?.value,
       onShowRemote: () => _showRemote(context, ref),
-      onCollection: () => context.push('/libraries'),
-      onConnect: () => context.push('/connect'),
-      onSignOut: () => ref.read(sessionProvider.notifier).signOut(),
-      onVhsOnlyChanged: (value) =>
-          ref.read(shelfDisplayPrefsProvider.notifier).setVhsOnly(value),
-      onOpenSort: () => showShelfSortSheet(
-        context,
-        current: displayPrefs.sort,
-        onSelect: (mode) =>
-            ref.read(shelfDisplayPrefsProvider.notifier).setSort(mode),
-      ),
-      onSaveTimestampChanged: (value) => ref
-          .read(experiencePrefsProvider.notifier)
-          .setSaveTimestampOnEject(value),
-      onReplayArtGrab: () async {
-        await ref.read(artOnboardingDoneProvider.notifier).resetForDemo();
-        await ref.read(artWarmProgressProvider.notifier).resetAndRerun();
-      },
+      onShowSettings: () => _showSettings(context, ref),
+      onConnectPrompt: () => context.push('/connect'),
       onArtOnboardingDone: () =>
           ref.read(artOnboardingDoneProvider.notifier).markDone(),
     );
