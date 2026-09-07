@@ -24,7 +24,7 @@ extension ShelfSortModeLabel on ShelfSortMode {
 
 class ShelfDisplayPrefs {
   const ShelfDisplayPrefs({
-    this.vhsOnly = false,
+    this.vhsOnly = true,
     this.sort = ShelfSortMode.titleAsc,
   });
 
@@ -64,14 +64,14 @@ class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
   Future<void> _restore() async {
     final epoch = _epoch;
     final prefs = await SharedPreferences.getInstance();
-    if (epoch != _epoch) return;
+    if (!ref.mounted || epoch != _epoch) return;
     final sortName = prefs.getString(_sortKey);
     final sort = ShelfSortMode.values.firstWhere(
       (m) => m.name == sortName,
       orElse: () => ShelfSortMode.titleAsc,
     );
     state = ShelfDisplayPrefs(
-      vhsOnly: prefs.getBool(_vhsOnlyKey) ?? false,
+      vhsOnly: prefs.getBool(_vhsOnlyKey) ?? true,
       sort: sort,
     );
   }
