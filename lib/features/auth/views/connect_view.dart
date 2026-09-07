@@ -42,9 +42,9 @@ class ConnectView extends StatelessWidget {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,9 +55,10 @@ class ConnectView extends StatelessWidget {
                     'Point VHSFin at your server. Keep the kids account simple.',
                     style: TextStyle(
                       color: VhsColors.brand.withValues(alpha: 0.7),
+                      height: 1.35,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   TextField(
                     controller: serverController,
                     decoration: const InputDecoration(
@@ -66,19 +67,22 @@ class ConnectView extends StatelessWidget {
                     ),
                     keyboardType: TextInputType.url,
                     textInputAction: TextInputAction.next,
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: userController,
                     decoration: const InputDecoration(labelText: 'Username'),
                     textInputAction: TextInputAction.next,
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: passwordController,
                     decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     onSubmitted: (_) => onSubmit(),
+                    style: const TextStyle(fontSize: 16),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 12),
@@ -87,10 +91,13 @@ class ConnectView extends StatelessWidget {
                       style: const TextStyle(color: VhsColors.accent),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: busy ? null : onSubmit,
-                    child: Text(busy ? 'TUNING…' : 'POWER ON'),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: busy ? null : onSubmit,
+                      child: Text(busy ? 'TUNING…' : 'POWER ON'),
+                    ),
                   ),
                 ],
               ),

@@ -3,6 +3,8 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/library/state/art_onboarding.dart';
+import 'package:vhsfin/features/library/widgets/art_grab_onboarding_dialog.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
@@ -27,6 +29,8 @@ class LivingRoomView extends StatelessWidget {
     required this.vhsOnly,
     required this.connected,
     required this.sortLabel,
+    required this.saveTimestampOnEject,
+    required this.rewinding,
     required this.onRew,
     required this.onRewEnd,
     required this.onPlay,
@@ -44,6 +48,11 @@ class LivingRoomView extends StatelessWidget {
     required this.onSignOut,
     required this.onVhsOnlyChanged,
     required this.onOpenSort,
+    required this.onSaveTimestampChanged,
+    required this.onReplayArtGrab,
+    required this.onArtOnboardingDone,
+    this.showArtOnboarding = false,
+    this.artWarmProgress = const ArtWarmProgress(),
     this.shelvesError,
     this.shelves,
     this.userName,
@@ -63,6 +72,10 @@ class LivingRoomView extends StatelessWidget {
   final bool connected;
   final String? userName;
   final String sortLabel;
+  final bool saveTimestampOnEject;
+  final bool rewinding;
+  final bool showArtOnboarding;
+  final ArtWarmProgress artWarmProgress;
 
   final VoidCallback onRew;
   final VoidCallback onRewEnd;
@@ -81,6 +94,9 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onSignOut;
   final ValueChanged<bool> onVhsOnlyChanged;
   final VoidCallback onOpenSort;
+  final ValueChanged<bool> onSaveTimestampChanged;
+  final VoidCallback onReplayArtGrab;
+  final VoidCallback onArtOnboardingDone;
 
   @override
   Widget build(BuildContext context) {
@@ -111,57 +127,66 @@ class LivingRoomView extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth > 820;
-                  // Keep the console wide — only a slim living-room margin.
-                  final pad = wide ? 28.0 : 0.0;
+                  final pad = wide ? 28.0 : 12.0;
+                  final maxConsole = wide ? 1100.0 : double.infinity;
 
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _EntertainmentCenter(
-                          vcr: VcrBox(
-                            deck: deck,
-                            player: player,
-                            surfaceEpoch: surfaceEpoch,
-                            slotKey: flightAnchors.slotKey,
-                            flyingTapeId: flyingTapeId,
-                            slotArt: slotArt,
-                            onRew: onRew,
-                            onRewEnd: onRewEnd,
-                            onPlay: onPlay,
-                            onFf: onFf,
-                            onFfEnd: onFfEnd,
-                            onEject: onEject,
-                            onFull: onFull,
-                          ),
-                          bookshelf: _BookshelfBody(
-                            shelvesLoading: shelvesLoading,
-                            shelvesError: shelvesError,
-                            shelves: shelves,
-                            deck: deck,
-                            vhsOnly: vhsOnly,
-                            flightAnchors: flightAnchors,
-                            flyingTapeId: flyingTapeId,
-                            flightSourceKey: flightSourceKey,
-                            resolveSpineArt: resolveSpineArt,
-                            onTapeTap: onTapeTap,
-                          ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxConsole),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _EntertainmentCenter(
+                              vcr: VcrBox(
+                                deck: deck,
+                                player: player,
+                                surfaceEpoch: surfaceEpoch,
+                                slotKey: flightAnchors.slotKey,
+                                flyingTapeId: flyingTapeId,
+                                slotArt: slotArt,
+                                rewinding: rewinding,
+                                onRew: onRew,
+                                onRewEnd: onRewEnd,
+                                onPlay: onPlay,
+                                onFf: onFf,
+                                onFfEnd: onFfEnd,
+                                onEject: onEject,
+                                onFull: onFull,
+                              ),
+                              bookshelf: _BookshelfBody(
+                                shelvesLoading: shelvesLoading,
+                                shelvesError: shelvesError,
+                                shelves: shelves,
+                                deck: deck,
+                                vhsOnly: vhsOnly,
+                                flightAnchors: flightAnchors,
+                                flyingTapeId: flyingTapeId,
+                                flightSourceKey: flightSourceKey,
+                                resolveSpineArt: resolveSpineArt,
+                                onTapeTap: onTapeTap,
+                              ),
+                            ),
+                            const SizedBox(height: 48),
+                            DeckSettingsBar(
+                              connected: connected,
+                              userName: userName,
+                              vhsOnly: vhsOnly,
+                              sortLabel: sortLabel,
+                              saveTimestampOnEject: saveTimestampOnEject,
+                              onCollection: onCollection,
+                              onConnect: onConnect,
+                              onSignOut: onSignOut,
+                              onVhsOnlyChanged: onVhsOnlyChanged,
+                              onOpenSort: onOpenSort,
+                              onSaveTimestampChanged: onSaveTimestampChanged,
+                              onReplayArtGrab: onReplayArtGrab,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
-                        const SizedBox(height: 128),
-                        DeckSettingsBar(
-                          connected: connected,
-                          userName: userName,
-                          vhsOnly: vhsOnly,
-                          sortLabel: sortLabel,
-                          onCollection: onCollection,
-                          onConnect: onConnect,
-                          onSignOut: onSignOut,
-                          onVhsOnlyChanged: onVhsOnlyChanged,
-                          onOpenSort: onOpenSort,
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   );
                 },
@@ -177,6 +202,18 @@ class LivingRoomView extends StatelessWidget {
               artFor: artForFlight,
             ),
           ),
+          if (showArtOnboarding)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.55),
+                child: Center(
+                  child: ArtGrabOnboardingDialog(
+                    progress: artWarmProgress,
+                    onDone: onArtOnboardingDone,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

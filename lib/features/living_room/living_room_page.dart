@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
 import 'package:vhsfin/features/library/state/vhs_sleeve_actions.dart';
 import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
 import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
+import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 import 'package:vhsfin/features/living_room/state/series_episodes.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
@@ -26,15 +28,46 @@ class LivingRoomPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider).value;
     final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
+    final experience = ref.watch(experiencePrefsProvider);
     final shelvesAsync = ref.watch(shelvesProvider);
+    final artOnboardingDone = ref.watch(artOnboardingDoneProvider);
+    final artWarm = ref.watch(artWarmProgressProvider);
+    final shuttle = ref.watch(deckShuttleProvider);
+
     // Art-index warm only matters for VHS-only filtering — skip the extra
-    // rebuild storm while browsing the full shelf.
+    // rebuild storm while browsing the full shelf (unless onboarding).
     final vhsArtIds = displayPrefs.vhsOnly
         ? ref.watch(vhsArtIndexProvider)
         : const <String>{};
-    if (displayPrefs.vhsOnly) {
-      ref.watch(vhsArtWarmProvider);
+
+    final shelves = shelvesAsync.asData?.value;
+    final hasShelfItems =
+        shelves != null && shelves.any((s) => s.items.isNotEmpty);
+
+    // Kick off art warm for first-time onboarding and/or VHS-only filtering.
+    ref.listen<AsyncValue<List<Shelf>>>(shelvesProvider, (prev, next) {
+      next.whenData((value) {
+        if (!value.any((s) => s.items.isNotEmpty)) return;
+        final needOnboarding = !ref.read(artOnboardingDoneProvider);
+        final vhsOnly = ref.read(shelfDisplayPrefsProvider).vhsOnly;
+        if (needOnboarding || vhsOnly) {
+          ref.read(artWarmProgressProvider.notifier).ensureRunning();
+        }
+      });
+    });
+    ref.listen(shelfDisplayPrefsProvider, (prev, next) {
+      if (!next.vhsOnly) return;
+      final loaded = ref.read(shelvesProvider).asData?.value;
+      if (loaded == null || !loaded.any((s) => s.items.isNotEmpty)) return;
+      ref.read(artWarmProgressProvider.notifier).ensureRunning();
+    });
+    if (hasShelfItems &&
+        (!artOnboardingDone || displayPrefs.vhsOnly) &&
+        artWarm.phase == ArtWarmPhase.idle) {
+      // Shelves may already be cached before listen fires.
+      Future(() => ref.read(artWarmProgressProvider.notifier).ensureRunning());
     }
+
     final deck = ref.watch(vcrDeckProvider);
     final flightAnchors = ref.watch(tapeFlightAnchorsProvider);
     final flyingTapeId = ref.watch(flyingTapeIdProvider);
@@ -46,7 +79,6 @@ class LivingRoomPage extends ConsumerWidget {
         : ref.watch(vhsSpineArtProvider(deck.loadedTape!)).asData?.value;
     final sfx = ref.watch(deckSfxProvider);
 
-    final shelves = shelvesAsync.asData?.value;
     final filteredShelves = shelves == null
         ? null
         : [
@@ -63,6 +95,11 @@ class LivingRoomPage extends ConsumerWidget {
               ),
           ];
 
+    final showArtOnboarding = !artOnboardingDone &&
+        hasShelfItems &&
+        (artWarm.phase == ArtWarmPhase.running ||
+            artWarm.phase == ArtWarmPhase.done);
+
     return LivingRoomView(
       deck: deck,
       player: player,
@@ -78,6 +115,10 @@ class LivingRoomPage extends ConsumerWidget {
       connected: session != null,
       userName: session?.userName,
       sortLabel: displayPrefs.sort.buttonLabel,
+      saveTimestampOnEject: experience.saveTimestampOnEject,
+      rewinding: shuttle == DeckShuttle.rewind,
+      showArtOnboarding: showArtOnboarding,
+      artWarmProgress: artWarm,
       onRew: () {
         player.startRewind();
         sfx.startRewind();
@@ -122,6 +163,15 @@ class LivingRoomPage extends ConsumerWidget {
         onSelect: (mode) =>
             ref.read(shelfDisplayPrefsProvider.notifier).setSort(mode),
       ),
+      onSaveTimestampChanged: (value) => ref
+          .read(experiencePrefsProvider.notifier)
+          .setSaveTimestampOnEject(value),
+      onReplayArtGrab: () async {
+        await ref.read(artOnboardingDoneProvider.notifier).resetForDemo();
+        await ref.read(artWarmProgressProvider.notifier).resetAndRerun();
+      },
+      onArtOnboardingDone: () =>
+          ref.read(artOnboardingDoneProvider.notifier).markDone(),
     );
   }
 

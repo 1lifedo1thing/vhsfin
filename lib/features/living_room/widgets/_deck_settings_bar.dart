@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 
-/// Deck chrome under the entertainment center — VHS filter, sort, collection.
+/// Deck chrome under the entertainment center — filters, experience, account.
 class DeckSettingsBar extends StatelessWidget {
   const DeckSettingsBar({
     super.key,
@@ -14,6 +14,9 @@ class DeckSettingsBar extends StatelessWidget {
     required this.sortLabel,
     required this.onVhsOnlyChanged,
     required this.onOpenSort,
+    required this.saveTimestampOnEject,
+    required this.onSaveTimestampChanged,
+    required this.onReplayArtGrab,
     this.userName,
   });
 
@@ -21,17 +24,20 @@ class DeckSettingsBar extends StatelessWidget {
   final String? userName;
   final bool vhsOnly;
   final String sortLabel;
+  final bool saveTimestampOnEject;
   final VoidCallback onCollection;
   final VoidCallback onConnect;
   final VoidCallback onSignOut;
   final ValueChanged<bool> onVhsOnlyChanged;
   final VoidCallback onOpenSort;
+  final ValueChanged<bool> onSaveTimestampChanged;
+  final VoidCallback onReplayArtGrab;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
+        constraints: const BoxConstraints(maxWidth: 760),
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
           decoration: BoxDecoration(
@@ -56,7 +62,6 @@ class DeckSettingsBar extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.04),
                 blurRadius: 0,
                 offset: const Offset(0, 1),
-                spreadRadius: 0,
               ),
             ],
           ),
@@ -119,9 +124,15 @@ class DeckSettingsBar extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    _VhsOnlySwitch(
+                    _DeckToggle(
+                      label: 'VHS ONLY',
                       value: vhsOnly,
                       onChanged: onVhsOnlyChanged,
+                    ),
+                    _DeckToggle(
+                      label: 'SAVE ON EJECT',
+                      value: saveTimestampOnEject,
+                      onChanged: onSaveTimestampChanged,
                     ),
                     _DeckKey(
                       label: 'SORT',
@@ -133,12 +144,28 @@ class DeckSettingsBar extends StatelessWidget {
                       onPressed: onCollection,
                     ),
                     _DeckKey(
+                      label: 'REPLAY ART GRAB',
+                      onPressed: onReplayArtGrab,
+                    ),
+                    _DeckKey(
                       label: connected ? 'SIGN OUT' : 'CONNECT',
                       sublabel: connected ? userName : null,
                       dim: true,
                       onPressed: connected ? onSignOut : onConnect,
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Save on eject remembers where you left each tape — reinsert '
+                'to continue (then rewind like a real VHS). Replay art grab '
+                're-runs the first-time poster lookup tour.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: VhsColors.brand.withValues(alpha: 0.4),
+                  fontSize: 11,
+                  height: 1.35,
                 ),
               ),
             ],
@@ -149,12 +176,14 @@ class DeckSettingsBar extends StatelessWidget {
   }
 }
 
-class _VhsOnlySwitch extends StatelessWidget {
-  const _VhsOnlySwitch({
+class _DeckToggle extends StatelessWidget {
+  const _DeckToggle({
+    required this.label,
     required this.value,
     required this.onChanged,
   });
 
+  final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -167,7 +196,8 @@ class _VhsOnlySwitch extends StatelessWidget {
         onTap: () => onChanged(!value),
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
@@ -180,7 +210,7 @@ class _VhsOnlySwitch extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'VHS ONLY',
+                label,
                 style: TextStyle(
                   color: value
                       ? VhsColors.phosphor
@@ -245,8 +275,8 @@ class _DeckKey extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          constraints: const BoxConstraints(minWidth: 88),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          constraints: const BoxConstraints(minWidth: 96, minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
@@ -260,6 +290,7 @@ class _DeckKey extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 label,
