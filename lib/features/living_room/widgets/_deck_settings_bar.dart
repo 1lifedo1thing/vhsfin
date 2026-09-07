@@ -18,6 +18,7 @@ class DeckSettingsBar extends StatelessWidget {
     required this.onSaveTimestampChanged,
     required this.onReplayArtGrab,
     this.userName,
+    this.embedded = false,
   });
 
   final bool connected;
@@ -33,144 +34,163 @@ class DeckSettingsBar extends StatelessWidget {
   final ValueChanged<bool> onSaveTimestampChanged;
   final VoidCallback onReplayArtGrab;
 
+  /// When true, sits flush as the lower drawer of the wooden console.
+  final bool embedded;
+
   @override
   Widget build(BuildContext context) {
+    final panel = Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(embedded ? 6 : 10),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF4A4A4E),
+            Color(0xFF2E2E32),
+            Color(0xFF1A1A1E),
+          ],
+        ),
+        border: Border.all(
+          color: embedded
+              ? const Color(0xFF5A5A60)
+              : Colors.black.withValues(alpha: 0.55),
+        ),
+        boxShadow: embedded
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  blurRadius: 0,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: vhsOnly ? VhsColors.ledOn : VhsColors.ledOff,
+                  boxShadow: vhsOnly
+                      ? [
+                          BoxShadow(
+                            color: VhsColors.ledOn.withValues(alpha: 0.45),
+                            blurRadius: 6,
+                          ),
+                        ]
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'DECK SETTINGS',
+                style: TextStyle(
+                  color: VhsColors.phosphor.withValues(alpha: 0.7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'VHSFIN',
+                style: TextStyle(
+                  color: VhsColors.brand.withValues(alpha: 0.35),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.6,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _DeckToggle(
+                  label: 'VHS ONLY',
+                  value: vhsOnly,
+                  onChanged: onVhsOnlyChanged,
+                ),
+                _DeckToggle(
+                  label: 'SAVE ON EJECT',
+                  value: saveTimestampOnEject,
+                  onChanged: onSaveTimestampChanged,
+                ),
+                _DeckKey(
+                  label: 'SORT',
+                  sublabel: sortLabel,
+                  onPressed: onOpenSort,
+                ),
+                _DeckKey(
+                  label: 'COLLECTION',
+                  onPressed: onCollection,
+                ),
+                _DeckKey(
+                  label: 'REPLAY ART GRAB',
+                  onPressed: onReplayArtGrab,
+                ),
+                _DeckKey(
+                  label: connected ? 'SIGN OUT' : 'CONNECT',
+                  sublabel: connected ? userName : null,
+                  dim: true,
+                  onPressed: connected ? onSignOut : onConnect,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Save on eject remembers where you left each tape — reinsert '
+            'to continue (then rewind like a real VHS). Replay art grab '
+            're-runs the first-time poster lookup tour.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: VhsColors.brand.withValues(alpha: 0.4),
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (embedded) return panel;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF2E2E32),
-                Color(0xFF1A1A1E),
-                Color(0xFF121214),
-              ],
-            ),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.55)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.04),
-                blurRadius: 0,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: vhsOnly ? VhsColors.ledOn : VhsColors.ledOff,
-                      boxShadow: vhsOnly
-                          ? [
-                              BoxShadow(
-                                color: VhsColors.ledOn.withValues(alpha: 0.45),
-                                blurRadius: 6,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'DECK SETTINGS',
-                    style: TextStyle(
-                      color: VhsColors.phosphor.withValues(alpha: 0.7),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2.2,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'VHSFIN',
-                    style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.35),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.6,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.06),
-                  ),
-                ),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _DeckToggle(
-                      label: 'VHS ONLY',
-                      value: vhsOnly,
-                      onChanged: onVhsOnlyChanged,
-                    ),
-                    _DeckToggle(
-                      label: 'SAVE ON EJECT',
-                      value: saveTimestampOnEject,
-                      onChanged: onSaveTimestampChanged,
-                    ),
-                    _DeckKey(
-                      label: 'SORT',
-                      sublabel: sortLabel,
-                      onPressed: onOpenSort,
-                    ),
-                    _DeckKey(
-                      label: 'COLLECTION',
-                      onPressed: onCollection,
-                    ),
-                    _DeckKey(
-                      label: 'REPLAY ART GRAB',
-                      onPressed: onReplayArtGrab,
-                    ),
-                    _DeckKey(
-                      label: connected ? 'SIGN OUT' : 'CONNECT',
-                      sublabel: connected ? userName : null,
-                      dim: true,
-                      onPressed: connected ? onSignOut : onConnect,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Save on eject remembers where you left each tape — reinsert '
-                'to continue (then rewind like a real VHS). Replay art grab '
-                're-runs the first-time poster lookup tour.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: VhsColors.brand.withValues(alpha: 0.4),
-                  fontSize: 11,
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
+        child: panel,
       ),
     );
   }

@@ -127,64 +127,61 @@ class LivingRoomView extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth > 820;
-                  final pad = wide ? 28.0 : 12.0;
-                  final maxConsole = wide ? 1100.0 : double.infinity;
+                  final pad = wide ? 32.0 : 12.0;
+                  // Furniture-scale console — wide enough for spines, not a
+                  // stretched living-room void on ultrawide monitors.
+                  final maxConsole = wide ? 920.0 : double.infinity;
 
                   return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(pad, 20, pad, 48),
+                    padding: EdgeInsets.fromLTRB(pad, wide ? 28 : 16, pad, 40),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: maxConsole),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _EntertainmentCenter(
-                              vcr: VcrBox(
-                                deck: deck,
-                                player: player,
-                                surfaceEpoch: surfaceEpoch,
-                                slotKey: flightAnchors.slotKey,
-                                flyingTapeId: flyingTapeId,
-                                slotArt: slotArt,
-                                rewinding: rewinding,
-                                onRew: onRew,
-                                onRewEnd: onRewEnd,
-                                onPlay: onPlay,
-                                onFf: onFf,
-                                onFfEnd: onFfEnd,
-                                onEject: onEject,
-                                onFull: onFull,
-                              ),
-                              bookshelf: _BookshelfBody(
-                                shelvesLoading: shelvesLoading,
-                                shelvesError: shelvesError,
-                                shelves: shelves,
-                                deck: deck,
-                                vhsOnly: vhsOnly,
-                                flightAnchors: flightAnchors,
-                                flyingTapeId: flyingTapeId,
-                                flightSourceKey: flightSourceKey,
-                                resolveSpineArt: resolveSpineArt,
-                                onTapeTap: onTapeTap,
-                              ),
-                            ),
-                            const SizedBox(height: 48),
-                            DeckSettingsBar(
-                              connected: connected,
-                              userName: userName,
-                              vhsOnly: vhsOnly,
-                              sortLabel: sortLabel,
-                              saveTimestampOnEject: saveTimestampOnEject,
-                              onCollection: onCollection,
-                              onConnect: onConnect,
-                              onSignOut: onSignOut,
-                              onVhsOnlyChanged: onVhsOnlyChanged,
-                              onOpenSort: onOpenSort,
-                              onSaveTimestampChanged: onSaveTimestampChanged,
-                              onReplayArtGrab: onReplayArtGrab,
-                            ),
-                            const SizedBox(height: 24),
-                          ],
+                        child: _EntertainmentCenter(
+                          vcr: VcrBox(
+                            deck: deck,
+                            player: player,
+                            surfaceEpoch: surfaceEpoch,
+                            slotKey: flightAnchors.slotKey,
+                            flyingTapeId: flyingTapeId,
+                            slotArt: slotArt,
+                            rewinding: rewinding,
+                            onRew: onRew,
+                            onRewEnd: onRewEnd,
+                            onPlay: onPlay,
+                            onFf: onFf,
+                            onFfEnd: onFfEnd,
+                            onEject: onEject,
+                            onFull: onFull,
+                          ),
+                          bookshelf: _BookshelfBody(
+                            shelvesLoading: shelvesLoading,
+                            shelvesError: shelvesError,
+                            shelves: shelves,
+                            deck: deck,
+                            vhsOnly: vhsOnly,
+                            flightAnchors: flightAnchors,
+                            flyingTapeId: flyingTapeId,
+                            flightSourceKey: flightSourceKey,
+                            resolveSpineArt: resolveSpineArt,
+                            onTapeTap: onTapeTap,
+                            onConnectPrompt: onConnect,
+                          ),
+                          settings: DeckSettingsBar(
+                            embedded: true,
+                            connected: connected,
+                            userName: userName,
+                            vhsOnly: vhsOnly,
+                            sortLabel: sortLabel,
+                            saveTimestampOnEject: saveTimestampOnEject,
+                            onCollection: onCollection,
+                            onConnect: onConnect,
+                            onSignOut: onSignOut,
+                            onVhsOnlyChanged: onVhsOnlyChanged,
+                            onOpenSort: onOpenSort,
+                            onSaveTimestampChanged: onSaveTimestampChanged,
+                            onReplayArtGrab: onReplayArtGrab,
+                          ),
                         ),
                       ),
                     ),
@@ -230,6 +227,7 @@ class _BookshelfBody extends StatelessWidget {
     required this.flightSourceKey,
     required this.resolveSpineArt,
     required this.onTapeTap,
+    required this.onConnectPrompt,
     this.shelvesError,
     this.shelves,
   });
@@ -244,6 +242,7 @@ class _BookshelfBody extends StatelessWidget {
   final String? flightSourceKey;
   final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
+  final VoidCallback onConnectPrompt;
 
   @override
   Widget build(BuildContext context) {
@@ -271,19 +270,22 @@ class _BookshelfBody extends StatelessWidget {
       flightSourceKey: flightSourceKey,
       resolveSpineArt: resolveSpineArt,
       onTapeTap: onTapeTap,
+      onConnectPrompt: onConnectPrompt,
     );
   }
 }
 
-/// VCR sitting on a wooden console with the tape shelf built into it.
+/// VCR + shelf bay + deck drawer as one wooden entertainment center.
 class _EntertainmentCenter extends StatelessWidget {
   const _EntertainmentCenter({
     required this.vcr,
     required this.bookshelf,
+    required this.settings,
   });
 
   final Widget vcr;
   final Widget bookshelf;
+  final Widget settings;
 
   @override
   Widget build(BuildContext context) {
@@ -315,6 +317,8 @@ class _EntertainmentCenter extends StatelessWidget {
           vcr,
           const SizedBox(height: 14),
           bookshelf,
+          const SizedBox(height: 12),
+          settings,
         ],
       ),
     );

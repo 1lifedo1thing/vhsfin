@@ -24,6 +24,7 @@ class BookshelfView extends StatelessWidget {
     required this.resolveSpineArt,
     required this.onTapeTap,
     this.embedded = false,
+    this.onConnectPrompt,
   });
 
   /// When true, sits inside the wooden entertainment center.
@@ -37,6 +38,7 @@ class BookshelfView extends StatelessWidget {
   final String? flightSourceKey;
   final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
+  final VoidCallback? onConnectPrompt;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +61,7 @@ class BookshelfView extends StatelessWidget {
             flightSourceKey: flightSourceKey,
             resolveSpineArt: resolveSpineArt,
             onTapeTap: onTapeTap,
+            onConnectPrompt: onConnectPrompt,
           ),
         ],
       ],
@@ -79,6 +82,7 @@ class _ShelfBlock extends StatelessWidget {
     required this.flightSourceKey,
     required this.resolveSpineArt,
     required this.onTapeTap,
+    this.onConnectPrompt,
   });
 
   final Shelf shelf;
@@ -92,6 +96,7 @@ class _ShelfBlock extends StatelessWidget {
   final String? flightSourceKey;
   final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
+  final VoidCallback? onConnectPrompt;
 
   /// Pack at upright spine thickness + a hair of air between tapes.
   static const _spineGap = 2.0;
@@ -115,19 +120,10 @@ class _ShelfBlock extends StatelessWidget {
           ),
         if (shelf.items.isEmpty)
           _shelfBay(
-            child: Center(
-              child: Text(
-                shelf.id == 'connect'
-                    ? 'Connect to load your tapes'
-                    : shelf.id == 'empty'
-                    ? 'Pick collections below'
-                    : vhsOnly
-                        ? 'No VHS titles on this shelf'
-                        : 'Empty shelf',
-                style: TextStyle(
-                  color: VhsColors.brand.withValues(alpha: 0.55),
-                ),
-              ),
+            child: _EmptyShelfPrompt(
+              shelfId: shelf.id,
+              vhsOnly: vhsOnly,
+              onConnectPrompt: onConnectPrompt,
             ),
           )
         else
@@ -212,6 +208,152 @@ class _ShelfBlock extends StatelessWidget {
             height: _lipHeight,
             child: const CustomPaint(painter: ShelfLipPainter()),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Intentional empty bay — readable copy over ghost tape silhouettes.
+class _EmptyShelfPrompt extends StatelessWidget {
+  const _EmptyShelfPrompt({
+    required this.shelfId,
+    required this.vhsOnly,
+    this.onConnectPrompt,
+  });
+
+  final String shelfId;
+  final bool vhsOnly;
+  final VoidCallback? onConnectPrompt;
+
+  @override
+  Widget build(BuildContext context) {
+    final isConnect = shelfId == 'connect';
+    final title = isConnect
+        ? 'Connect to load your tapes'
+        : shelfId == 'empty'
+            ? 'Pick collections below'
+            : vhsOnly
+                ? 'No VHS titles on this shelf'
+                : 'Empty shelf';
+    final subtitle = isConnect
+        ? 'Tap here or use CONNECT on the deck'
+        : shelfId == 'empty'
+            ? 'Choose libraries from DECK SETTINGS'
+            : null;
+
+    final content = Stack(
+      alignment: Alignment.center,
+      children: [
+        const Positioned(
+          left: 0,
+          right: 0,
+          bottom: 6,
+          height: 148,
+          child: _GhostSpineRow(),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.42),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: VhsColors.brand.withValues(alpha: 0.12),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: vhsBrandStyle(size: 15).copyWith(
+                      color: VhsColors.brand.withValues(alpha: 0.92),
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: VhsColors.phosphor.withValues(alpha: 0.65),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (!isConnect || onConnectPrompt == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onConnectPrompt,
+        borderRadius: BorderRadius.circular(4),
+        hoverColor: VhsColors.phosphor.withValues(alpha: 0.06),
+        splashColor: VhsColors.phosphor.withValues(alpha: 0.12),
+        child: content,
+      ),
+    );
+  }
+}
+
+/// Faint empty spine silhouettes so a vacant bay still reads as a shelf.
+class _GhostSpineRow extends StatelessWidget {
+  const _GhostSpineRow();
+
+  static const _widths = <double>[
+    18, 16, 20, 15, 18, 17, 19, 16, 18, 15, 20, 17, 16, 18, 19, 15, 17, 18,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < _widths.length; i++) ...[
+            if (i > 0) const SizedBox(width: 3),
+            Expanded(
+              flex: (_widths[i] * 10).round(),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  height: 118 + (i % 3) * 6.0,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(2),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.035),
+                        Colors.white.withValues(alpha: 0.07),
+                        Colors.white.withValues(alpha: 0.03),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
