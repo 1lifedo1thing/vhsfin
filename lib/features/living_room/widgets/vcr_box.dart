@@ -24,6 +24,7 @@ class VcrBox extends StatelessWidget {
     required this.onFfEnd,
     required this.onEject,
     required this.onFull,
+    this.rewinding = false,
   });
 
   final VcrDeckState deck;
@@ -39,6 +40,7 @@ class VcrBox extends StatelessWidget {
   final VoidCallback onFfEnd;
   final VoidCallback onEject;
   final VoidCallback onFull;
+  final bool rewinding;
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +150,8 @@ class VcrBox extends StatelessWidget {
                 tape: deck.loadedTape,
                 player: player,
                 surfaceEpoch: surfaceEpoch,
+                resumeAt: deck.resumeAt,
+                rewinding: rewinding,
               ),
             ),
           ),
@@ -210,6 +214,7 @@ class VcrBox extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
             child: _DeckButtons(
               enabled: deck.isPowered,
+              rewinding: rewinding,
               onRew: onRew,
               onRewEnd: onRewEnd,
               onPlay: onPlay,
@@ -411,6 +416,7 @@ class _SlotCassette extends StatelessWidget {
 class _DeckButtons extends StatelessWidget {
   const _DeckButtons({
     required this.enabled,
+    required this.rewinding,
     required this.onRew,
     required this.onRewEnd,
     required this.onPlay,
@@ -421,6 +427,7 @@ class _DeckButtons extends StatelessWidget {
   });
 
   final bool enabled;
+  final bool rewinding;
   final VoidCallback onRew;
   final VoidCallback onRewEnd;
   final VoidCallback onPlay;
@@ -437,6 +444,7 @@ class _DeckButtons extends StatelessWidget {
           icon: Icons.fast_rewind_rounded,
           label: 'REW',
           enabled: enabled,
+          emphasized: rewinding,
           onTapDown: (_) => onRew(),
           onTapUp: (_) => onRewEnd(),
           onTapCancel: onRewEnd,
@@ -510,12 +518,12 @@ class _DeckKey extends StatelessWidget {
         onTapCancel: enabled ? onTapCancel : null,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             children: [
               Container(
-                width: 36,
-                height: 26,
+                width: 44,
+                height: 32,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
                   gradient: const LinearGradient(
