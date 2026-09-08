@@ -11,6 +11,7 @@ import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/widgets/clean_fullscreen_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_flight_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_box.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
@@ -87,14 +88,20 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onConnectPrompt;
   final VoidCallback onArtOnboardingDone;
 
-  bool get _fullscreen =>
-      deck.style == PlaybackStyle.cleanFullscreen &&
-      surfaceOwner == DeckSurfaceOwner.fullscreen;
+  bool get _fullscreen => deck.style == PlaybackStyle.cleanFullscreen;
 
   @override
   Widget build(BuildContext context) {
     final controller = player.controllerOrNull;
-    final showFullVideo = _fullscreen && controller != null;
+    final videoSurface = controller == null
+        ? null
+        : LetterboxedVideo(
+            key: GlobalObjectKey(player),
+            player: player.player,
+            controller: controller,
+            opacity: deck.power == VcrPower.playing ? 1 : 0.15,
+            fullscreen: _fullscreen,
+          );
 
     return Scaffold(
       floatingActionButton: _fullscreen
@@ -166,6 +173,7 @@ class LivingRoomView extends StatelessWidget {
                             onFfEnd: onFfEnd,
                             onEject: onEject,
                             onFull: onFull,
+                            videoSurface: _fullscreen ? null : videoSurface,
                           ),
                           bookshelf: _BookshelfBody(
                             shelvesLoading: shelvesLoading,
@@ -219,8 +227,7 @@ class LivingRoomView extends StatelessWidget {
                 },
                 child: CleanFullscreenOverlay(
                   title: deck.loadedTape?.title ?? '',
-                  surfaceEpoch: surfaceEpoch,
-                  controller: showFullVideo ? controller : null,
+                  videoSurface: videoSurface,
                   onBack: onCloseFullscreen,
                 ),
               ),
@@ -291,10 +298,7 @@ class _BookshelfBody extends StatelessWidget {
 
 /// VCR + shelf bay as one wooden entertainment center (no fat settings drawer).
 class _EntertainmentCenter extends StatelessWidget {
-  const _EntertainmentCenter({
-    required this.vcr,
-    required this.bookshelf,
-  });
+  const _EntertainmentCenter({required this.vcr, required this.bookshelf});
 
   final Widget vcr;
   final Widget bookshelf;
@@ -307,11 +311,7 @@ class _EntertainmentCenter extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF5A3A24),
-            Color(0xFF3A2416),
-            Color(0xFF24160E),
-          ],
+          colors: [Color(0xFF5A3A24), Color(0xFF3A2416), Color(0xFF24160E)],
         ),
         boxShadow: [
           BoxShadow(
@@ -325,11 +325,7 @@ class _EntertainmentCenter extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          vcr,
-          const SizedBox(height: 14),
-          bookshelf,
-        ],
+        children: [vcr, const SizedBox(height: 14), bookshelf],
       ),
     );
   }

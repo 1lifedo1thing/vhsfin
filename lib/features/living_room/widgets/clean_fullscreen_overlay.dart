@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Fullscreen clean playback overlay (no route) — keeps living room mounted.
@@ -7,14 +6,12 @@ class CleanFullscreenOverlay extends StatelessWidget {
   const CleanFullscreenOverlay({
     super.key,
     required this.title,
-    required this.surfaceEpoch,
     required this.onBack,
-    this.controller,
+    this.videoSurface,
   });
 
   final String title;
-  final int surfaceEpoch;
-  final VideoController? controller;
+  final Widget? videoSurface;
   final VoidCallback onBack;
 
   @override
@@ -24,14 +21,8 @@ class CleanFullscreenOverlay extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (controller != null)
-            Video(
-              key: ValueKey('full-overlay-$surfaceEpoch'),
-              controller: controller!,
-              fit: BoxFit.contain,
-              fill: Colors.black,
-              controls: NoVideoControls,
-            )
+          if (videoSurface != null)
+            videoSurface!
           else
             const ColoredBox(color: Colors.black),
           SafeArea(

@@ -34,13 +34,9 @@ class LivingRoomPage extends ConsumerWidget {
     final vcr = ref.read(vcrDeckProvider.notifier);
 
     try {
-      // Keep the page and persistent VideoController alive. Only the single
-      // Video output moves between surfaces.
-      deck.releaseSurface();
+      // One keyed Video moves to the overlay in the same frame. It is never
+      // destroyed or duplicated, so web playback keeps its DOM video element.
       vcr.setStyle(PlaybackStyle.cleanFullscreen);
-      await _waitSurfaceClear();
-      if (!context.mounted) return;
-
       deck.reattachSurface(DeckSurfaceOwner.fullscreen);
       await _resumeAfterSurfaceAttach(deck);
     } finally {
@@ -54,25 +50,12 @@ class LivingRoomPage extends ConsumerWidget {
     final vcr = ref.read(vcrDeckProvider.notifier);
     try {
       await deck.stopShuttle();
-      deck.releaseSurface();
       vcr.setStyle(PlaybackStyle.vhsCrt);
-      await _waitSurfaceClear();
-      if (!context.mounted) return;
-
       deck.reattachSurface(DeckSurfaceOwner.crt);
       await _resumeAfterSurfaceAttach(deck);
     } finally {
       deck.endSurfaceTransfer();
     }
-  }
-
-  /// Let the previous Video / HtmlElementView tear down before remounting.
-  Future<void> _waitSurfaceClear() async {
-    for (var i = 0; i < 2; i++) {
-      await SchedulerBinding.instance.endOfFrame;
-      await Future<void>.delayed(Duration.zero);
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 100));
   }
 
   Future<void> _resumeAfterSurfaceAttach(DeckPlayerController deck) async {

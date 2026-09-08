@@ -17,11 +17,13 @@ class LetterboxedVideo extends StatefulWidget {
     required this.player,
     required this.controller,
     this.opacity = 1,
+    this.fullscreen = false,
   });
 
   final Player player;
   final VideoController controller;
   final double opacity;
+  final bool fullscreen;
 
   @override
   State<LetterboxedVideo> createState() => _LetterboxedVideoState();
@@ -34,17 +36,22 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
   void initState() {
     super.initState();
     if (kIsWeb) {
-      _keeper = HtmlVideoContainKeeper(widget.player)..start();
+      _keeper = HtmlVideoContainKeeper(widget.player, cover: !widget.fullscreen)
+        ..start();
     }
   }
 
   @override
   void didUpdateWidget(covariant LetterboxedVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.player != widget.player) {
+    if (oldWidget.player != widget.player ||
+        oldWidget.fullscreen != widget.fullscreen) {
       _keeper?.stop();
       if (kIsWeb) {
-        _keeper = HtmlVideoContainKeeper(widget.player)..start();
+        _keeper = HtmlVideoContainKeeper(
+          widget.player,
+          cover: !widget.fullscreen,
+        )..start();
       }
     }
   }
@@ -68,7 +75,7 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
               controller: widget.controller,
               controls: NoVideoControls,
               fill: Colors.black,
-              fit: BoxFit.fitHeight,
+              fit: widget.fullscreen ? BoxFit.contain : BoxFit.fitHeight,
               alignment: Alignment.center,
             ),
           ),

@@ -4,7 +4,6 @@ import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_glass_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_rewind_overlay.dart';
-import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
 import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
@@ -21,6 +20,7 @@ class VcrCrtScreen extends StatefulWidget {
     this.resumeAt,
     this.rewinding = false,
     this.screenRadius = 3,
+    this.videoSurface,
   });
 
   final VcrPower power;
@@ -34,6 +34,7 @@ class VcrCrtScreen extends StatefulWidget {
 
   /// Squircle-ish CRT aperture — higher for bubble / WEGA looks.
   final double screenRadius;
+  final Widget? videoSurface;
 
   @override
   State<VcrCrtScreen> createState() => _VcrCrtScreenState();
@@ -52,12 +53,13 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
       vsync: this,
       duration: const Duration(milliseconds: 850),
     );
-    _insertSlide = Tween<Offset>(
-      begin: const Offset(0, 1.15),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _insertController, curve: Curves.easeInOutCubic),
-    );
+    _insertSlide = Tween<Offset>(begin: const Offset(0, 1.15), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _insertController,
+            curve: Curves.easeInOutCubic,
+          ),
+        );
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncPlayback());
   }
 
@@ -72,7 +74,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
     // the new Video surface paints (web HtmlElementView needs a frame).
     final regainedSurface =
         oldWidget.surfaceOwner != DeckSurfaceOwner.crt &&
-            widget.surfaceOwner == DeckSurfaceOwner.crt;
+        widget.surfaceOwner == DeckSurfaceOwner.crt;
     if (regainedSurface &&
         widget.power == VcrPower.playing &&
         widget.surfaceOwner == DeckSurfaceOwner.crt) {
@@ -97,22 +99,14 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
         _insertController.value = 0;
       case VcrPower.inserting:
         if (tape != null && tape.streamUrl.isNotEmpty) {
-          await deck.load(
-            tape.streamUrl,
-            play: false,
-            seekTo: widget.resumeAt,
-          );
+          await deck.load(tape.streamUrl, play: false, seekTo: widget.resumeAt);
         }
         if (!mounted || gen != _syncGen) return;
         await _insertController.forward(from: 0);
       case VcrPower.playing:
         _insertController.value = 1;
         if (tape == null || tape.streamUrl.isEmpty) return;
-        await deck.load(
-          tape.streamUrl,
-          play: true,
-          seekTo: widget.resumeAt,
-        );
+        await deck.load(tape.streamUrl, play: true, seekTo: widget.resumeAt);
     }
   }
 
@@ -124,14 +118,10 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
 
   @override
   Widget build(BuildContext context) {
-    final deck = widget.player;
-    final surfaceEpoch = widget.surfaceEpoch;
-    // Exactly one surface: only bind while CRT owns the shared controller.
-    // (Fullscreen / transfer use owner none|fullscreen — never dual Video.)
-    final showVideo = widget.surfaceOwner == DeckSurfaceOwner.crt &&
+    final showVideo =
+        widget.style == PlaybackStyle.vhsCrt &&
         (widget.power == VcrPower.playing ||
             (widget.power == VcrPower.inserting && widget.tape != null));
-    final controller = deck.controllerOrNull;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(widget.screenRadius),
@@ -141,13 +131,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
           fit: StackFit.expand,
           children: [
             const ColoredBox(color: Colors.black),
-            if (showVideo && controller != null)
-              LetterboxedVideo(
-                key: ValueKey('crt-$surfaceEpoch-${widget.tape?.id}'),
-                player: deck.player,
-                controller: controller,
-                opacity: widget.power == VcrPower.playing ? 1 : 0.15,
-              ),
+            if (showVideo && widget.videoSurface != null) widget.videoSurface!,
             // Ejecting = black while the clunk plays; off = snow.
             if (widget.power == VcrPower.off) const StaticScreen(),
             if (widget.power == VcrPower.inserting)

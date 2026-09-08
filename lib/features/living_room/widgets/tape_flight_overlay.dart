@@ -68,7 +68,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
           final kind = _flight?.kind;
           setState(() => _flight = null);
           if (kind != _FlightKind.eject) {
-            widget.onFlyingTapeIdChanged(null);
+            _notifyFlyingTapeId(null);
           }
         });
   }
@@ -163,7 +163,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     final art = widget.artFor(tape);
     if (!mounted || gen != _flightGen) return;
 
-    widget.onFlyingTapeIdChanged(tape.id);
+    _notifyFlyingTapeId(tape.id);
     setState(() {
       _flight = _FlightSpec(
         tape: tape,
@@ -175,6 +175,13 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     });
     _controller.value = 0;
     await _controller.forward();
+  }
+
+  void _notifyFlyingTapeId(String? tapeId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onFlyingTapeIdChanged(tapeId);
+    });
   }
 
   @override

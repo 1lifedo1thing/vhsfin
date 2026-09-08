@@ -28,6 +28,7 @@ class VcrBox extends StatelessWidget {
     required this.onEject,
     required this.onFull,
     this.rewinding = false,
+    this.videoSurface,
   });
 
   final VcrDeckState deck;
@@ -46,6 +47,7 @@ class VcrBox extends StatelessWidget {
   final VoidCallback onEject;
   final VoidCallback onFull;
   final bool rewinding;
+  final Widget? videoSurface;
 
   @override
   Widget build(BuildContext context) {
@@ -87,10 +89,8 @@ class VcrBox extends StatelessWidget {
                   children: [
                     Text(
                       'VHSFIN',
-                      style: vhsBrandStyle(size: 12).copyWith(
-                        letterSpacing: 3,
-                        color: chrome.brandColor,
-                      ),
+                      style: vhsBrandStyle(size: 12)
+                          .copyWith(letterSpacing: 3, color: chrome.brandColor),
                     ),
                     const SizedBox(width: 8),
                     Container(
@@ -120,8 +120,9 @@ class VcrBox extends StatelessWidget {
                     Text(
                       ledOn ? 'PLAY' : 'OFF',
                       style: TextStyle(
-                        color:
-                            ledOn ? VhsColors.phosphor : VhsColors.phosphorDim,
+                        color: ledOn
+                            ? VhsColors.phosphor
+                            : VhsColors.phosphorDim,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.2,
@@ -165,6 +166,7 @@ class VcrBox extends StatelessWidget {
                     resumeAt: deck.resumeAt,
                     rewinding: rewinding,
                     screenRadius: chrome.screenRadius,
+                    videoSurface: videoSurface,
                   ),
                 ),
               ),
@@ -186,7 +188,8 @@ class VcrBox extends StatelessWidget {
                     flyingTapeId: flyingTapeId,
                     inserting: deck.power == VcrPower.inserting,
                     ejecting: deck.power == VcrPower.ejecting,
-                    loaded: deck.loadedTape != null &&
+                    loaded:
+                        deck.loadedTape != null &&
                         (deck.power == VcrPower.playing ||
                             deck.power == VcrPower.inserting ||
                             deck.power == VcrPower.ejecting),
@@ -203,9 +206,7 @@ class VcrBox extends StatelessWidget {
                         height: 10,
                         margin: const EdgeInsets.symmetric(horizontal: 1),
                         decoration: BoxDecoration(
-                          color: i.isEven
-                              ? chrome.ventDark
-                              : chrome.ventLight,
+                          color: i.isEven ? chrome.ventDark : chrome.ventLight,
                           borderRadius: BorderRadius.circular(1),
                         ),
                       ),
@@ -267,126 +268,94 @@ class _VcrSkinChrome {
   final double screenRadius;
 
   static _VcrSkinChrome of(CrtTvSkin skin) => switch (skin) {
-        CrtTvSkin.zenith => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFF4A4A4E),
-              Color(0xFF2E2E32),
-              Color(0xFF1A1A1E),
-            ],
-            border: Color(0xFF5A5A60),
-            bezelGradient: [
-              Color(0xFF0E0E10),
-              Color(0xFF18181C),
-              Color(0xFF0A0A0C),
-            ],
-            bezelBorder: Color(0xFF2A2A2E),
-            chromeStrip: [
-              Color(0xFF6A6A70),
-              Color(0xFFC8C8D0),
-              Color(0xFF7A7A80),
-              Color(0xFFB0B0B8),
-              Color(0xFF5A5A60),
-            ],
-            ventDark: Color(0xFF121214),
-            ventLight: Color(0xFF2A2A2E),
-            brandColor: VhsColors.brand,
-            badge: 'COLOR TV · VCR',
-            radius: 6,
-            bezelRadius: 4,
-            bezelPad: 14,
-            screenRadius: 4,
-          ),
-        // Late-90s silver flat tube (WEGA-ish) with a soft squircle aperture.
-        CrtTvSkin.wegaSilver => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFFD8DCE0),
-              Color(0xFFB0B6BC),
-              Color(0xFF8A9298),
-            ],
-            border: Color(0xFF6A7278),
-            bezelGradient: [
-              Color(0xFF1A1E22),
-              Color(0xFF0E1216),
-              Color(0xFF06080A),
-            ],
-            bezelBorder: Color(0xFF3A4248),
-            chromeStrip: [
-              Color(0xFFA8B0B8),
-              Color(0xFFE8ECF0),
-              Color(0xFF9098A0),
-              Color(0xFFD0D6DC),
-              Color(0xFF787F86),
-            ],
-            ventDark: Color(0xFF5A6268),
-            ventLight: Color(0xFFC0C6CC),
-            brandColor: Color(0xFF1A2228),
-            badge: 'FD TRINITRON',
-            radius: 18,
-            bezelRadius: 22,
-            bezelPad: 18,
-            screenRadius: 20,
-          ),
-        // Deep bubble CRT — heavy rounded aperture like a curved 90s tube.
-        CrtTvSkin.bubbleTube => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFF2A2C30),
-              Color(0xFF16181C),
-              Color(0xFF0A0C10),
-            ],
-            border: Color(0xFF3A3C40),
-            bezelGradient: [
-              Color(0xFF08090B),
-              Color(0xFF12141A),
-              Color(0xFF040506),
-            ],
-            bezelBorder: Color(0xFF1E2026),
-            chromeStrip: [
-              Color(0xFF3A3C42),
-              Color(0xFF6A6C72),
-              Color(0xFF2A2C32),
-              Color(0xFF5A5C62),
-              Color(0xFF1A1C20),
-            ],
-            ventDark: Color(0xFF08090B),
-            ventLight: Color(0xFF2A2C32),
-            brandColor: Color(0xFFC8CCD0),
-            badge: 'SUPER TUBE',
-            radius: 28,
-            bezelRadius: 36,
-            bezelPad: 22,
-            screenRadius: 28,
-          ),
-        // 90s teal / graphite sports plastic.
-        CrtTvSkin.aquaGraphite => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFF2A4850),
-              Color(0xFF1A3038),
-              Color(0xFF0E1C22),
-            ],
-            border: Color(0xFF3A6870),
-            bezelGradient: [
-              Color(0xFF061014),
-              Color(0xFF0C181C),
-              Color(0xFF040A0C),
-            ],
-            bezelBorder: Color(0xFF1A3840),
-            chromeStrip: [
-              Color(0xFF2A5860),
-              Color(0xFF5A98A0),
-              Color(0xFF1A4048),
-              Color(0xFF4A8890),
-              Color(0xFF0E3038),
-            ],
-            ventDark: Color(0xFF061014),
-            ventLight: Color(0xFF2A4850),
-            brandColor: Color(0xFFB8E0E8),
-            badge: 'STEREO COLOR',
-            radius: 16,
-            bezelRadius: 20,
-            bezelPad: 16,
-            screenRadius: 16,
-          ),
-      };
+    CrtTvSkin.zenith => const _VcrSkinChrome(
+      bodyGradient: [Color(0xFF4A4A4E), Color(0xFF2E2E32), Color(0xFF1A1A1E)],
+      border: Color(0xFF5A5A60),
+      bezelGradient: [Color(0xFF0E0E10), Color(0xFF18181C), Color(0xFF0A0A0C)],
+      bezelBorder: Color(0xFF2A2A2E),
+      chromeStrip: [
+        Color(0xFF6A6A70),
+        Color(0xFFC8C8D0),
+        Color(0xFF7A7A80),
+        Color(0xFFB0B0B8),
+        Color(0xFF5A5A60),
+      ],
+      ventDark: Color(0xFF121214),
+      ventLight: Color(0xFF2A2A2E),
+      brandColor: VhsColors.brand,
+      badge: 'COLOR TV · VCR',
+      radius: 6,
+      bezelRadius: 4,
+      bezelPad: 14,
+      screenRadius: 4,
+    ),
+    // Late-90s silver flat tube (WEGA-ish) with a soft squircle aperture.
+    CrtTvSkin.wegaSilver => const _VcrSkinChrome(
+      bodyGradient: [Color(0xFFD8DCE0), Color(0xFFB0B6BC), Color(0xFF8A9298)],
+      border: Color(0xFF6A7278),
+      bezelGradient: [Color(0xFF1A1E22), Color(0xFF0E1216), Color(0xFF06080A)],
+      bezelBorder: Color(0xFF3A4248),
+      chromeStrip: [
+        Color(0xFFA8B0B8),
+        Color(0xFFE8ECF0),
+        Color(0xFF9098A0),
+        Color(0xFFD0D6DC),
+        Color(0xFF787F86),
+      ],
+      ventDark: Color(0xFF5A6268),
+      ventLight: Color(0xFFC0C6CC),
+      brandColor: Color(0xFF1A2228),
+      badge: 'FD TRINITRON',
+      radius: 18,
+      bezelRadius: 22,
+      bezelPad: 18,
+      screenRadius: 20,
+    ),
+    // Deep bubble CRT — heavy rounded aperture like a curved 90s tube.
+    CrtTvSkin.bubbleTube => const _VcrSkinChrome(
+      bodyGradient: [Color(0xFF2A2C30), Color(0xFF16181C), Color(0xFF0A0C10)],
+      border: Color(0xFF3A3C40),
+      bezelGradient: [Color(0xFF08090B), Color(0xFF12141A), Color(0xFF040506)],
+      bezelBorder: Color(0xFF1E2026),
+      chromeStrip: [
+        Color(0xFF3A3C42),
+        Color(0xFF6A6C72),
+        Color(0xFF2A2C32),
+        Color(0xFF5A5C62),
+        Color(0xFF1A1C20),
+      ],
+      ventDark: Color(0xFF08090B),
+      ventLight: Color(0xFF2A2C32),
+      brandColor: Color(0xFFC8CCD0),
+      badge: 'SUPER TUBE',
+      radius: 28,
+      bezelRadius: 36,
+      bezelPad: 22,
+      screenRadius: 28,
+    ),
+    // 90s teal / graphite sports plastic.
+    CrtTvSkin.aquaGraphite => const _VcrSkinChrome(
+      bodyGradient: [Color(0xFF2A4850), Color(0xFF1A3038), Color(0xFF0E1C22)],
+      border: Color(0xFF3A6870),
+      bezelGradient: [Color(0xFF061014), Color(0xFF0C181C), Color(0xFF040A0C)],
+      bezelBorder: Color(0xFF1A3840),
+      chromeStrip: [
+        Color(0xFF2A5860),
+        Color(0xFF5A98A0),
+        Color(0xFF1A4048),
+        Color(0xFF4A8890),
+        Color(0xFF0E3038),
+      ],
+      ventDark: Color(0xFF061014),
+      ventLight: Color(0xFF2A4850),
+      brandColor: Color(0xFFB8E0E8),
+      badge: 'STEREO COLOR',
+      radius: 16,
+      bezelRadius: 20,
+      bezelPad: 16,
+      screenRadius: 16,
+    ),
+  };
 }
 
 class _BubbleAntenna extends StatelessWidget {
@@ -464,8 +433,9 @@ class _CassetteSlot extends StatelessWidget {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(3)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(3),
+            ),
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -487,10 +457,7 @@ class _CassetteSlot extends StatelessWidget {
                 Align(
                   // Flight overlay owns insert/eject motion; bay only holds.
                   alignment: Alignment.center,
-                  child: _SlotCassette(
-                    title: tape?.title,
-                    art: art,
-                  ),
+                  child: _SlotCassette(title: tape?.title, art: art),
                 )
               else if (!loaded && !inserting && !ejecting)
                 const Center(
@@ -690,8 +657,8 @@ class _DeckKey extends StatelessWidget {
     final color = !enabled
         ? VhsColors.brand.withValues(alpha: 0.22)
         : emphasized
-            ? VhsColors.phosphor
-            : VhsColors.brand.withValues(alpha: 0.8);
+        ? VhsColors.phosphor
+        : VhsColors.brand.withValues(alpha: 0.8);
 
     return Expanded(
       child: InkWell(

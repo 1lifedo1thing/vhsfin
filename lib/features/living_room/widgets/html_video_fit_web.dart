@@ -9,18 +9,20 @@ import 'package:web/web.dart' as web;
 ///
 /// Flutter's BoxFit / FittedBox are ignored by HtmlElementView on web
 /// (platform views size independently).
-Future<void> applyHtmlVideoObjectFitContain(Player player) async {
+Future<void> applyHtmlVideoObjectFitContain(
+  Player player, {
+  bool cover = true,
+}) async {
   _ensureGlobalContainStyle();
   try {
     final handle = await player.handle;
-    final instances =
-        globalContext.getProperty(_kInstances.toJS) as JSObject?;
+    final instances = globalContext.getProperty(_kInstances.toJS) as JSObject?;
     if (instances != null) {
       final byString = instances.getProperty(handle.toString().toJS);
       final byNumber = instances.getProperty(handle.toJS);
       final raw = byString ?? byNumber;
       if (raw != null) {
-        _styleVideo(raw as web.HTMLVideoElement);
+        _styleVideo(raw as web.HTMLVideoElement, cover: cover);
       }
     }
   } catch (_) {
@@ -32,12 +34,12 @@ Future<void> applyHtmlVideoObjectFitContain(Player player) async {
   for (var i = 0; i < videos.length; i++) {
     final node = videos.item(i);
     if (node != null) {
-      _styleVideo(node as web.HTMLVideoElement);
+      _styleVideo(node as web.HTMLVideoElement, cover: cover);
     }
   }
 }
 
-void _styleVideo(web.HTMLVideoElement video) {
+void _styleVideo(web.HTMLVideoElement video, {required bool cover}) {
   // Fill the CRT box height; crop sides for widescreen, pillarbox if narrower.
   // object-fit: cover in a 4:3 frame ≈ fitHeight for typical 16:9 streams.
   video.style.cssText = [
@@ -45,12 +47,16 @@ void _styleVideo(web.HTMLVideoElement video) {
     'height: 100%',
     'max-width: 100%',
     'max-height: 100%',
-    'object-fit: cover !important',
+    'object-fit: ${cover ? 'cover' : 'contain'} !important',
     'object-position: center center',
     'background-color: #000000',
     'border: none',
   ].join(';');
-  video.style.setProperty('object-fit', 'cover', 'important');
+  video.style.setProperty(
+    'object-fit',
+    cover ? 'cover' : 'contain',
+    'important',
+  );
 }
 
 var _injectedStyle = false;
@@ -77,16 +83,17 @@ const _kInstances = r'$com.alexmercerind.media_kit.instances';
 
 /// Keep re-applying while the CRT surface is mounted (Flutter may reset styles).
 class HtmlVideoContainKeeper {
-  HtmlVideoContainKeeper(this.player);
+  HtmlVideoContainKeeper(this.player, {this.cover = true});
 
   final Player player;
+  final bool cover;
   Timer? _timer;
 
   void start() {
     _timer?.cancel();
-    unawaited(applyHtmlVideoObjectFitContain(player));
+    unawaited(applyHtmlVideoObjectFitContain(player, cover: cover));
     _timer = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      unawaited(applyHtmlVideoObjectFitContain(player));
+      unawaited(applyHtmlVideoObjectFitContain(player, cover: cover));
     });
   }
 
