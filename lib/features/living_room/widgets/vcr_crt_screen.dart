@@ -64,13 +64,12 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
         oldWidget.tape?.id != widget.tape?.id) {
       _syncPlayback();
     }
-    // Coming back from fullscreen — CRT just remounted; nudge play after paint.
+    // Coming back from fullscreen — living room reattaches; nudge play after
+    // the new Video surface paints (web HtmlElementView needs a frame).
     final regainedSurface =
         oldWidget.surfaceOwner != DeckSurfaceOwner.crt &&
             widget.surfaceOwner == DeckSurfaceOwner.crt;
-    final leftFullscreen = oldWidget.style == PlaybackStyle.cleanFullscreen &&
-        widget.style == PlaybackStyle.vhsCrt;
-    if ((regainedSurface || leftFullscreen) &&
+    if (regainedSurface &&
         widget.power == VcrPower.playing &&
         widget.surfaceOwner == DeckSurfaceOwner.crt) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -123,9 +122,9 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
   Widget build(BuildContext context) {
     final deck = widget.player;
     final surfaceEpoch = widget.surfaceEpoch;
-    // Don't bind a second Video while fullscreen (or nobody) owns the surface.
+    // Exactly one surface: only bind while CRT owns the shared controller.
+    // (Fullscreen / transfer use owner none|fullscreen — never dual Video.)
     final showVideo = widget.surfaceOwner == DeckSurfaceOwner.crt &&
-        widget.style != PlaybackStyle.cleanFullscreen &&
         (widget.power == VcrPower.playing ||
             (widget.power == VcrPower.inserting && widget.tape != null));
     final controller = deck.controllerOrNull;

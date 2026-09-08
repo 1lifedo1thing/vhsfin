@@ -8,6 +8,10 @@ import 'package:vhsfin/features/playback/state/deck_player.dart';
 import 'package:vhsfin/features/playback/views/clean_player_view.dart';
 
 /// Clean fullscreen playback using the same shared deck player.
+///
+/// Surface handoff: this page claims fullscreen on enter and only
+/// [releaseSurface]s before pop. The living room awaits [GoRouter.push] and
+/// reattaches the CRT — never reattach here after pop (State is disposing).
 class CleanPlayerPage extends ConsumerStatefulWidget {
   const CleanPlayerPage({super.key});
 
@@ -52,38 +56,22 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
     }
   }
 
-  /// Hand the surface back to the CRT without two [Video]s on one controller.
+  /// Unbind fullscreen Video, release ownership, pop.
   ///
-  /// Order matters on web: unbind fullscreen → pop → wait for HtmlElementView
-  /// teardown → new [VideoController] → CRT style → play.
+  /// CRT remount is owned by [LivingRoomPage] after [push] completes.
   Future<void> _backToVcr() async {
     if (_leaving) return;
     _leaving = true;
 
     final deck = ref.read(deckPlayerProvider);
-    final vcr = ref.read(vcrDeckProvider.notifier);
     await deck.stopShuttle();
 
-    // 1) Unmount fullscreen Video while this route is still up.
     if (mounted) setState(() => _bindVideo = false);
     deck.releaseSurface();
     await _waitFrames(2);
     await Future<void>.delayed(const Duration(milliseconds: 64));
 
-    // 2) Pop so the route (and any platform view) is gone.
     if (mounted) context.pop();
-
-    // 3) Wait for HtmlElementView / <video> teardown after route dispose.
-    await _waitFrames(2);
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-
-    // 4) Fresh controller for CRT, then allow the bezel to bind.
-    deck.reattachSurface(DeckSurfaceOwner.crt);
-    vcr.setStyle(PlaybackStyle.vhsCrt);
-
-    await _waitFrames(2);
-    await Future<void>.delayed(const Duration(milliseconds: 32));
-    await deck.play();
   }
 
   @override

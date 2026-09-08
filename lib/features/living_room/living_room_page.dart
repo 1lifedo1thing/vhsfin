@@ -30,13 +30,31 @@ class LivingRoomPage extends ConsumerWidget {
     final deckState = ref.read(vcrDeckProvider);
     if (!deckState.isPlaying) return;
     final deck = ref.read(deckPlayerProvider);
+    final vcr = ref.read(vcrDeckProvider.notifier);
     // Unbind CRT Video before the fullscreen route mounts another.
-    ref.read(vcrDeckProvider.notifier).setStyle(PlaybackStyle.cleanFullscreen);
+    // Owner alone gates the bezel Video — release first so nothing binds.
     deck.releaseSurface();
+    vcr.setStyle(PlaybackStyle.cleanFullscreen);
     await SchedulerBinding.instance.endOfFrame;
     await Future<void>.delayed(const Duration(milliseconds: 48));
     if (!context.mounted) return;
-    context.push('/play');
+
+    // Await the route so CRT restore runs on this still-mounted page.
+    // CleanPlayerPage must not reattach after pop (its State is disposing).
+    await context.push('/play');
+    if (!context.mounted) return;
+
+    // Fullscreen has released + popped; wait for HtmlElementView teardown.
+    await SchedulerBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (!context.mounted) return;
+
+    vcr.setStyle(PlaybackStyle.vhsCrt);
+    deck.reattachSurface(DeckSurfaceOwner.crt);
+    await SchedulerBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 48));
+    if (!context.mounted) return;
+    await deck.play();
   }
 
   void _showSettings(BuildContext context, WidgetRef ref) {

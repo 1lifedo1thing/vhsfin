@@ -12,6 +12,23 @@ enum DeckShuttle { idle, rewind, fastForward }
 /// web texture (audio keeps going). Use [none] while transferring ownership.
 enum DeckSurfaceOwner { none, crt, fullscreen }
 
+/// Pure ownership ledger (no media_kit) — release before claim; claim bumps epoch.
+class DeckSurfaceLedger {
+  var epoch = 0;
+  var owner = DeckSurfaceOwner.crt;
+
+  void release() {
+    if (owner == DeckSurfaceOwner.none) return;
+    owner = DeckSurfaceOwner.none;
+  }
+
+  void claim(DeckSurfaceOwner next) {
+    assert(next != DeckSurfaceOwner.none, 'claim needs a real owner');
+    owner = next;
+    epoch++;
+  }
+}
+
 /// One shared deck player for the CRT bezel and fullscreen.
 ///
 /// Only one [Video] should bind to [controller] at a time — hide the CRT
@@ -21,8 +38,7 @@ class DeckPlayerController {
   VideoController? _controller;
   String? _loadedUrl;
   Timer? _shuttleTimer;
-  var _surfaceEpoch = 0;
-  var _surfaceOwner = DeckSurfaceOwner.crt;
+  final _surface = DeckSurfaceLedger();
   DeckShuttle _shuttle = DeckShuttle.idle;
   void Function(int epoch)? onSurfaceChanged;
   void Function(DeckShuttle shuttle)? onShuttleChanged;
@@ -30,8 +46,8 @@ class DeckPlayerController {
   bool get isReady => _player != null;
   VideoController? get controllerOrNull => _controller;
   String? get loadedUrl => _loadedUrl;
-  int get surfaceEpoch => _surfaceEpoch;
-  DeckSurfaceOwner get surfaceOwner => _surfaceOwner;
+  int get surfaceEpoch => _surface.epoch;
+  DeckSurfaceOwner get surfaceOwner => _surface.owner;
   DeckShuttle get shuttle => _shuttle;
   Duration get position =>
       _player?.state.position ?? Duration.zero;
@@ -59,9 +75,9 @@ class DeckPlayerController {
 
   /// Drop ownership so every [Video] unmounts before a transfer.
   void releaseSurface() {
-    if (_surfaceOwner == DeckSurfaceOwner.none) return;
-    _surfaceOwner = DeckSurfaceOwner.none;
-    onSurfaceChanged?.call(_surfaceEpoch);
+    if (_surface.owner == DeckSurfaceOwner.none) return;
+    _surface.release();
+    onSurfaceChanged?.call(_surface.epoch);
   }
 
   /// Fresh video surface after fullscreen — web loses the old texture otherwise.
@@ -72,9 +88,8 @@ class DeckPlayerController {
     assert(owner != DeckSurfaceOwner.none, 'reattach needs a real owner');
     _ensure();
     _controller = VideoController(_player!);
-    _surfaceOwner = owner;
-    _surfaceEpoch++;
-    onSurfaceChanged?.call(_surfaceEpoch);
+    _surface.claim(owner);
+    onSurfaceChanged?.call(_surface.epoch);
   }
 
   Future<void> load(
