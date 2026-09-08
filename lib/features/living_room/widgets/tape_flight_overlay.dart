@@ -178,7 +178,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
   }
 
   void _notifyFlyingTapeId(String? tapeId) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future<void>(() {
       if (!mounted) return;
       widget.onFlyingTapeIdChanged(tapeId);
     });
