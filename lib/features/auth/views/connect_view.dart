@@ -50,14 +50,6 @@ class ConnectView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('JELLYFIN', style: vhsBrandStyle(size: 28)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Point VHSFin at your server. Keep the kids account simple.',
-                    style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.7),
-                      height: 1.35,
-                    ),
-                  ),
                   const SizedBox(height: 28),
                   TextField(
                     controller: serverController,
