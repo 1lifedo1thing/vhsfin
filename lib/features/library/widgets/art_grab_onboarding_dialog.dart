@@ -62,8 +62,8 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                           '${progress.total} titles. Spines will use sleeve '
                           'art when available.'
                       : 'Looking up VHS tapes and posters for your shelves. '
-                          'The first pass takes longer — later launches reuse '
-                          'the cache.',
+                          'Titles already in the cache skip the network — '
+                          'only new ones take longer.',
                   style: TextStyle(
                     color: VhsColors.brand.withValues(alpha: 0.75),
                     height: 1.35,

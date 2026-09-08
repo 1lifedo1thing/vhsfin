@@ -29,18 +29,28 @@ Future<void> showTapeInspectSheet(
     precacheImage(VhsSleeveCrop.providerFor(url), context);
   }
 
+  final desktop = MediaQuery.sizeOf(context).width >= 720;
+  final content = _TapeInspectSheet(
+    tape: tape,
+    onInsert: onInsert,
+    onRejectSleeve: onRejectSleeve,
+    initialArt: art,
+    loadArt: loadArt,
+    desktop: desktop,
+  );
+  if (desktop) {
+    return showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (_) => content,
+    );
+  }
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.72),
-    builder: (context) => _TapeInspectSheet(
-      tape: tape,
-      onInsert: onInsert,
-      onRejectSleeve: onRejectSleeve,
-      initialArt: art,
-      loadArt: loadArt,
-    ),
+    builder: (_) => content,
   );
 }
 
@@ -49,6 +59,7 @@ class _TapeInspectSheet extends StatefulWidget {
     required this.tape,
     required this.onInsert,
     required this.onRejectSleeve,
+    required this.desktop,
     this.initialArt,
     this.loadArt,
   });
@@ -56,6 +67,7 @@ class _TapeInspectSheet extends StatefulWidget {
   final Tape tape;
   final VoidCallback onInsert;
   final Future<void> Function() onRejectSleeve;
+  final bool desktop;
   final VhsSpineArt? initialArt;
   final Future<VhsSpineArt?> Function()? loadArt;
 
@@ -91,13 +103,19 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
     }
     final bottom = MediaQuery.paddingOf(context).bottom;
     final maxH = MediaQuery.sizeOf(context).height * 0.82;
+    final outerPadding = widget.desktop
+        ? const EdgeInsets.all(24)
+        : EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
+      padding: outerPadding,
       child: Align(
-        alignment: Alignment.bottomCenter,
+        alignment: widget.desktop ? Alignment.center : Alignment.bottomCenter,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 520, maxHeight: maxH),
+          constraints: BoxConstraints(
+            maxWidth: widget.desktop ? 780 : 520,
+            maxHeight: maxH,
+          ),
           child: Material(
             color: Colors.transparent,
             child: Container(
@@ -112,10 +130,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
                     Color(0xFF140E0A),
                   ],
                 ),
-                border: Border.all(
-                  color: const Color(0xFF6A4A32),
-                  width: 1.5,
-                ),
+                border: Border.all(color: const Color(0xFF6A4A32), width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.55),
@@ -177,10 +192,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
 }
 
 class _PopupHeader extends StatelessWidget {
-  const _PopupHeader({
-    required this.showWrongSleeve,
-    this.onWrongSleeve,
-  });
+  const _PopupHeader({required this.showWrongSleeve, this.onWrongSleeve});
 
   final bool showWrongSleeve;
   final VoidCallback? onWrongSleeve;
@@ -285,27 +297,37 @@ class _InfoBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 400;
+        final wide = constraints.maxWidth >= 600;
         final sleeve = _SleeveArt(
           tape: tape,
           art: art,
-          height: wide ? 220 : 200,
+          height: wide ? 300 : 200,
         );
+
+        if (wide) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              sleeve,
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _TapeTitleBlock(tape: tape),
+                    const SizedBox(height: 18),
+                    _TapeMetaBlock(tape: tape),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (wide)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  sleeve,
-                  const SizedBox(width: 16),
-                  Expanded(child: _TapeTitleBlock(tape: tape)),
-                ],
-              )
-            else
-              Center(child: sleeve),
+            Center(child: sleeve),
             // Full-width shelf — same content width as the title.
             CustomPaint(
               size: Size(constraints.maxWidth, 3),
@@ -316,10 +338,8 @@ class _InfoBody extends StatelessWidget {
               painter: ShelfLipPainter(),
             ),
             const SizedBox(height: 14),
-            if (!wide) ...[
-              _TapeTitleBlock(tape: tape),
-              const SizedBox(height: 14),
-            ],
+            _TapeTitleBlock(tape: tape),
+            const SizedBox(height: 14),
             _TapeMetaBlock(tape: tape),
           ],
         );
@@ -342,6 +362,7 @@ class _SleeveArt extends StatelessWidget {
 
   static const _spineLean = 0.1; // ~5.7° into the cover
   static const _depthFace = 5.0;
+
   /// Open-edge clamshell curve — right side only; spine edge stays square.
   static const _vhsCorner = 14.0;
 
@@ -488,9 +509,9 @@ class _FrontSleeve extends StatelessWidget {
 
   /// Square on the spine edge; rounded only on the open right edge.
   BorderRadius get _faceRadius => BorderRadius.only(
-        topRight: Radius.circular(cornerRadius),
-        bottomRight: Radius.circular(cornerRadius),
-      );
+    topRight: Radius.circular(cornerRadius),
+    bottomRight: Radius.circular(cornerRadius),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -660,10 +681,8 @@ class _TapeTitleBlock extends StatelessWidget {
       children: [
         Text(
           tape.title,
-          style: vhsBrandStyle(size: 22).copyWith(
-            letterSpacing: 1.1,
-            height: 1.15,
-          ),
+          style: vhsBrandStyle(size: 22)
+              .copyWith(letterSpacing: 1.1, height: 1.15),
         ),
         if (tape.subtitle != null && tape.subtitle!.isNotEmpty) ...[
           const SizedBox(height: 6),
@@ -702,8 +721,7 @@ class _TapeMetaBlock extends StatelessWidget {
               _MetaChip(label: _formatDuration(tape.duration!)),
             if (tape.episodeCount != null)
               _MetaChip(label: '${tape.episodeCount} EPS'),
-            if (tape.officialRating != null &&
-                tape.officialRating!.isNotEmpty)
+            if (tape.officialRating != null && tape.officialRating!.isNotEmpty)
               _MetaChip(label: tape.officialRating!),
             if (tape.communityRating != null)
               _MetaChip(label: _formatRating(tape.communityRating!)),
@@ -821,10 +839,7 @@ class _MetaChip extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({
-    required this.onBack,
-    required this.onInsert,
-  });
+  const _ActionBar({required this.onBack, required this.onInsert});
 
   final VoidCallback onBack;
   final VoidCallback onInsert;

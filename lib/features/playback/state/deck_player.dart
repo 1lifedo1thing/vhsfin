@@ -40,6 +40,7 @@ class DeckPlayerController {
   Timer? _shuttleTimer;
   final _surface = DeckSurfaceLedger();
   DeckShuttle _shuttle = DeckShuttle.idle;
+  var _surfaceTransferInProgress = false;
   void Function(int epoch)? onSurfaceChanged;
   void Function(DeckShuttle shuttle)? onShuttleChanged;
 
@@ -49,8 +50,8 @@ class DeckPlayerController {
   int get surfaceEpoch => _surface.epoch;
   DeckSurfaceOwner get surfaceOwner => _surface.owner;
   DeckShuttle get shuttle => _shuttle;
-  Duration get position =>
-      _player?.state.position ?? Duration.zero;
+  bool get surfaceTransferInProgress => _surfaceTransferInProgress;
+  Duration get position => _player?.state.position ?? Duration.zero;
 
   Player get player {
     _ensure();
@@ -80,23 +81,30 @@ class DeckPlayerController {
     onSurfaceChanged?.call(_surface.epoch);
   }
 
-  /// Fresh video surface after fullscreen — web loses the old texture otherwise.
+  /// Prevent overlapping enter/exit taps from racing surface ownership.
+  bool beginSurfaceTransfer() {
+    if (_surfaceTransferInProgress) return false;
+    _surfaceTransferInProgress = true;
+    return true;
+  }
+
+  void endSurfaceTransfer() {
+    _surfaceTransferInProgress = false;
+  }
+
+  /// Claim the persistent controller after the previous [Video] unmounts.
   ///
-  /// Call only after every [Video] has been disposed (owner [none]). Then bump
-  /// [surfaceEpoch] so the CRT remounts on a new [VideoController].
+  /// A [VideoController] supports one output and is intended to live alongside
+  /// its [Player]. Recreating it during every handoff can pause or detach web
+  /// playback. The epoch remounts the [Video] without replacing its controller.
   void reattachSurface(DeckSurfaceOwner owner) {
     assert(owner != DeckSurfaceOwner.none, 'reattach needs a real owner');
     _ensure();
-    _controller = VideoController(_player!);
     _surface.claim(owner);
     onSurfaceChanged?.call(_surface.epoch);
   }
 
-  Future<void> load(
-    String url, {
-    bool play = true,
-    Duration? seekTo,
-  }) async {
+  Future<void> load(String url, {bool play = true, Duration? seekTo}) async {
     stopShuttle();
     _ensure();
     if (_loadedUrl == url) {
@@ -149,7 +157,9 @@ class DeckPlayerController {
     if (_player == null) return;
     _shuttleTimer?.cancel();
     _setShuttle(DeckShuttle.rewind);
-    _shuttleTimer = Timer.periodic(const Duration(milliseconds: 200), (_) async {
+    _shuttleTimer = Timer.periodic(const Duration(milliseconds: 200), (
+      _,
+    ) async {
       final position = _player!.state.position;
       final next = position - const Duration(milliseconds: 900);
       await _player!.seek(next < Duration.zero ? Duration.zero : next);
@@ -180,8 +190,8 @@ class DeckPlayerController {
 
 final deckSurfaceEpochProvider =
     NotifierProvider<DeckSurfaceEpochNotifier, int>(
-  DeckSurfaceEpochNotifier.new,
-);
+      DeckSurfaceEpochNotifier.new,
+    );
 
 class DeckSurfaceEpochNotifier extends Notifier<int> {
   @override
@@ -192,8 +202,8 @@ class DeckSurfaceEpochNotifier extends Notifier<int> {
 
 final deckSurfaceOwnerProvider =
     NotifierProvider<DeckSurfaceOwnerNotifier, DeckSurfaceOwner>(
-  DeckSurfaceOwnerNotifier.new,
-);
+      DeckSurfaceOwnerNotifier.new,
+    );
 
 class DeckSurfaceOwnerNotifier extends Notifier<DeckSurfaceOwner> {
   @override
@@ -202,8 +212,9 @@ class DeckSurfaceOwnerNotifier extends Notifier<DeckSurfaceOwner> {
   void set(DeckSurfaceOwner owner) => state = owner;
 }
 
-final deckShuttleProvider =
-    NotifierProvider<DeckShuttleNotifier, DeckShuttle>(DeckShuttleNotifier.new);
+final deckShuttleProvider = NotifierProvider<DeckShuttleNotifier, DeckShuttle>(
+  DeckShuttleNotifier.new,
+);
 
 class DeckShuttleNotifier extends Notifier<DeckShuttle> {
   @override

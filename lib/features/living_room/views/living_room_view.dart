@@ -9,6 +9,7 @@ import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
+import 'package:vhsfin/features/living_room/widgets/clean_fullscreen_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_flight_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_box.dart';
@@ -37,6 +38,7 @@ class LivingRoomView extends StatelessWidget {
     required this.onFfEnd,
     required this.onEject,
     required this.onFull,
+    required this.onCloseFullscreen,
     required this.resolveSpineArt,
     required this.onTapeTap,
     required this.onFlyingTapeIdChanged,
@@ -75,6 +77,7 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onFfEnd;
   final VoidCallback onEject;
   final VoidCallback onFull;
+  final VoidCallback onCloseFullscreen;
   final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
   final ValueChanged<String?> onFlyingTapeIdChanged;
@@ -84,31 +87,40 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onConnectPrompt;
   final VoidCallback onArtOnboardingDone;
 
+  bool get _fullscreen =>
+      deck.style == PlaybackStyle.cleanFullscreen &&
+      surfaceOwner == DeckSurfaceOwner.fullscreen;
+
   @override
   Widget build(BuildContext context) {
+    final controller = player.controllerOrNull;
+    final showFullVideo = _fullscreen && controller != null;
+
     return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'vhsfin_settings',
-            onPressed: onShowSettings,
-            backgroundColor: const Color(0xFF2A2A28),
-            foregroundColor: VhsColors.brand,
-            tooltip: 'Settings',
-            child: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton.small(
-            heroTag: 'vhsfin_remote',
-            onPressed: onShowRemote,
-            backgroundColor: const Color(0xFF2A2A28),
-            foregroundColor: VhsColors.brand,
-            tooltip: 'Remote',
-            child: const Icon(Icons.settings_remote_rounded),
-          ),
-        ],
-      ),
+      floatingActionButton: _fullscreen
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'vhsfin_settings',
+                  onPressed: onShowSettings,
+                  backgroundColor: const Color(0xFF2A2A28),
+                  foregroundColor: VhsColors.brand,
+                  tooltip: 'Settings',
+                  child: const Icon(Icons.tune_rounded),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.small(
+                  heroTag: 'vhsfin_remote',
+                  onPressed: onShowRemote,
+                  backgroundColor: const Color(0xFF2A2A28),
+                  foregroundColor: VhsColors.brand,
+                  tooltip: 'Remote',
+                  child: const Icon(Icons.settings_remote_rounded),
+                ),
+              ],
+            ),
       body: Stack(
         children: [
           DecoratedBox(
@@ -129,8 +141,6 @@ class LivingRoomView extends StatelessWidget {
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth > 820;
                   final pad = wide ? 32.0 : 12.0;
-                  // Furniture-scale console — wide enough for spines, not a
-                  // stretched living-room void on ultrawide monitors.
                   final maxConsole = wide ? 920.0 : double.infinity;
 
                   return SingleChildScrollView(
@@ -196,6 +206,22 @@ class LivingRoomView extends StatelessWidget {
                     progress: artWarmProgress,
                     onDone: onArtOnboardingDone,
                   ),
+                ),
+              ),
+            ),
+          if (_fullscreen)
+            Positioned.fill(
+              child: PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, _) {
+                  if (didPop) return;
+                  onCloseFullscreen();
+                },
+                child: CleanFullscreenOverlay(
+                  title: deck.loadedTape?.title ?? '',
+                  surfaceEpoch: surfaceEpoch,
+                  controller: showFullVideo ? controller : null,
+                  onBack: onCloseFullscreen,
                 ),
               ),
             ),

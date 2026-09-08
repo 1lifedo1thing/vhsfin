@@ -16,15 +16,18 @@ void main() {
 
     await container
         .read(experiencePrefsProvider.notifier)
-        .setCrtSkin(CrtTvSkin.portable);
-    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.portable);
+        .setCrtSkin(CrtTvSkin.bubbleTube);
+    expect(
+      container.read(experiencePrefsProvider).crtSkin,
+      CrtTvSkin.bubbleTube,
+    );
 
     await Future<void>.delayed(const Duration(milliseconds: 20));
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('vhsfin.crt_tv_skin.v1'), 'portable');
+    expect(prefs.getString('vhsfin.crt_tv_skin.v1'), 'bubbleTube');
   });
 
-  test('crtSkin restore reads stored skin', () async {
+  test('crtSkin restore reads stored skin and legacy names', () async {
     SharedPreferences.setMockInitialValues({
       'vhsfin.crt_tv_skin.v1': 'woodConsole',
     });
@@ -35,7 +38,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(
       container.read(experiencePrefsProvider).crtSkin,
-      CrtTvSkin.woodConsole,
+      CrtTvSkin.aquaGraphite,
     );
   });
 }

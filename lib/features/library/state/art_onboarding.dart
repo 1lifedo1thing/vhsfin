@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
 import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
@@ -16,21 +18,32 @@ class ArtOnboardingDoneNotifier extends Notifier<bool> {
   static const prefsKey = 'vhsfin.art_onboarding_done.v1';
 
   int _epoch = 0;
+  Completer<void> _ready = Completer<void>();
+
+  /// Completes after the first prefs restore.
+  Future<void> get ready => _ready.future;
 
   @override
   bool build() {
+    _ready = Completer<void>();
     _restore();
     return false;
   }
 
   Future<void> _restore() async {
     final epoch = _epoch;
-    final prefs = await SharedPreferences.getInstance();
-    if (epoch != _epoch) return;
-    state = prefs.getBool(prefsKey) ?? false;
+    final ready = _ready;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (epoch != _epoch) return;
+      state = prefs.getBool(prefsKey) ?? false;
+    } finally {
+      if (!ready.isCompleted) ready.complete();
+    }
   }
 
   Future<void> markDone() async {
+    if (state) return;
     _epoch++;
     state = true;
     final prefs = await SharedPreferences.getInstance();
@@ -44,6 +57,22 @@ class ArtOnboardingDoneNotifier extends Notifier<bool> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(prefsKey, false);
   }
+}
+
+/// Session-only: show the art-grab dialog. Persisted "done" alone would hide
+/// the finished screen the moment warm completes; this keeps it until CONTINUE.
+final artOnboardingUiProvider =
+    NotifierProvider<ArtOnboardingUiNotifier, bool>(
+  ArtOnboardingUiNotifier.new,
+);
+
+class ArtOnboardingUiNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void show() => state = true;
+
+  void dismiss() => state = false;
 }
 
 enum ArtWarmPhase { idle, running, done }
@@ -129,6 +158,7 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
           total: 0,
           foundCount: 0,
         );
+        await ref.read(artOnboardingDoneProvider.notifier).markDone();
         return;
       }
 
@@ -139,11 +169,72 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
         foundCount: ref.read(vhsArtIndexProvider).length,
       );
 
-      const chunk = 8;
+      final resolver = ref.read(vhsCoverResolverProvider);
+
+      // Pass 1 — disk/memory only. Reloads with a full cache finish in seconds
+      // instead of re-timeouting every known miss on a phone.
+      const cacheChunk = 24;
       var completed = 0;
-      for (var i = 0; i < tapes.length; i += chunk) {
+      final needsNetwork = <Tape>[];
+      for (var i = 0; i < tapes.length; i += cacheChunk) {
         if (gen != _generation) return;
-        final slice = tapes.sublist(i, math.min(i + chunk, tapes.length));
+        final slice = tapes.sublist(i, math.min(i + cacheChunk, tapes.length));
+        final batch = <String, bool>{};
+        final outcomes = await Future.wait(slice.map((tape) async {
+          if (tape.hasBoxImage || tape.isDemo) {
+            return (tape: tape, cached: true, hasArt: true);
+          }
+          final cached = await resolver.hasCachedLookup(
+            title: tape.title,
+            year: tape.productionYear,
+            seriesTitle: tape.seriesTitle,
+            seasonNumber: tape.seasonNumber,
+            kind: tape.kind,
+          );
+          if (!cached) {
+            return (tape: tape, cached: false, hasArt: false);
+          }
+          try {
+            final art = await resolver.spineArtFor(
+              title: tape.title,
+              year: tape.productionYear,
+              seriesTitle: tape.seriesTitle,
+              seasonNumber: tape.seasonNumber,
+              kind: tape.kind,
+              allowNetwork: false,
+            );
+            return (tape: tape, cached: true, hasArt: art != null);
+          } catch (_) {
+            return (tape: tape, cached: true, hasArt: false);
+          }
+        }));
+        if (gen != _generation) return;
+
+        for (final outcome in outcomes) {
+          if (!outcome.cached) {
+            needsNetwork.add(outcome.tape);
+            continue;
+          }
+          batch[outcome.tape.id] = outcome.hasArt;
+          completed++;
+        }
+        index.markMany(batch);
+        state = ArtWarmProgress(
+          phase: ArtWarmPhase.running,
+          completed: completed,
+          total: tapes.length,
+          foundCount: ref.read(vhsArtIndexProvider).length,
+        );
+      }
+
+      // Pass 2 — only titles with no cache entry (true first-time lookups).
+      const netChunk = 6;
+      for (var i = 0; i < needsNetwork.length; i += netChunk) {
+        if (gen != _generation) return;
+        final slice = needsNetwork.sublist(
+          i,
+          math.min(i + netChunk, needsNetwork.length),
+        );
         final batch = <String, bool>{};
         await Future.wait(slice.map((tape) async {
           try {
@@ -172,6 +263,9 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
         total: tapes.length,
         foundCount: ref.read(vhsArtIndexProvider).length,
       );
+      // Persist even if the user never taps CONTINUE — otherwise every
+      // relaunch reopens the popup and re-walks the shelf.
+      await ref.read(artOnboardingDoneProvider.notifier).markDone();
     } finally {
       if (gen == _generation) _running = false;
     }

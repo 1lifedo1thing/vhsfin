@@ -75,10 +75,14 @@ class VhsCoverResolver {
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
-  static const missTtl = Duration(hours: 12);
+  /// Keep ordinary misses around long enough that relaunch / VHS-only warm
+  /// does not re-stampede VHSCollector + IA (timeouts stack up on phones).
+  static const missTtl = Duration(days: 14);
   static const _collectorBase = 'https://vhscollector.com';
 
   final Map<String, String> _memory = {};
+  Map<String, String>? _disk;
+  Future<void>? _diskLoad;
 
   /// Episodes remap to one `"Show Season N"` lookup so we don't stampede
   /// VHSCollector / IA opening a long season. Year is cleared so every
@@ -128,6 +132,7 @@ class VhsCoverResolver {
     String? seriesTitle,
     int? seasonNumber,
     TapeKind kind = TapeKind.movie,
+    bool allowNetwork = true,
   }) async {
     final id = lookupIdentity(
       title: title,
@@ -154,16 +159,20 @@ class VhsCoverResolver {
       return _decodeMemory(_memory[key]!);
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final disk = _readDisk(prefs);
+    final disk = await _ensureDisk();
     if (disk.containsKey(key)) {
       final value = disk[key]!;
-      if (_isFreshMiss(value) || !_isMiss(value)) {
+      // Hits always win. Fresh misses win. Stale misses are reused when we are
+      // not allowed to hit the network (warm / relaunch), so phones don't
+      // re-timeout hundreds of known-empty titles.
+      if (!_isMiss(value) || _isFreshMiss(value) || !allowNetwork) {
         _memory[key] = value;
         return _decodeMemory(value);
       }
       disk.remove(key);
     }
+
+    if (!allowNetwork) return null;
 
     final resolved = await _search(
       title,
@@ -180,6 +189,7 @@ class VhsCoverResolver {
         : jsonEncode(resolved.toJson());
     _memory[key] = stored;
     disk[key] = stored;
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_cacheKey, jsonEncode(disk));
     debugPrint(
       resolved == null
@@ -187,6 +197,28 @@ class VhsCoverResolver {
           : 'vhs-spine HIT "$title" kind=$kind → ${resolved.imageUrl}',
     );
     return resolved;
+  }
+
+  /// Whether this title identity already has a disk/memory cache entry
+  /// (hit or miss). Used by art warm to skip network for known titles.
+  Future<bool> hasCachedLookup({
+    required String title,
+    int? year,
+    String? seriesTitle,
+    int? seasonNumber,
+    TapeKind kind = TapeKind.movie,
+  }) async {
+    final id = lookupIdentity(
+      title: title,
+      year: year,
+      seriesTitle: seriesTitle,
+      seasonNumber: seasonNumber,
+      kind: kind,
+    );
+    final key = _key(id.title, id.year, id.seriesTitle, id.kind);
+    if (_memory.containsKey(key)) return true;
+    final disk = await _ensureDisk();
+    return disk.containsKey(key);
   }
 
   Future<String?> coverUrlFor({
@@ -229,13 +261,23 @@ class VhsCoverResolver {
       'rejected': true,
     });
     _memory[key] = stored;
-    final prefs = await SharedPreferences.getInstance();
-    final disk = _readDisk(prefs);
+    final disk = await _ensureDisk();
     disk[key] = stored;
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_cacheKey, jsonEncode(disk));
     debugPrint(
       'vhs-spine REJECT → miss "${id.title}" (${id.year}) kind=${id.kind}',
     );
+  }
+
+  Future<Map<String, String>> _ensureDisk() async {
+    if (_disk != null) return _disk!;
+    _diskLoad ??= () async {
+      final prefs = await SharedPreferences.getInstance();
+      _disk = _readDisk(prefs);
+    }();
+    await _diskLoad;
+    return _disk!;
   }
 
   /// Rejected sleeves stay missed longer than ordinary cache misses.

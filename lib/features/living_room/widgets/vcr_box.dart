@@ -8,9 +8,7 @@ import 'package:vhsfin/features/living_room/widgets/vcr_crt_screen.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
-/// Compact all-in-one TV/VCR — CRT hood, cassette door, deck keys.
-///
-/// Visual chrome follows [crtSkin] (Zenith, cream, portable, wood).
+/// Visual chrome follows [crtSkin] (Zenith, WEGA silver, bubble tube, aqua).
 class VcrBox extends StatelessWidget {
   const VcrBox({
     super.key,
@@ -57,7 +55,7 @@ class VcrBox extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (crtSkin == CrtTvSkin.portable) const _PortableHandle(),
+        if (crtSkin == CrtTvSkin.bubbleTube) const _BubbleAntenna(),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(chrome.radius),
@@ -166,6 +164,7 @@ class VcrBox extends StatelessWidget {
                     surfaceOwner: surfaceOwner,
                     resumeAt: deck.resumeAt,
                     rewinding: rewinding,
+                    screenRadius: chrome.screenRadius,
                   ),
                 ),
               ),
@@ -250,6 +249,7 @@ class _VcrSkinChrome {
     required this.radius,
     required this.bezelRadius,
     required this.bezelPad,
+    required this.screenRadius,
   });
 
   final List<Color> bodyGradient;
@@ -264,6 +264,7 @@ class _VcrSkinChrome {
   final double radius;
   final double bezelRadius;
   final double bezelPad;
+  final double screenRadius;
 
   static _VcrSkinChrome of(CrtTvSkin skin) => switch (skin) {
         CrtTvSkin.zenith => const _VcrSkinChrome(
@@ -293,120 +294,118 @@ class _VcrSkinChrome {
             radius: 6,
             bezelRadius: 4,
             bezelPad: 14,
+            screenRadius: 4,
           ),
-        CrtTvSkin.consumerCream => const _VcrSkinChrome(
+        // Late-90s silver flat tube (WEGA-ish) with a soft squircle aperture.
+        CrtTvSkin.wegaSilver => const _VcrSkinChrome(
             bodyGradient: [
-              Color(0xFFE8DCC8),
-              Color(0xFFD2C4A8),
-              Color(0xFFB8A888),
+              Color(0xFFD8DCE0),
+              Color(0xFFB0B6BC),
+              Color(0xFF8A9298),
             ],
-            border: Color(0xFF9A8A6E),
+            border: Color(0xFF6A7278),
             bezelGradient: [
-              Color(0xFF2A2218),
-              Color(0xFF1A1410),
-              Color(0xFF0C0A08),
+              Color(0xFF1A1E22),
+              Color(0xFF0E1216),
+              Color(0xFF06080A),
             ],
-            bezelBorder: Color(0xFF4A3A28),
+            bezelBorder: Color(0xFF3A4248),
             chromeStrip: [
-              Color(0xFFC8B898),
-              Color(0xFFF0E6D4),
-              Color(0xFFB0A080),
-              Color(0xFFE0D4BC),
-              Color(0xFFA09070),
+              Color(0xFFA8B0B8),
+              Color(0xFFE8ECF0),
+              Color(0xFF9098A0),
+              Color(0xFFD0D6DC),
+              Color(0xFF787F86),
             ],
-            ventDark: Color(0xFF8A7A60),
-            ventLight: Color(0xFFC8B898),
-            brandColor: Color(0xFF3A2A18),
-            badge: 'STEREO · VHS',
-            radius: 10,
-            bezelRadius: 8,
-            bezelPad: 16,
-          ),
-        CrtTvSkin.portable => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFF3A4850),
-              Color(0xFF243038),
-              Color(0xFF141C22),
-            ],
-            border: Color(0xFF5A6A72),
-            bezelGradient: [
-              Color(0xFF0A1014),
-              Color(0xFF12181C),
-              Color(0xFF060A0C),
-            ],
-            bezelBorder: Color(0xFF2A3438),
-            chromeStrip: [
-              Color(0xFF4A5A62),
-              Color(0xFF8A9AA2),
-              Color(0xFF5A6A72),
-              Color(0xFF7A8A92),
-              Color(0xFF3A4A52),
-            ],
-            ventDark: Color(0xFF0E1418),
-            ventLight: Color(0xFF2A3438),
-            brandColor: Color(0xFFD8E4E8),
-            badge: 'PORTABLE TV',
-            radius: 14,
-            bezelRadius: 10,
-            bezelPad: 12,
-          ),
-        CrtTvSkin.woodConsole => const _VcrSkinChrome(
-            bodyGradient: [
-              Color(0xFF6A4228),
-              Color(0xFF4A2E18),
-              Color(0xFF2E1A0E),
-            ],
-            border: Color(0xFF8A5A38),
-            bezelGradient: [
-              Color(0xFF1A1008),
-              Color(0xFF241810),
-              Color(0xFF100A06),
-            ],
-            bezelBorder: Color(0xFF3A2818),
-            chromeStrip: [
-              Color(0xFF8A6238),
-              Color(0xFFC8A070),
-              Color(0xFF7A5230),
-              Color(0xFFB89060),
-              Color(0xFF5A3A20),
-            ],
-            ventDark: Color(0xFF1A1008),
-            ventLight: Color(0xFF4A2E18),
-            brandColor: Color(0xFFE8D4B0),
-            badge: 'CONSOLE · VCR',
-            radius: 4,
-            bezelRadius: 3,
+            ventDark: Color(0xFF5A6268),
+            ventLight: Color(0xFFC0C6CC),
+            brandColor: Color(0xFF1A2228),
+            badge: 'FD TRINITRON',
+            radius: 18,
+            bezelRadius: 22,
             bezelPad: 18,
+            screenRadius: 20,
+          ),
+        // Deep bubble CRT — heavy rounded aperture like a curved 90s tube.
+        CrtTvSkin.bubbleTube => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFF2A2C30),
+              Color(0xFF16181C),
+              Color(0xFF0A0C10),
+            ],
+            border: Color(0xFF3A3C40),
+            bezelGradient: [
+              Color(0xFF08090B),
+              Color(0xFF12141A),
+              Color(0xFF040506),
+            ],
+            bezelBorder: Color(0xFF1E2026),
+            chromeStrip: [
+              Color(0xFF3A3C42),
+              Color(0xFF6A6C72),
+              Color(0xFF2A2C32),
+              Color(0xFF5A5C62),
+              Color(0xFF1A1C20),
+            ],
+            ventDark: Color(0xFF08090B),
+            ventLight: Color(0xFF2A2C32),
+            brandColor: Color(0xFFC8CCD0),
+            badge: 'SUPER TUBE',
+            radius: 28,
+            bezelRadius: 36,
+            bezelPad: 22,
+            screenRadius: 28,
+          ),
+        // 90s teal / graphite sports plastic.
+        CrtTvSkin.aquaGraphite => const _VcrSkinChrome(
+            bodyGradient: [
+              Color(0xFF2A4850),
+              Color(0xFF1A3038),
+              Color(0xFF0E1C22),
+            ],
+            border: Color(0xFF3A6870),
+            bezelGradient: [
+              Color(0xFF061014),
+              Color(0xFF0C181C),
+              Color(0xFF040A0C),
+            ],
+            bezelBorder: Color(0xFF1A3840),
+            chromeStrip: [
+              Color(0xFF2A5860),
+              Color(0xFF5A98A0),
+              Color(0xFF1A4048),
+              Color(0xFF4A8890),
+              Color(0xFF0E3038),
+            ],
+            ventDark: Color(0xFF061014),
+            ventLight: Color(0xFF2A4850),
+            brandColor: Color(0xFFB8E0E8),
+            badge: 'STEREO COLOR',
+            radius: 16,
+            bezelRadius: 20,
+            bezelPad: 16,
+            screenRadius: 16,
           ),
       };
 }
 
-class _PortableHandle extends StatelessWidget {
-  const _PortableHandle();
+class _BubbleAntenna extends StatelessWidget {
+  const _BubbleAntenna();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 2),
       child: Center(
         child: Container(
-          width: 120,
-          height: 14,
+          width: 56,
+          height: 10,
           decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: BorderRadius.circular(5),
             gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF4A5860), Color(0xFF2A3438)],
+              colors: [Color(0xFF3A3C42), Color(0xFF1A1C20)],
             ),
-            border: Border.all(color: const Color(0xFF1A2226)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: const Color(0xFF0A0C10)),
           ),
         ),
       ),

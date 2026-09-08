@@ -50,11 +50,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     final epoch = _epoch;
     final prefs = await SharedPreferences.getInstance();
     if (!ref.mounted || epoch != _epoch) return;
-    final skinName = prefs.getString(_crtSkinKey);
-    final skin = CrtTvSkin.values.firstWhere(
-      (s) => s.name == skinName,
-      orElse: () => CrtTvSkin.zenith,
-    );
+    final skin = CrtTvSkinLabels.fromPrefs(prefs.getString(_crtSkinKey));
     state = ExperiencePrefs(
       saveTimestampOnEject: prefs.getBool(_saveTsKey) ?? false,
       crtSkin: skin,

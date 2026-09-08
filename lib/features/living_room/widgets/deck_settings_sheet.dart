@@ -119,13 +119,15 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                           height: 7,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                _vhsOnly ? VhsColors.ledOn : VhsColors.ledOff,
+                            color: _vhsOnly
+                                ? VhsColors.ledOn
+                                : VhsColors.ledOff,
                             boxShadow: _vhsOnly
                                 ? [
                                     BoxShadow(
-                                      color: VhsColors.ledOn
-                                          .withValues(alpha: 0.45),
+                                      color: VhsColors.ledOn.withValues(
+                                        alpha: 0.45,
+                                      ),
                                       blurRadius: 6,
                                     ),
                                   ]
@@ -155,6 +157,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                     const SizedBox(height: 8),
                     _DeckToggle(
                       label: 'VHS ONLY',
+                      subtitle: 'Only titles with scanned VHS artwork.',
                       value: _vhsOnly,
                       onChanged: (value) {
                         setState(() => _vhsOnly = value);
@@ -164,6 +167,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                     const SizedBox(height: 8),
                     _DeckToggle(
                       label: 'SAVE ON EJECT',
+                      subtitle: 'Keeps your place. Rewinding is still on you.',
                       value: _saveOnEject,
                       onChanged: (value) {
                         setState(() => _saveOnEject = value);
@@ -207,6 +211,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                     ),
                     const SizedBox(height: 14),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: _DeckKey(
@@ -221,7 +226,12 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                         Expanded(
                           child: _DeckKey(
                             label: widget.connected ? 'SIGN OUT' : 'CONNECT',
-                            sublabel: widget.connected ? widget.userName : null,
+                            // Always reserve subtitle height so both keys match.
+                            sublabel: widget.connected
+                                ? (widget.userName?.isNotEmpty == true
+                                      ? widget.userName
+                                      : ' ')
+                                : ' ',
                             dim: true,
                             onPressed: () {
                               Navigator.of(context).pop();
@@ -234,17 +244,6 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Save on eject remembers where you left each tape — '
-                      'reinsert to continue (then rewind like a real VHS).',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: VhsColors.brand.withValues(alpha: 0.4),
-                        fontSize: 11,
-                        height: 1.35,
-                      ),
                     ),
                   ],
                 ),
@@ -306,11 +305,13 @@ class _SkinChip extends StatelessWidget {
 class _DeckToggle extends StatelessWidget {
   const _DeckToggle({
     required this.label,
+    required this.subtitle,
     required this.value,
     required this.onChanged,
   });
 
   final String label;
+  final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -323,7 +324,7 @@ class _DeckToggle extends StatelessWidget {
         onTap: () => onChanged(!value),
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: 58),
           padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
@@ -336,16 +337,31 @@ class _DeckToggle extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: value
-                        ? VhsColors.phosphor
-                        : VhsColors.brand.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: value
+                            ? VhsColors.phosphor
+                            : VhsColors.brand.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: VhsColors.brand.withValues(alpha: 0.45),
+                        fontSize: 10,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Text(
@@ -402,7 +418,7 @@ class _DeckKey extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: 52),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
@@ -421,20 +437,22 @@ class _DeckKey extends StatelessWidget {
                   letterSpacing: 1.3,
                 ),
               ),
-              if (sublabel != null && sublabel!.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  sublabel!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: VhsColors.brand.withValues(alpha: 0.45),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 9,
-                    letterSpacing: 0.8,
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                (sublabel != null && sublabel!.trim().isNotEmpty)
+                    ? sublabel!
+                    : ' ',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: (sublabel != null && sublabel!.trim().isNotEmpty)
+                      ? VhsColors.brand.withValues(alpha: 0.45)
+                      : Colors.transparent,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 9,
+                  letterSpacing: 0.8,
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -451,18 +469,12 @@ Future<void> showShelfSortSheet(
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (context) => _ShelfSortSheet(
-      current: current,
-      onSelect: onSelect,
-    ),
+    builder: (context) => _ShelfSortSheet(current: current, onSelect: onSelect),
   );
 }
 
 class _ShelfSortSheet extends StatelessWidget {
-  const _ShelfSortSheet({
-    required this.current,
-    required this.onSelect,
-  });
+  const _ShelfSortSheet({required this.current, required this.onSelect});
 
   final ShelfSortMode current;
   final ValueChanged<ShelfSortMode> onSelect;

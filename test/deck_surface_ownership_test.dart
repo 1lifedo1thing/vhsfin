@@ -31,4 +31,16 @@ void main() {
     expect(surface.owner, DeckSurfaceOwner.none);
     expect(surface.epoch, 0);
   });
+
+  test('surface handoff rejects overlapping transfers', () {
+    final deck = DeckPlayerController();
+    addTearDown(deck.dispose);
+
+    expect(deck.beginSurfaceTransfer(), isTrue);
+    expect(deck.beginSurfaceTransfer(), isFalse);
+    deck.endSurfaceTransfer();
+
+    expect(deck.beginSurfaceTransfer(), isTrue);
+    deck.endSurfaceTransfer();
+  });
 }

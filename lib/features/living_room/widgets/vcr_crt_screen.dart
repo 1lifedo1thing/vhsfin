@@ -20,6 +20,7 @@ class VcrCrtScreen extends StatefulWidget {
     this.tape,
     this.resumeAt,
     this.rewinding = false,
+    this.screenRadius = 3,
   });
 
   final VcrPower power;
@@ -30,6 +31,9 @@ class VcrCrtScreen extends StatefulWidget {
   final DeckSurfaceOwner surfaceOwner;
   final Duration? resumeAt;
   final bool rewinding;
+
+  /// Squircle-ish CRT aperture — higher for bubble / WEGA looks.
+  final double screenRadius;
 
   @override
   State<VcrCrtScreen> createState() => _VcrCrtScreenState();
@@ -130,7 +134,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
     final controller = deck.controllerOrNull;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(3),
+      borderRadius: BorderRadius.circular(widget.screenRadius),
       child: AspectRatio(
         aspectRatio: 4 / 3,
         child: Stack(

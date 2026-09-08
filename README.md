@@ -56,7 +56,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md).
 - VHS sleeve art lookup (Internet Archive), disk cache, wrong-sleeve reject
 - First-time art-grab onboarding (progress + found count)
 - Settings sheet (tune FAB): VHS-only (on by default), sort, save on eject, CRT look, collection / connect
-- Selectable CRT bezels (Zenith, cream, portable, wood)
+- Selectable CRT bezels (Zenith, WEGA silver, bubble tube, aqua graphite)
 - Desktop-friendly wide layouts (max widths, larger hit targets)
 
 ## Demo the art-grab onboarding

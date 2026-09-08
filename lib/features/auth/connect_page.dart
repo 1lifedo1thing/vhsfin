@@ -34,14 +34,16 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
       _error = null;
     });
     try {
-      await ref.read(sessionProvider.notifier).signIn(
+      await ref
+          .read(sessionProvider.notifier)
+          .signIn(
             serverUrl: _serverController.text,
             username: _userController.text,
             password: _passwordController.text,
           );
       ref.invalidate(shelvesProvider);
       ref.invalidate(librariesProvider);
-      if (mounted) context.go('/');
+      if (mounted) context.go('/libraries');
     } catch (error) {
       setState(() => _error = userFacingError(error));
     } finally {

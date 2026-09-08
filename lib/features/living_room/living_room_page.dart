@@ -30,30 +30,54 @@ class LivingRoomPage extends ConsumerWidget {
     final deckState = ref.read(vcrDeckProvider);
     if (!deckState.isPlaying) return;
     final deck = ref.read(deckPlayerProvider);
+    if (!deck.beginSurfaceTransfer()) return;
     final vcr = ref.read(vcrDeckProvider.notifier);
-    // Unbind CRT Video before the fullscreen route mounts another.
-    // Owner alone gates the bezel Video — release first so nothing binds.
-    deck.releaseSurface();
-    vcr.setStyle(PlaybackStyle.cleanFullscreen);
-    await SchedulerBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 48));
-    if (!context.mounted) return;
 
-    // Await the route so CRT restore runs on this still-mounted page.
-    // CleanPlayerPage must not reattach after pop (its State is disposing).
-    await context.push('/play');
-    if (!context.mounted) return;
+    try {
+      // Keep the page and persistent VideoController alive. Only the single
+      // Video output moves between surfaces.
+      deck.releaseSurface();
+      vcr.setStyle(PlaybackStyle.cleanFullscreen);
+      await _waitSurfaceClear();
+      if (!context.mounted) return;
 
-    // Fullscreen has released + popped; wait for HtmlElementView teardown.
-    await SchedulerBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (!context.mounted) return;
+      deck.reattachSurface(DeckSurfaceOwner.fullscreen);
+      await _resumeAfterSurfaceAttach(deck);
+    } finally {
+      deck.endSurfaceTransfer();
+    }
+  }
 
-    vcr.setStyle(PlaybackStyle.vhsCrt);
-    deck.reattachSurface(DeckSurfaceOwner.crt);
+  Future<void> _closeFullscreen(BuildContext context, WidgetRef ref) async {
+    final deck = ref.read(deckPlayerProvider);
+    if (!deck.beginSurfaceTransfer()) return;
+    final vcr = ref.read(vcrDeckProvider.notifier);
+    try {
+      await deck.stopShuttle();
+      deck.releaseSurface();
+      vcr.setStyle(PlaybackStyle.vhsCrt);
+      await _waitSurfaceClear();
+      if (!context.mounted) return;
+
+      deck.reattachSurface(DeckSurfaceOwner.crt);
+      await _resumeAfterSurfaceAttach(deck);
+    } finally {
+      deck.endSurfaceTransfer();
+    }
+  }
+
+  /// Let the previous Video / HtmlElementView tear down before remounting.
+  Future<void> _waitSurfaceClear() async {
+    for (var i = 0; i < 2; i++) {
+      await SchedulerBinding.instance.endOfFrame;
+      await Future<void>.delayed(Duration.zero);
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+
+  Future<void> _resumeAfterSurfaceAttach(DeckPlayerController deck) async {
     await SchedulerBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 48));
-    if (!context.mounted) return;
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     await deck.play();
   }
 
@@ -93,7 +117,6 @@ class LivingRoomPage extends ConsumerWidget {
     final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
     final experience = ref.watch(experiencePrefsProvider);
     final shelvesAsync = ref.watch(shelvesProvider);
-    final artOnboardingDone = ref.watch(artOnboardingDoneProvider);
     final artWarm = ref.watch(artWarmProgressProvider);
     final shuttle = ref.watch(deckShuttleProvider);
 
@@ -108,27 +131,22 @@ class LivingRoomPage extends ConsumerWidget {
         shelves != null && shelves.any((s) => s.items.isNotEmpty);
 
     // Kick off art warm for first-time onboarding and/or VHS-only filtering.
+    // Wait for the onboarding prefs flag so we don't flash the popup again
+    // after a prior CONTINUE (or auto-mark from a finished warm).
     ref.listen<AsyncValue<List<Shelf>>>(shelvesProvider, (prev, next) {
       next.whenData((value) {
         if (!value.any((s) => s.items.isNotEmpty)) return;
-        final needOnboarding = !ref.read(artOnboardingDoneProvider);
-        final vhsOnly = ref.read(shelfDisplayPrefsProvider).vhsOnly;
-        if (needOnboarding || vhsOnly) {
-          ref.read(artWarmProgressProvider.notifier).ensureRunning();
-        }
+        Future(() => _kickArtWarm(ref));
       });
     });
     ref.listen(shelfDisplayPrefsProvider, (prev, next) {
       if (!next.vhsOnly) return;
       final loaded = ref.read(shelvesProvider).asData?.value;
       if (loaded == null || !loaded.any((s) => s.items.isNotEmpty)) return;
-      ref.read(artWarmProgressProvider.notifier).ensureRunning();
+      Future(() => _kickArtWarm(ref));
     });
-    if (hasShelfItems &&
-        (!artOnboardingDone || displayPrefs.vhsOnly) &&
-        artWarm.phase == ArtWarmPhase.idle) {
-      // Shelves may already be cached before listen fires.
-      Future(() => ref.read(artWarmProgressProvider.notifier).ensureRunning());
+    if (hasShelfItems && artWarm.phase == ArtWarmPhase.idle) {
+      Future(() => _kickArtWarm(ref));
     }
 
     final deck = ref.watch(vcrDeckProvider);
@@ -142,6 +160,7 @@ class LivingRoomPage extends ConsumerWidget {
         ? null
         : ref.watch(vhsSpineArtProvider(deck.loadedTape!)).asData?.value;
     final sfx = ref.watch(deckSfxProvider);
+    final showArtOnboardingUi = ref.watch(artOnboardingUiProvider);
 
     final filteredShelves = shelves == null
         ? null
@@ -159,7 +178,8 @@ class LivingRoomPage extends ConsumerWidget {
               ),
           ];
 
-    final showArtOnboarding = !artOnboardingDone &&
+    final showArtOnboarding =
+        showArtOnboardingUi &&
         hasShelfItems &&
         (artWarm.phase == ArtWarmPhase.running ||
             artWarm.phase == ArtWarmPhase.done);
@@ -202,19 +222,37 @@ class LivingRoomPage extends ConsumerWidget {
       },
       onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
       onFull: () => _openFullscreen(context, ref),
+      onCloseFullscreen: () => _closeFullscreen(context, ref),
       resolveSpineArt: (tape) => ref.read(vhsSpineArtProvider(tape).future),
       onTapeTap: (tape, instanceKey) =>
           _onTapeTap(context, ref, tape, instanceKey),
       onFlyingTapeIdChanged: (id) =>
           ref.read(flyingTapeIdProvider.notifier).set(id),
-      artForFlight: (tape) =>
-          ref.read(vhsSpineArtProvider(tape)).asData?.value,
+      artForFlight: (tape) => ref.read(vhsSpineArtProvider(tape)).asData?.value,
       onShowRemote: () => _showRemote(context, ref),
       onShowSettings: () => _showSettings(context, ref),
       onConnectPrompt: () => context.push('/connect'),
-      onArtOnboardingDone: () =>
-          ref.read(artOnboardingDoneProvider.notifier).markDone(),
+      onArtOnboardingDone: () {
+        ref.read(artOnboardingDoneProvider.notifier).markDone();
+        ref.read(artOnboardingUiProvider.notifier).dismiss();
+      },
     );
+  }
+
+  Future<void> _kickArtWarm(WidgetRef ref) async {
+    await ref.read(artOnboardingDoneProvider.notifier).ready;
+    // Page may have been disposed while prefs loaded.
+    try {
+      final needOnboarding = !ref.read(artOnboardingDoneProvider);
+      final vhsOnly = ref.read(shelfDisplayPrefsProvider).vhsOnly;
+      if (!needOnboarding && !vhsOnly) return;
+      if (needOnboarding) {
+        ref.read(artOnboardingUiProvider.notifier).show();
+      }
+      await ref.read(artWarmProgressProvider.notifier).ensureRunning();
+    } catch (_) {
+      // Ref disposed — ignore.
+    }
   }
 
   void _showRemote(BuildContext context, WidgetRef ref) {
@@ -264,8 +302,7 @@ class LivingRoomPage extends ConsumerWidget {
         series: tape,
         loadedId: ref.read(vcrDeckProvider).loadedTape?.id,
         loadEpisodes: () => ref.read(seriesEpisodesProvider(tape).future),
-        resolveArt: (episode) =>
-            ref.read(vhsSpineArtProvider(episode).future),
+        resolveArt: (episode) => ref.read(vhsSpineArtProvider(episode).future),
         onInsert: (episode) =>
             ref.read(vcrDeckProvider.notifier).insertTape(episode),
         onRejectSleeve: (episode) =>

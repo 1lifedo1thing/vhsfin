@@ -58,18 +58,19 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..addStatusListener((status) {
-        if (status != AnimationStatus.completed) return;
-        if (!mounted) return;
-        final kind = _flight?.kind;
-        setState(() => _flight = null);
-        if (kind != _FlightKind.eject) {
-          widget.onFlyingTapeIdChanged(null);
-        }
-      });
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 700),
+        )..addStatusListener((status) {
+          if (status != AnimationStatus.completed) return;
+          if (!mounted) return;
+          final kind = _flight?.kind;
+          setState(() => _flight = null);
+          if (kind != _FlightKind.eject) {
+            widget.onFlyingTapeIdChanged(null);
+          }
+        });
   }
 
   @override
@@ -91,12 +92,16 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     if (tape == null) return;
     if (next.power == VcrPower.inserting &&
         previous.power != VcrPower.inserting) {
-      widget.onFlyingTapeIdChanged(tape.id);
-      _beginFlight(tape: tape, kind: _FlightKind.insert);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _beginFlight(tape: tape, kind: _FlightKind.insert);
+      });
     } else if (next.power == VcrPower.ejecting &&
         previous.power != VcrPower.ejecting) {
-      widget.onFlyingTapeIdChanged(tape.id);
-      _beginFlight(tape: tape, kind: _FlightKind.eject);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _beginFlight(tape: tape, kind: _FlightKind.eject);
+      });
     }
   }
 
@@ -139,10 +144,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     final anchors = widget.anchors;
     final sourceKey = widget.flightSourceKey;
     final slotGlobal = anchors.globalRectOf(anchors.slotKey);
-    final spineGlobal = anchors.spineRectForTape(
-      tape.id,
-      sourceKey: sourceKey,
-    );
+    final spineGlobal = anchors.spineRectForTape(tape.id, sourceKey: sourceKey);
 
     var slot = _localRect(slotGlobal) ?? _fallbackSlotLocal();
     slot = Rect.fromCenter(
@@ -245,10 +247,7 @@ class _FlyingCassette extends StatelessWidget {
         opacity: opacity.clamp(0.0, 1.0),
         child: Transform.rotate(
           angle: -stand,
-          child: _CassetteFace(
-            tape: tape,
-            art: art,
-          ),
+          child: _CassetteFace(tape: tape, art: art),
         ),
       ),
     );
@@ -256,10 +255,7 @@ class _FlyingCassette extends StatelessWidget {
 }
 
 class _CassetteFace extends StatelessWidget {
-  const _CassetteFace({
-    required this.tape,
-    this.art,
-  });
+  const _CassetteFace({required this.tape, this.art});
 
   final Tape tape;
   final VhsSpineArt? art;
@@ -310,8 +306,9 @@ class _CassetteFace extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-                  bottom:
-                      BorderSide(color: Colors.black.withValues(alpha: 0.3)),
+                  bottom: BorderSide(
+                    color: Colors.black.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
             ),
