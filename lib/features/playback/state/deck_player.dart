@@ -59,6 +59,10 @@ class DeckPlayerController {
   String? get lastError => _lastError;
   Stream<String> get errors => _errors.stream;
 
+  void clearLastError() {
+    _lastError = null;
+  }
+
   Player get player {
     _ensure();
     return _player!;

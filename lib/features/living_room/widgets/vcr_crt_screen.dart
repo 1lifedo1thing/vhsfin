@@ -184,6 +184,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
                 initialPosition: widget.player.player.state.position,
                 initialError: widget.player.lastError,
                 onRetry: _retryPlayback,
+                onRecovered: widget.player.clearLastError,
               ),
             IgnorePointer(
               child: DecoratedBox(

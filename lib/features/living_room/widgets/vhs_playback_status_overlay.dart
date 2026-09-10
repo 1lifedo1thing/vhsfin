@@ -17,6 +17,7 @@ class VhsPlaybackStatusOverlay extends StatefulWidget {
     required this.initialPosition,
     required this.initialError,
     required this.onRetry,
+    required this.onRecovered,
     this.trackingDelay = const Duration(seconds: 6),
   });
 
@@ -29,6 +30,7 @@ class VhsPlaybackStatusOverlay extends StatefulWidget {
   final Duration initialPosition;
   final String? initialError;
   final Future<void> Function() onRetry;
+  final VoidCallback onRecovered;
   final Duration trackingDelay;
 
   @override
@@ -44,6 +46,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
   late bool _buffering;
   var _hasPlaybackProgress = false;
   var _showTracking = false;
+  String? _pendingError;
   String? _error;
 
   @override
@@ -70,7 +73,8 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
     _lastPosition = widget.initialPosition;
     _hasPlaybackProgress = false;
     _showTracking = false;
-    _error = widget.initialError;
+    _pendingError = widget.initialError;
+    _error = null;
     _armTrackingTimer();
 
     _subscriptions
@@ -92,9 +96,11 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
     _trackingTimer?.cancel();
     _trackingTimer = Timer(widget.trackingDelay, () {
       if (!mounted || _error != null) return;
-      if (_buffering || !_hasPlaybackProgress) {
-        setState(() => _showTracking = true);
-      }
+      if (_hasPlaybackProgress) return;
+      setState(() {
+        _error = _pendingError;
+        _showTracking = _pendingError == null;
+      });
     });
   }
 
@@ -108,6 +114,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
   void _onBuffering(bool value) {
     _buffering = value;
     if (value) {
+      _hasPlaybackProgress = false;
       _armTrackingTimer();
     } else if (_playing && _hasPlaybackProgress) {
       _clearStatus();
@@ -126,24 +133,27 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
 
   void _onError(String message) {
     if (message.trim().isEmpty || !mounted) return;
-    _trackingTimer?.cancel();
-    setState(() {
-      _error = message;
-      _showTracking = false;
-    });
+    _pendingError = message;
+    _hasPlaybackProgress = false;
+    _armTrackingTimer();
   }
 
   void _clearStatus() {
     _trackingTimer?.cancel();
-    if (!mounted || !_showTracking && _error == null) return;
+    if (!mounted) return;
+    final recovered = _pendingError != null || _error != null;
+    if (!_showTracking && !recovered) return;
     setState(() {
       _showTracking = false;
+      _pendingError = null;
       _error = null;
     });
+    if (recovered) widget.onRecovered();
   }
 
   Future<void> _retry() async {
     setState(() {
+      _pendingError = null;
       _error = null;
       _showTracking = true;
     });

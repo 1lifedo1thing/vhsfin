@@ -62,6 +62,9 @@ void main() {
     errors.add('HTTP 503');
     await tester.pump();
 
+    expect(find.text('TAPE READ ERROR'), findsNothing);
+
+    await tester.pump(const Duration(seconds: 2));
     expect(find.text('TAPE READ ERROR'), findsOneWidget);
     expect(find.textContaining('HTTP 503'), findsNothing);
 
@@ -99,6 +102,30 @@ void main() {
     await tester.pump();
     expect(find.text('ADJUSTING TRACKING'), findsNothing);
   });
+
+  testWidgets('does not show a transient error when playback advances', (
+    tester,
+  ) async {
+    var recoveries = 0;
+    await tester.pumpWidget(
+      _StatusHarness(
+        playing: playing.stream,
+        buffering: buffering.stream,
+        position: position.stream,
+        errors: errors.stream,
+        initialBuffering: false,
+        initialError: 'recoverable preload error',
+        onRecovered: () => recoveries++,
+      ),
+    );
+
+    position.add(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('TAPE READ ERROR'), findsNothing);
+    expect(recoveries, 1);
+  });
 }
 
 class _StatusHarness extends StatelessWidget {
@@ -109,7 +136,9 @@ class _StatusHarness extends StatelessWidget {
     required this.errors,
     this.initialBuffering = true,
     this.initialPosition = Duration.zero,
+    this.initialError,
     this.onRetry,
+    this.onRecovered,
   });
 
   final Stream<bool> playing;
@@ -118,7 +147,9 @@ class _StatusHarness extends StatelessWidget {
   final Stream<String> errors;
   final bool initialBuffering;
   final Duration initialPosition;
+  final String? initialError;
   final Future<void> Function()? onRetry;
+  final VoidCallback? onRecovered;
 
   @override
   Widget build(BuildContext context) {
@@ -135,9 +166,10 @@ class _StatusHarness extends StatelessWidget {
             initialPlaying: true,
             initialBuffering: initialBuffering,
             initialPosition: initialPosition,
-            initialError: null,
+            initialError: initialError,
             trackingDelay: const Duration(seconds: 1),
             onRetry: onRetry ?? () async {},
+            onRecovered: onRecovered ?? () {},
           ),
         ),
       ),
