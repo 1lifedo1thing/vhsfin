@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
@@ -9,8 +10,9 @@ import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
-import 'package:vhsfin/features/living_room/widgets/clean_fullscreen_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
+    if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
 import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_flight_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_box.dart';
@@ -38,8 +40,6 @@ class LivingRoomView extends StatelessWidget {
     required this.onFf,
     required this.onFfEnd,
     required this.onEject,
-    required this.onFull,
-    required this.onCloseFullscreen,
     required this.resolveSpineArt,
     required this.onTapeTap,
     required this.onFlyingTapeIdChanged,
@@ -77,8 +77,6 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onFf;
   final VoidCallback onFfEnd;
   final VoidCallback onEject;
-  final VoidCallback onFull;
-  final VoidCallback onCloseFullscreen;
   final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
   final ValueChanged<String?> onFlyingTapeIdChanged;
@@ -88,46 +86,47 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onConnectPrompt;
   final VoidCallback onArtOnboardingDone;
 
-  bool get _fullscreen => deck.style == PlaybackStyle.cleanFullscreen;
-
   @override
   Widget build(BuildContext context) {
     final controller = player.controllerOrNull;
+    final videoKey = GlobalObjectKey<VideoState>(player);
+    player.bindFullscreen(() async {
+      if (await enterHtmlVideoFullscreen(player.player)) return;
+      final videoState = videoKey.currentState;
+      if (videoState != null) await videoState.enterFullscreen();
+    });
     final videoSurface = controller == null
         ? null
         : LetterboxedVideo(
-            key: GlobalObjectKey(player),
             player: player.player,
             controller: controller,
+            videoKey: videoKey,
             opacity: deck.power == VcrPower.playing ? 1 : 0.15,
-            fullscreen: _fullscreen,
           );
 
     return Scaffold(
-      floatingActionButton: _fullscreen
-          ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.small(
-                  heroTag: 'vhsfin_settings',
-                  onPressed: onShowSettings,
-                  backgroundColor: const Color(0xFF2A2A28),
-                  foregroundColor: VhsColors.brand,
-                  tooltip: 'Settings',
-                  child: const Icon(Icons.tune_rounded),
-                ),
-                const SizedBox(height: 10),
-                FloatingActionButton.small(
-                  heroTag: 'vhsfin_remote',
-                  onPressed: onShowRemote,
-                  backgroundColor: const Color(0xFF2A2A28),
-                  foregroundColor: VhsColors.brand,
-                  tooltip: 'Remote',
-                  child: const Icon(Icons.settings_remote_rounded),
-                ),
-              ],
-            ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'vhsfin_settings',
+            onPressed: onShowSettings,
+            backgroundColor: const Color(0xFF2A2A28),
+            foregroundColor: VhsColors.brand,
+            tooltip: 'Settings',
+            child: const Icon(Icons.tune_rounded),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.small(
+            heroTag: 'vhsfin_remote',
+            onPressed: onShowRemote,
+            backgroundColor: const Color(0xFF2A2A28),
+            foregroundColor: VhsColors.brand,
+            tooltip: 'Remote',
+            child: const Icon(Icons.settings_remote_rounded),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           DecoratedBox(
@@ -172,8 +171,8 @@ class LivingRoomView extends StatelessWidget {
                             onFf: onFf,
                             onFfEnd: onFfEnd,
                             onEject: onEject,
-                            onFull: onFull,
-                            videoSurface: _fullscreen ? null : videoSurface,
+                            onFull: player.enterFullscreen,
+                            videoSurface: videoSurface,
                           ),
                           bookshelf: _BookshelfBody(
                             shelvesLoading: shelvesLoading,
@@ -214,21 +213,6 @@ class LivingRoomView extends StatelessWidget {
                     progress: artWarmProgress,
                     onDone: onArtOnboardingDone,
                   ),
-                ),
-              ),
-            ),
-          if (_fullscreen)
-            Positioned.fill(
-              child: PopScope(
-                canPop: false,
-                onPopInvokedWithResult: (didPop, _) {
-                  if (didPop) return;
-                  onCloseFullscreen();
-                },
-                child: CleanFullscreenOverlay(
-                  title: deck.loadedTape?.title ?? '',
-                  videoSurface: videoSurface,
-                  onBack: onCloseFullscreen,
                 ),
               ),
             ),

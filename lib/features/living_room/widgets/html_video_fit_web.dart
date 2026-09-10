@@ -14,6 +14,30 @@ Future<void> applyHtmlVideoObjectFitContain(
   bool cover = true,
 }) async {
   _ensureGlobalContainStyle();
+  final playerVideo = await _videoForPlayer(player);
+  if (playerVideo != null) {
+    _styleVideo(
+      playerVideo,
+      cover: cover && web.document.fullscreenElement != playerVideo,
+    );
+    return;
+  }
+
+  // Fallback: style every media_kit video on the page.
+  final videos = web.document.querySelectorAll('video');
+  for (var i = 0; i < videos.length; i++) {
+    final node = videos.item(i);
+    if (node != null) {
+      final video = node as web.HTMLVideoElement;
+      _styleVideo(
+        video,
+        cover: cover && web.document.fullscreenElement != video,
+      );
+    }
+  }
+}
+
+Future<web.HTMLVideoElement?> _videoForPlayer(Player player) async {
   try {
     final handle = await player.handle;
     final instances = globalContext.getProperty(_kInstances.toJS) as JSObject?;
@@ -22,21 +46,42 @@ Future<void> applyHtmlVideoObjectFitContain(
       final byNumber = instances.getProperty(handle.toJS);
       final raw = byString ?? byNumber;
       if (raw != null) {
-        _styleVideo(raw as web.HTMLVideoElement, cover: cover);
+        return raw as web.HTMLVideoElement;
       }
     }
   } catch (_) {
     // Fall through to querySelectorAll.
   }
 
-  // Fallback: style every media_kit video on the page.
-  final videos = web.document.querySelectorAll('video');
-  for (var i = 0; i < videos.length; i++) {
-    final node = videos.item(i);
-    if (node != null) {
-      _styleVideo(node as web.HTMLVideoElement, cover: cover);
-    }
+  return web.document.querySelector('video') as web.HTMLVideoElement?;
+}
+
+/// Fullscreens the existing DOM video instead of rebuilding Flutter's web
+/// platform view. Native video controls provide a one-step exit.
+Future<bool> enterHtmlVideoFullscreen(Player player) async {
+  // Keep requestFullscreen in the original click task. Awaiting player.handle
+  // first can consume the browser's transient user activation.
+  final video = web.document.querySelector('video') as web.HTMLVideoElement?;
+  if (video == null) return false;
+
+  try {
+    video.controls = true;
+    _styleVideo(video, cover: false);
+    await video.requestFullscreen().toDart;
+  } catch (_) {
+    video.controls = false;
+    _styleVideo(video, cover: true);
+    return false;
   }
+
+  Timer.periodic(const Duration(milliseconds: 150), (timer) {
+    if (web.document.fullscreenElement != null) return;
+    timer.cancel();
+    video.controls = false;
+    _styleVideo(video, cover: true);
+    unawaited(player.play());
+  });
+  return true;
 }
 
 void _styleVideo(web.HTMLVideoElement video, {required bool cover}) {

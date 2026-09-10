@@ -43,6 +43,7 @@ class DeckPlayerController {
   var _surfaceTransferInProgress = false;
   void Function(int epoch)? onSurfaceChanged;
   void Function(DeckShuttle shuttle)? onShuttleChanged;
+  Future<void> Function()? _enterFullscreen;
 
   bool get isReady => _player != null;
   VideoController? get controllerOrNull => _controller;
@@ -137,6 +138,21 @@ class DeckPlayerController {
     await _player!.playOrPause();
   }
 
+  void bindFullscreen(Future<void> Function() enterFullscreen) {
+    _enterFullscreen = enterFullscreen;
+  }
+
+  Future<void> enterFullscreen() async {
+    final enter = _enterFullscreen;
+    if (enter == null) return;
+    try {
+      await enter();
+    } catch (_) {
+      // Browser fullscreen may be denied by policy; don't surface an
+      // unhandled async exception from a deck-button tap.
+    }
+  }
+
   Future<void> stop() async {
     stopShuttle();
     if (_player == null) return;
@@ -185,6 +201,7 @@ class DeckPlayerController {
     _player?.dispose();
     _player = null;
     _controller = null;
+    _enterFullscreen = null;
   }
 }
 

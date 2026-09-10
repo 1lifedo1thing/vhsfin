@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
@@ -25,44 +24,6 @@ import 'package:vhsfin/user_facing_error.dart';
 
 class LivingRoomPage extends ConsumerWidget {
   const LivingRoomPage({super.key});
-
-  Future<void> _openFullscreen(BuildContext context, WidgetRef ref) async {
-    final deckState = ref.read(vcrDeckProvider);
-    if (!deckState.isPlaying) return;
-    final deck = ref.read(deckPlayerProvider);
-    if (!deck.beginSurfaceTransfer()) return;
-    final vcr = ref.read(vcrDeckProvider.notifier);
-
-    try {
-      // One keyed Video moves to the overlay in the same frame. It is never
-      // destroyed or duplicated, so web playback keeps its DOM video element.
-      vcr.setStyle(PlaybackStyle.cleanFullscreen);
-      deck.reattachSurface(DeckSurfaceOwner.fullscreen);
-      await _resumeAfterSurfaceAttach(deck);
-    } finally {
-      deck.endSurfaceTransfer();
-    }
-  }
-
-  Future<void> _closeFullscreen(BuildContext context, WidgetRef ref) async {
-    final deck = ref.read(deckPlayerProvider);
-    if (!deck.beginSurfaceTransfer()) return;
-    final vcr = ref.read(vcrDeckProvider.notifier);
-    try {
-      await deck.stopShuttle();
-      vcr.setStyle(PlaybackStyle.vhsCrt);
-      deck.reattachSurface(DeckSurfaceOwner.crt);
-      await _resumeAfterSurfaceAttach(deck);
-    } finally {
-      deck.endSurfaceTransfer();
-    }
-  }
-
-  Future<void> _resumeAfterSurfaceAttach(DeckPlayerController deck) async {
-    await SchedulerBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    await deck.play();
-  }
 
   void _showSettings(BuildContext context, WidgetRef ref) {
     final session = ref.read(sessionProvider).value;
@@ -204,8 +165,6 @@ class LivingRoomPage extends ConsumerWidget {
         sfx.stopShuttle();
       },
       onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
-      onFull: () => _openFullscreen(context, ref),
-      onCloseFullscreen: () => _closeFullscreen(context, ref),
       resolveSpineArt: (tape) => ref.read(vhsSpineArtProvider(tape).future),
       onTapeTap: (tape, instanceKey) =>
           _onTapeTap(context, ref, tape, instanceKey),
@@ -264,9 +223,9 @@ class LivingRoomPage extends ConsumerWidget {
         player.stopShuttle();
         sfx.stopShuttle();
       },
-      onFullScreen: () {
-        Navigator.of(context).maybePop();
-        _openFullscreen(context, ref);
+      onFullScreen: () async {
+        await Navigator.of(context).maybePop();
+        await player.enterFullscreen();
       },
       onEject: () => ref.read(vcrDeckProvider.notifier).eject(),
     );

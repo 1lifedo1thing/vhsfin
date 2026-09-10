@@ -16,14 +16,14 @@ class LetterboxedVideo extends StatefulWidget {
     super.key,
     required this.player,
     required this.controller,
+    required this.videoKey,
     this.opacity = 1,
-    this.fullscreen = false,
   });
 
   final Player player;
   final VideoController controller;
+  final GlobalKey<VideoState> videoKey;
   final double opacity;
-  final bool fullscreen;
 
   @override
   State<LetterboxedVideo> createState() => _LetterboxedVideoState();
@@ -36,22 +36,17 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
   void initState() {
     super.initState();
     if (kIsWeb) {
-      _keeper = HtmlVideoContainKeeper(widget.player, cover: !widget.fullscreen)
-        ..start();
+      _keeper = HtmlVideoContainKeeper(widget.player)..start();
     }
   }
 
   @override
   void didUpdateWidget(covariant LetterboxedVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.player != widget.player ||
-        oldWidget.fullscreen != widget.fullscreen) {
+    if (oldWidget.player != widget.player) {
       _keeper?.stop();
       if (kIsWeb) {
-        _keeper = HtmlVideoContainKeeper(
-          widget.player,
-          cover: !widget.fullscreen,
-        )..start();
+        _keeper = HtmlVideoContainKeeper(widget.player)..start();
       }
     }
   }
@@ -72,12 +67,45 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
         child: SizedBox.expand(
           child: ClipRect(
             child: Video(
+              key: widget.videoKey,
               controller: widget.controller,
-              controls: NoVideoControls,
+              controls: (state) => state.isFullscreen()
+                  ? _FullscreenBackControls(videoState: state)
+                  : const SizedBox.shrink(),
+              onEnterFullscreen: _resumePlaybackAfterFullscreenChange,
+              onExitFullscreen: _resumePlaybackAfterFullscreenChange,
               fill: Colors.black,
-              fit: widget.fullscreen ? BoxFit.contain : BoxFit.fitHeight,
+              fit: BoxFit.fitHeight,
               alignment: Alignment.center,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resumePlaybackAfterFullscreenChange() async {
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await widget.player.play();
+  }
+}
+
+class _FullscreenBackControls extends StatelessWidget {
+  const _FullscreenBackControls({required this.videoState});
+
+  final VideoState videoState;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: FilledButton.tonalIcon(
+            onPressed: videoState.exitFullscreen,
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text('BACK TO CRT'),
           ),
         ),
       ),

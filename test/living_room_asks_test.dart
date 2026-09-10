@@ -40,8 +40,6 @@ void main() {
             onFf: () {},
             onFfEnd: () {},
             onEject: () {},
-            onFull: () {},
-            onCloseFullscreen: () {},
             resolveSpineArt: (_) async => null,
             onTapeTap: (tape, key) {},
             onFlyingTapeIdChanged: (_) {},
