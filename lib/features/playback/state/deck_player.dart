@@ -123,10 +123,12 @@ class DeckPlayerController {
     stopShuttle();
     _ensure();
     if (_loadedUrl == url) {
+      // A prepared web video must be playing before setting currentTime.
+      // Seeking first can abort Jellyfin's progressive transcode response.
+      if (play) await _player!.play();
       if (seekTo != null && seekTo > Duration.zero) {
         await _player!.seek(seekTo);
       }
-      if (play) await _player!.play();
       return;
     }
     _loadedUrl = url;

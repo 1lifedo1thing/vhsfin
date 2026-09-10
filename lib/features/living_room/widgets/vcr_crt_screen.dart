@@ -102,11 +102,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
       case VcrPower.inserting:
         if (tape != null && tape.streamUrl.isNotEmpty) {
           try {
-            await deck.load(
-              tape.streamUrl,
-              play: false,
-              seekTo: widget.resumeAt,
-            );
+            await deck.load(tape.streamUrl, play: false);
           } catch (_) {
             // The playback status overlay presents the retained player error.
           }
@@ -129,11 +125,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
     if (tape == null || tape.streamUrl.isEmpty) return;
     await widget.player.stop();
     if (!mounted) return;
-    await widget.player.load(
-      tape.streamUrl,
-      play: true,
-      seekTo: widget.resumeAt,
-    );
+    await widget.player.load(tape.streamUrl, play: true);
   }
 
   @override
