@@ -42,6 +42,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
   late Duration _lastPosition;
   late bool _playing;
   late bool _buffering;
+  var _hasPlaybackProgress = false;
   var _showTracking = false;
   String? _error;
 
@@ -67,6 +68,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
     _playing = widget.initialPlaying;
     _buffering = widget.initialBuffering;
     _lastPosition = widget.initialPosition;
+    _hasPlaybackProgress = false;
     _showTracking = false;
     _error = widget.initialError;
     _armTrackingTimer();
@@ -90,7 +92,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
     _trackingTimer?.cancel();
     _trackingTimer = Timer(widget.trackingDelay, () {
       if (!mounted || _error != null) return;
-      if (_buffering || _lastPosition <= widget.initialPosition) {
+      if (_buffering || !_hasPlaybackProgress) {
         setState(() => _showTracking = true);
       }
     });
@@ -98,7 +100,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
 
   void _onPlaying(bool value) {
     _playing = value;
-    if (!value && _lastPosition <= widget.initialPosition) {
+    if (!value && !_hasPlaybackProgress) {
       _armTrackingTimer();
     }
   }
@@ -107,15 +109,19 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
     _buffering = value;
     if (value) {
       _armTrackingTimer();
-    } else if (_playing && _lastPosition > widget.initialPosition) {
+    } else if (_playing && _hasPlaybackProgress) {
       _clearStatus();
     }
   }
 
   void _onPosition(Duration value) {
-    if (value <= _lastPosition) return;
+    if (value == _lastPosition) return;
+    final advanced = value > _lastPosition;
     _lastPosition = value;
-    if (_playing && !_buffering) _clearStatus();
+    if (_playing && advanced) {
+      _hasPlaybackProgress = true;
+      if (!_buffering) _clearStatus();
+    }
   }
 
   void _onError(String message) {
@@ -142,6 +148,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
       _showTracking = true;
     });
     _lastPosition = widget.initialPosition;
+    _hasPlaybackProgress = false;
     _armTrackingTimer();
     try {
       await widget.onRetry();

@@ -39,6 +39,7 @@ class DeckPlayerController {
   String? _loadedUrl;
   Timer? _shuttleTimer;
   StreamSubscription<String>? _errorSubscription;
+  final _errors = StreamController<String>.broadcast();
   final _surface = DeckSurfaceLedger();
   DeckShuttle _shuttle = DeckShuttle.idle;
   var _surfaceTransferInProgress = false;
@@ -56,6 +57,7 @@ class DeckPlayerController {
   bool get surfaceTransferInProgress => _surfaceTransferInProgress;
   Duration get position => _player?.state.position ?? Duration.zero;
   String? get lastError => _lastError;
+  Stream<String> get errors => _errors.stream;
 
   Player get player {
     _ensure();
@@ -76,7 +78,9 @@ class DeckPlayerController {
       ),
     );
     _errorSubscription = _player!.stream.error.listen((error) {
-      if (error.trim().isNotEmpty) _lastError = error;
+      if (_loadedUrl == null || error.trim().isEmpty) return;
+      _lastError = error;
+      _errors.add(error);
     });
     _controller = VideoController(_player!);
   }
@@ -170,6 +174,7 @@ class DeckPlayerController {
     stopShuttle();
     if (_player == null) return;
     _loadedUrl = null;
+    _lastError = null;
     await _player!.stop();
     await _player!.setRate(1);
   }
@@ -211,11 +216,15 @@ class DeckPlayerController {
 
   void dispose() {
     stopShuttle();
+    final errorSubscription = _errorSubscription;
+    _errorSubscription = null;
+    unawaited(() async {
+      await errorSubscription?.cancel();
+      await _errors.close();
+    }());
     _player?.dispose();
-    unawaited(_errorSubscription?.cancel());
     _player = null;
     _controller = null;
-    _errorSubscription = null;
     _lastError = null;
     _enterFullscreen = null;
   }

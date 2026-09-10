@@ -104,10 +104,9 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     }
 
     unawaited(sfx.stopShuttle());
-    unawaited(player.stop());
-    // Start the clunk, then fly out — don't wait for the whole clip.
-    await sfx.playEject();
-    if (!ref.mounted) return;
+    // Request the clunk, then leave playback before the intentional stop can
+    // be mistaken for a stream failure.
+    unawaited(sfx.playEject());
     state = state.copyWith(power: VcrPower.ejecting);
     await Future<void>.delayed(const Duration(milliseconds: 780));
     if (!ref.mounted) return;

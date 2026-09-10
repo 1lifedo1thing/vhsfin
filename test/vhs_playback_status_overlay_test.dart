@@ -71,6 +71,34 @@ void main() {
     expect(retries, 1);
     expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
   });
+
+  testWidgets('recognizes replay progress after position resets', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _StatusHarness(
+        playing: playing.stream,
+        buffering: buffering.stream,
+        position: position.stream,
+        errors: errors.stream,
+        initialBuffering: false,
+        initialPosition: const Duration(minutes: 10),
+      ),
+    );
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+
+    position.add(const Duration(minutes: 5));
+    await tester.pump();
+    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+
+    position.add(
+      const Duration(minutes: 5) + const Duration(milliseconds: 500),
+    );
+    await tester.pump();
+    expect(find.text('ADJUSTING TRACKING'), findsNothing);
+  });
 }
 
 class _StatusHarness extends StatelessWidget {
@@ -79,6 +107,8 @@ class _StatusHarness extends StatelessWidget {
     required this.buffering,
     required this.position,
     required this.errors,
+    this.initialBuffering = true,
+    this.initialPosition = Duration.zero,
     this.onRetry,
   });
 
@@ -86,6 +116,8 @@ class _StatusHarness extends StatelessWidget {
   final Stream<bool> buffering;
   final Stream<Duration> position;
   final Stream<String> errors;
+  final bool initialBuffering;
+  final Duration initialPosition;
   final Future<void> Function()? onRetry;
 
   @override
@@ -101,8 +133,8 @@ class _StatusHarness extends StatelessWidget {
             position: position,
             errors: errors,
             initialPlaying: true,
-            initialBuffering: true,
-            initialPosition: Duration.zero,
+            initialBuffering: initialBuffering,
+            initialPosition: initialPosition,
             initialError: null,
             trackingDelay: const Duration(seconds: 1),
             onRetry: onRetry ?? () async {},

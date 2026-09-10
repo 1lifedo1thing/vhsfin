@@ -94,6 +94,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
 
     switch (widget.power) {
       case VcrPower.off:
+        _insertController.value = 0;
       case VcrPower.ejecting:
         await deck.stop();
         if (!mounted || gen != _syncGen) return;
@@ -177,7 +178,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
                 playing: widget.player.player.stream.playing,
                 buffering: widget.player.player.stream.buffering,
                 position: widget.player.player.stream.position,
-                errors: widget.player.player.stream.error,
+                errors: widget.player.errors,
                 initialPlaying: widget.player.player.state.playing,
                 initialBuffering: widget.player.player.state.buffering,
                 initialPosition: widget.player.player.state.position,
