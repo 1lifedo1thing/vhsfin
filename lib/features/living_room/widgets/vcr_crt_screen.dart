@@ -5,6 +5,7 @@ import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_glass_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_rewind_overlay.dart';
 import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_playback_status_overlay.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 /// The CRT screen inside the VCR bezel — static, insert anim, or playback.
@@ -99,15 +100,39 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
         _insertController.value = 0;
       case VcrPower.inserting:
         if (tape != null && tape.streamUrl.isNotEmpty) {
-          await deck.load(tape.streamUrl, play: false, seekTo: widget.resumeAt);
+          try {
+            await deck.load(
+              tape.streamUrl,
+              play: false,
+              seekTo: widget.resumeAt,
+            );
+          } catch (_) {
+            // The playback status overlay presents the retained player error.
+          }
         }
         if (!mounted || gen != _syncGen) return;
         await _insertController.forward(from: 0);
       case VcrPower.playing:
         _insertController.value = 1;
         if (tape == null || tape.streamUrl.isEmpty) return;
-        await deck.load(tape.streamUrl, play: true, seekTo: widget.resumeAt);
+        try {
+          await deck.load(tape.streamUrl, play: true, seekTo: widget.resumeAt);
+        } catch (_) {
+          // The playback status overlay presents the retained player error.
+        }
     }
+  }
+
+  Future<void> _retryPlayback() async {
+    final tape = widget.tape;
+    if (tape == null || tape.streamUrl.isEmpty) return;
+    await widget.player.stop();
+    if (!mounted) return;
+    await widget.player.load(
+      tape.streamUrl,
+      play: true,
+      seekTo: widget.resumeAt,
+    );
   }
 
   @override
@@ -144,6 +169,21 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
               const CrtGlassOverlay(),
             if (widget.rewinding && widget.power == VcrPower.playing)
               const CrtRewindOverlay(),
+            if (widget.power == VcrPower.playing &&
+                widget.style == PlaybackStyle.vhsCrt &&
+                widget.player.isReady)
+              VhsPlaybackStatusOverlay(
+                key: ValueKey(widget.tape?.id),
+                playing: widget.player.player.stream.playing,
+                buffering: widget.player.player.stream.buffering,
+                position: widget.player.player.stream.position,
+                errors: widget.player.player.stream.error,
+                initialPlaying: widget.player.player.state.playing,
+                initialBuffering: widget.player.player.state.buffering,
+                initialPosition: widget.player.player.state.position,
+                initialError: widget.player.lastError,
+                onRetry: _retryPlayback,
+              ),
             IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(

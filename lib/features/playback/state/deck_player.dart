@@ -38,12 +38,14 @@ class DeckPlayerController {
   VideoController? _controller;
   String? _loadedUrl;
   Timer? _shuttleTimer;
+  StreamSubscription<String>? _errorSubscription;
   final _surface = DeckSurfaceLedger();
   DeckShuttle _shuttle = DeckShuttle.idle;
   var _surfaceTransferInProgress = false;
   void Function(int epoch)? onSurfaceChanged;
   void Function(DeckShuttle shuttle)? onShuttleChanged;
   Future<void> Function()? _enterFullscreen;
+  String? _lastError;
 
   bool get isReady => _player != null;
   VideoController? get controllerOrNull => _controller;
@@ -53,6 +55,7 @@ class DeckPlayerController {
   DeckShuttle get shuttle => _shuttle;
   bool get surfaceTransferInProgress => _surfaceTransferInProgress;
   Duration get position => _player?.state.position ?? Duration.zero;
+  String? get lastError => _lastError;
 
   Player get player {
     _ensure();
@@ -72,6 +75,9 @@ class DeckPlayerController {
         bufferSize: 32 * 1024 * 1024,
       ),
     );
+    _errorSubscription = _player!.stream.error.listen((error) {
+      if (error.trim().isNotEmpty) _lastError = error;
+    });
     _controller = VideoController(_player!);
   }
 
@@ -116,7 +122,14 @@ class DeckPlayerController {
       return;
     }
     _loadedUrl = url;
-    await _player!.open(Media(url), play: play);
+    _lastError = null;
+    try {
+      await _player!.open(Media(url), play: play);
+    } catch (error) {
+      _loadedUrl = null;
+      _lastError = error.toString();
+      rethrow;
+    }
     if (seekTo != null && seekTo > Duration.zero) {
       await _player!.seek(seekTo);
     }
@@ -199,8 +212,11 @@ class DeckPlayerController {
   void dispose() {
     stopShuttle();
     _player?.dispose();
+    unawaited(_errorSubscription?.cancel());
     _player = null;
     _controller = null;
+    _errorSubscription = null;
+    _lastError = null;
     _enterFullscreen = null;
   }
 }
