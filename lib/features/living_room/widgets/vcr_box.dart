@@ -216,16 +216,23 @@ class VcrBox extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
-                child: _DeckButtons(
-                  enabled: deck.isPowered,
-                  rewinding: rewinding,
-                  onRew: onRew,
-                  onRewEnd: onRewEnd,
-                  onPlay: onPlay,
-                  onFf: onFf,
-                  onFfEnd: onFfEnd,
-                  onEject: onEject,
-                  onFull: onFull,
+                child: StreamBuilder<bool>(
+                  stream: player.isReady ? player.player.stream.playing : null,
+                  initialData: player.isReady
+                      ? player.player.state.playing
+                      : false,
+                  builder: (context, snapshot) => _DeckButtons(
+                    enabled: deck.isPowered,
+                    playing: snapshot.data ?? false,
+                    rewinding: rewinding,
+                    onRew: onRew,
+                    onRewEnd: onRewEnd,
+                    onPlay: onPlay,
+                    onFf: onFf,
+                    onFfEnd: onFfEnd,
+                    onEject: onEject,
+                    onFull: onFull,
+                  ),
                 ),
               ),
             ],
@@ -284,10 +291,10 @@ class _VcrSkinChrome {
       ventLight: Color(0xFF2A2A2E),
       brandColor: VhsColors.brand,
       badge: 'COLOR TV · VCR',
-      radius: 6,
-      bezelRadius: 4,
+      radius: 28,
+      bezelRadius: 36,
       bezelPad: 14,
-      screenRadius: 4,
+      screenRadius: 28,
     ),
     // Late-90s silver flat tube (WEGA-ish) with a soft squircle aperture.
     CrtTvSkin.wegaSilver => const _VcrSkinChrome(
@@ -403,78 +410,94 @@ class _CassetteSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     // Overlay owns the cassette while the tape is mid-flight.
     final hideForFlight =
-        tape != null && flyingTapeId != null && flyingTapeId == tape!.id;
+        tape != null &&
+        (inserting ||
+            ejecting ||
+            flyingTapeId != null && flyingTapeId == tape!.id);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Door / flap above the mouth
-        Container(
-          height: 12,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF3A3A40), Color(0xFF222226)],
-            ),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.5)),
-          ),
-          alignment: Alignment.center,
-          child: Container(
-            width: 36,
-            height: 3,
-            decoration: BoxDecoration(
-              color: const Color(0xFF111114),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-        ),
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(3),
-            ),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF050506), Color(0xFF141418)],
-            ),
-            border: Border.all(color: Colors.black),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  height: 4,
-                  color: Colors.black.withValues(alpha: 0.65),
-                ),
-              ),
-              if ((loaded || inserting || ejecting) && !hideForFlight)
-                Align(
-                  // Flight overlay owns insert/eject motion; bay only holds.
-                  alignment: Alignment.center,
-                  child: _SlotCassette(title: tape?.title, art: art),
-                )
-              else if (!loaded && !inserting && !ejecting)
-                const Center(
-                  child: Text(
-                    'VHS',
-                    style: TextStyle(
-                      color: Color(0xFF333338),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 6,
-                    ),
+    return Center(
+      child: SizedBox(
+        width: VhsSpine.nominalHeight + 32,
+        height: VhsSpine.nominalWidth + 20,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Door / flap above the mouth.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(3),
+                  ),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF3A3A40), Color(0xFF222226)],
+                  ),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
-            ],
-          ),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 36,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111114),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(3),
+                  ),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF050506), Color(0xFF141418)],
+                  ),
+                  border: Border.all(color: Colors.black),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        height: 4,
+                        color: Colors.black.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    if ((loaded || inserting || ejecting) && !hideForFlight)
+                      Align(
+                        // Flight overlay owns insert/eject motion; bay only holds.
+                        alignment: Alignment.center,
+                        child: _SlotCassette(title: tape?.title, art: art),
+                      )
+                    else if (!loaded && !inserting && !ejecting)
+                      const Center(
+                        child: Text(
+                          'VHS',
+                          style: TextStyle(
+                            color: Color(0xFF333338),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 6,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -488,77 +511,80 @@ class _SlotCassette extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      height: 32,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(2),
-        color: VhsColors.tapeShell,
-        border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: art != null
-          ? Stack(
-              fit: StackFit.expand,
-              children: [
-                // Force vertical spine canvas to (slotH × slotW), then rotate so
-                // it exactly fills the bay — RotatedBox alone sizes to the crop
-                // strip and chops the title off.
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final w = constraints.maxWidth;
-                    final h = constraints.maxHeight;
-                    return Center(
-                      child: RotatedBox(
-                        quarterTurns: 3,
-                        child: SizedBox(
-                          width: h,
-                          height: w,
-                          child: VhsSleeveCrop(
-                            url: art!.imageUrl,
-                            widthFraction: art!.centerWidthFraction,
+    return SizedBox(
+      width: VhsSpine.nominalHeight + 20,
+      height: VhsSpine.nominalWidth + 8,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(2),
+          color: VhsColors.tapeShell,
+          border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: art != null
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Force vertical spine canvas to (slotH × slotW), then rotate so
+                  // it exactly fills the bay — RotatedBox alone sizes to the crop
+                  // strip and chops the title off.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final w = constraints.maxWidth;
+                      final h = constraints.maxHeight;
+                      return Center(
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: SizedBox(
+                            width: h,
+                            height: w,
+                            child: VhsSleeveCrop(
+                              url: art!.imageUrl,
+                              widthFraction: art!.centerWidthFraction,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                        bottom: BorderSide(
-                          color: Colors.black.withValues(alpha: 0.35),
+                      );
+                    },
+                  ),
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                          bottom: BorderSide(
+                            color: Colors.black.withValues(alpha: 0.35),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            )
-          : Center(
-              child: Text(
-                (title ?? 'TAPE').toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF2A1810),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
+                ],
+              )
+            : Center(
+                child: Text(
+                  (title ?? 'TAPE').toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF2A1810),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
@@ -566,6 +592,7 @@ class _SlotCassette extends StatelessWidget {
 class _DeckButtons extends StatelessWidget {
   const _DeckButtons({
     required this.enabled,
+    required this.playing,
     required this.rewinding,
     required this.onRew,
     required this.onRewEnd,
@@ -577,6 +604,7 @@ class _DeckButtons extends StatelessWidget {
   });
 
   final bool enabled;
+  final bool playing;
   final bool rewinding;
   final VoidCallback onRew;
   final VoidCallback onRewEnd;
@@ -600,8 +628,8 @@ class _DeckButtons extends StatelessWidget {
           onTapCancel: onRewEnd,
         ),
         _DeckKey(
-          icon: Icons.play_arrow_rounded,
-          label: 'PLAY',
+          icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          label: 'PLAY/PAUSE',
           enabled: enabled,
           emphasized: true,
           onTap: onPlay,

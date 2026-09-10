@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,5 +42,34 @@ void main() {
       container.read(experiencePrefsProvider).crtSkin,
       CrtTvSkin.aquaGraphite,
     );
+  });
+
+  test(
+    'resume positions are available after persisted state is ready',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'vhsfin.tape_resume_ms.v1': jsonEncode({'movie': 42000}),
+      });
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final positions = container.read(tapeResumePositionsProvider.notifier);
+      await positions.ready;
+
+      expect(positions.positionFor('movie'), const Duration(seconds: 42));
+    },
+  );
+
+  test('save-on-eject preference persists', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container
+        .read(experiencePrefsProvider.notifier)
+        .setSaveTimestampOnEject(true);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('vhsfin.save_timestamp_on_eject'), isTrue);
   });
 }

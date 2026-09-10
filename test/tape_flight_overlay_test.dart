@@ -46,5 +46,31 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(container.read(flyingTapeIdProvider), tape.id);
+    expect(find.byType(Opacity), findsNothing);
+
+    await tester.pumpWidget(
+      app(const VcrDeckState(power: VcrPower.playing, loadedTape: tape)),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(container.read(flyingTapeIdProvider), isNull);
+
+    await tester.pumpWidget(
+      app(const VcrDeckState(power: VcrPower.ejecting, loadedTape: tape)),
+    );
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(container.read(flyingTapeIdProvider), tape.id);
+
+    await tester.pumpWidget(app(const VcrDeckState()));
+    await tester.pump();
+    await tester.pump();
+
+    expect(container.read(flyingTapeIdProvider), isNull);
+    expect(tester.takeException(), isNull);
   });
 }

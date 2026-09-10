@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,13 +18,9 @@ class ExperiencePrefs {
   /// Classic CRT bezel / cabinet look.
   final CrtTvSkin crtSkin;
 
-  ExperiencePrefs copyWith({
-    bool? saveTimestampOnEject,
-    CrtTvSkin? crtSkin,
-  }) {
+  ExperiencePrefs copyWith({bool? saveTimestampOnEject, CrtTvSkin? crtSkin}) {
     return ExperiencePrefs(
-      saveTimestampOnEject:
-          saveTimestampOnEject ?? this.saveTimestampOnEject,
+      saveTimestampOnEject: saveTimestampOnEject ?? this.saveTimestampOnEject,
       crtSkin: crtSkin ?? this.crtSkin,
     );
   }
@@ -31,8 +28,8 @@ class ExperiencePrefs {
 
 final experiencePrefsProvider =
     NotifierProvider<ExperiencePrefsNotifier, ExperiencePrefs>(
-  ExperiencePrefsNotifier.new,
-);
+      ExperiencePrefsNotifier.new,
+    );
 
 class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _saveTsKey = 'vhsfin.save_timestamp_on_eject';
@@ -76,29 +73,34 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
 /// Per-tape resume positions (milliseconds), used when save-on-eject is on.
 final tapeResumePositionsProvider =
     NotifierProvider<TapeResumePositionsNotifier, Map<String, int>>(
-  TapeResumePositionsNotifier.new,
-);
+      TapeResumePositionsNotifier.new,
+    );
 
 class TapeResumePositionsNotifier extends Notifier<Map<String, int>> {
   static const _key = 'vhsfin.tape_resume_ms.v1';
+  late Completer<void> _ready;
+
+  Future<void> get ready => _ready.future;
 
   @override
   Map<String, int> build() {
-    _restore();
+    _ready = Completer<void>();
+    unawaited(_restore());
     return const {};
   }
 
   Future<void> _restore() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null) return;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw == null) return;
       final map = jsonDecode(raw) as Map<String, dynamic>;
-      state = {
-        for (final e in map.entries) e.key: (e.value as num).toInt(),
-      };
+      state = {for (final e in map.entries) e.key: (e.value as num).toInt()};
     } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
+    } finally {
+      if (!_ready.isCompleted) _ready.complete();
     }
   }
 
@@ -114,6 +116,7 @@ class TapeResumePositionsNotifier extends Notifier<Map<String, int>> {
   }
 
   Future<void> save(String tapeId, Duration position) async {
+    await ready;
     if (position <= Duration.zero) {
       await clear(tapeId);
       return;
@@ -123,12 +126,14 @@ class TapeResumePositionsNotifier extends Notifier<Map<String, int>> {
   }
 
   Future<void> clear(String tapeId) async {
+    await ready;
     if (!state.containsKey(tapeId)) return;
     state = {...state}..remove(tapeId);
     await _persist();
   }
 
   Future<void> clearAll() async {
+    await ready;
     state = const {};
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);

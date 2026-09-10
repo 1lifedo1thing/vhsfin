@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vhsfin/features/library/model/shelf.dart';
+import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/views/living_room_view.dart';
 import 'package:vhsfin/features/living_room/widgets/deck_settings_sheet.dart';
+import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
@@ -55,6 +59,7 @@ void main() {
 
       expect(find.text('REPLAY ART GRAB'), findsNothing);
       expect(find.text('DECK SETTINGS'), findsNothing);
+      expect(find.text('PLAY/PAUSE'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Settings'));
@@ -121,6 +126,35 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets('loaded tape stays absent from its shelf', (tester) async {
+    const tape = Tape(id: 'movie', title: 'Movie', streamUrl: 'stream');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BookshelfView(
+            shelves: const [
+              Shelf(id: 'movies', title: 'Movies', items: [tape]),
+            ],
+            loadedId: tape.id,
+            loadedSeriesId: null,
+            vhsOnly: false,
+            flightAnchors: TapeFlightAnchors(),
+            flyingTapeId: null,
+            flightSourceKey: null,
+            resolveSpineArt: (_) async => null,
+            onTapeTap: (_, _) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final spine = tester.widget<VhsSpine>(find.byType(VhsSpine));
+    expect(spine.ghosted, isTrue);
+    expect(spine.selected, isFalse);
   });
 
   test('ShelfDisplayPrefs defaults vhsOnly ON for new installs', () {

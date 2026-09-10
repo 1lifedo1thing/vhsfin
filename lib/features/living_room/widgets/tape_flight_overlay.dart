@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -53,24 +52,14 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
   late final AnimationController _controller;
   final GlobalKey _layerKey = GlobalKey(debugLabel: 'tapeFlightLayer');
   _FlightSpec? _flight;
-  var _flightGen = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 700),
-        )..addStatusListener((status) {
-          if (status != AnimationStatus.completed) return;
-          if (!mounted) return;
-          final kind = _flight?.kind;
-          setState(() => _flight = null);
-          if (kind != _FlightKind.eject) {
-            _notifyFlyingTapeId(null);
-          }
-        });
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
   }
 
   @override
@@ -84,6 +73,14 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     super.didUpdateWidget(oldWidget);
     final previous = oldWidget.deck;
     final next = widget.deck;
+    final finishedInsert =
+        previous.power == VcrPower.inserting && next.power == VcrPower.playing;
+    final finishedEject =
+        previous.power == VcrPower.ejecting && next.power == VcrPower.off;
+    if (finishedInsert || finishedEject) {
+      _finishFlight();
+      return;
+    }
     if (previous.power == next.power &&
         previous.loadedTape?.id == next.loadedTape?.id) {
       return;
@@ -94,12 +91,20 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
         previous.power != VcrPower.inserting) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        if (widget.deck.power != VcrPower.inserting ||
+            widget.deck.loadedTape?.id != tape.id) {
+          return;
+        }
         _beginFlight(tape: tape, kind: _FlightKind.insert);
       });
     } else if (next.power == VcrPower.ejecting &&
         previous.power != VcrPower.ejecting) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        if (widget.deck.power != VcrPower.ejecting ||
+            widget.deck.loadedTape?.id != tape.id) {
+          return;
+        }
         _beginFlight(tape: tape, kind: _FlightKind.eject);
       });
     }
@@ -118,28 +123,28 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     final size = MediaQuery.sizeOf(context);
     return Rect.fromCenter(
       center: Offset(size.width * 0.5, size.height * 0.26),
-      width: size.width * 0.62,
-      height: 36,
+      width: VhsSpine.nominalHeight,
+      height: VhsSpine.nominalWidth,
     );
   }
 
   Rect _fallbackShelfLocal(Rect slot) {
     return Rect.fromCenter(
       center: Offset(slot.center.dx, slot.bottom + 140),
-      width: 28,
-      height: 168,
+      width: VhsSpine.nominalWidth,
+      height: VhsSpine.nominalHeight,
     );
   }
 
-  Future<void> _beginFlight({
-    required Tape tape,
-    required _FlightKind kind,
-  }) async {
-    final gen = ++_flightGen;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted || gen != _flightGen) return;
-    await Future<void>.delayed(const Duration(milliseconds: 24));
-    if (!mounted || gen != _flightGen) return;
+  void _beginFlight({required Tape tape, required _FlightKind kind}) {
+    if (!mounted) return;
+    final expectedPower = kind == _FlightKind.insert
+        ? VcrPower.inserting
+        : VcrPower.ejecting;
+    if (widget.deck.power != expectedPower ||
+        widget.deck.loadedTape?.id != tape.id) {
+      return;
+    }
 
     final anchors = widget.anchors;
     final sourceKey = widget.flightSourceKey;
@@ -149,19 +154,19 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     var slot = _localRect(slotGlobal) ?? _fallbackSlotLocal();
     slot = Rect.fromCenter(
       center: slot.center,
-      width: slot.width * 0.9,
-      height: 34,
+      width: VhsSpine.nominalHeight,
+      height: VhsSpine.nominalWidth,
     );
 
     var spine = _localRect(spineGlobal) ?? _fallbackShelfLocal(slot);
     spine = Rect.fromCenter(
       center: spine.center,
-      width: 28,
-      height: math.min(spine.height, 168),
+      width: VhsSpine.nominalWidth,
+      height: math.min(spine.height, VhsSpine.nominalHeight),
     );
 
     final art = widget.artFor(tape);
-    if (!mounted || gen != _flightGen) return;
+    if (!mounted) return;
 
     _notifyFlyingTapeId(tape.id);
     setState(() {
@@ -174,13 +179,19 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
       );
     });
     _controller.value = 0;
-    await _controller.forward();
+    _controller.forward();
   }
 
   void _notifyFlyingTapeId(String? tapeId) {
-    Future<void>(() {
+    if (!mounted) return;
+    widget.onFlyingTapeIdChanged(tapeId);
+  }
+
+  void _finishFlight() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      widget.onFlyingTapeIdChanged(tapeId);
+      widget.onFlyingTapeIdChanged(null);
+      setState(() => _flight = null);
     });
   }
 
@@ -231,8 +242,8 @@ class _FlyingCassette extends StatelessWidget {
   final Tape tape;
   final VhsSpineArt? art;
 
-  static const _length = 200.0;
-  static const _thickness = 32.0;
+  static const _length = VhsSpine.nominalHeight;
+  static const _thickness = VhsSpine.nominalWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -242,20 +253,14 @@ class _FlyingCassette extends StatelessWidget {
     final pos = Offset.lerp(shelf.center, slot.center, t)!;
     // Horizontal mesh; π/2 = standing spine on the shelf.
     final stand = (1.0 - t) * (math.pi / 2);
-    final scale = ui.lerpDouble(0.6, 1.0, t)!;
-    final opacity = progress < 0.92 ? 1.0 : (1.0 - (progress - 0.92) / 0.08);
-
     return Positioned(
-      left: pos.dx - _length * scale / 2,
-      top: pos.dy - _thickness * scale / 2,
-      width: _length * scale,
-      height: _thickness * scale,
-      child: Opacity(
-        opacity: opacity.clamp(0.0, 1.0),
-        child: Transform.rotate(
-          angle: -stand,
-          child: _CassetteFace(tape: tape, art: art),
-        ),
+      left: pos.dx - _length / 2,
+      top: pos.dy - _thickness / 2,
+      width: _length,
+      height: _thickness,
+      child: Transform.rotate(
+        angle: -stand,
+        child: _CassetteFace(tape: tape, art: art),
       ),
     );
   }

@@ -232,15 +232,15 @@ class _EmptyShelfPrompt extends StatelessWidget {
     final title = isConnect
         ? 'Connect to load your tapes'
         : shelfId == 'empty'
-            ? 'Pick collections below'
-            : vhsOnly
-                ? 'No VHS titles on this shelf'
-                : 'Empty shelf';
+        ? 'Pick collections below'
+        : vhsOnly
+        ? 'No VHS titles on this shelf'
+        : 'Empty shelf';
     final subtitle = isConnect
         ? 'Tap here or use CONNECT on the deck'
         : shelfId == 'empty'
-            ? 'Choose libraries from DECK SETTINGS'
-            : null;
+        ? 'Choose libraries from DECK SETTINGS'
+        : null;
 
     final content = Stack(
       alignment: Alignment.center,
@@ -316,7 +316,24 @@ class _GhostSpineRow extends StatelessWidget {
   const _GhostSpineRow();
 
   static const _widths = <double>[
-    18, 16, 20, 15, 18, 17, 19, 16, 18, 15, 20, 17, 16, 18, 19, 15, 17, 18,
+    18,
+    16,
+    20,
+    15,
+    18,
+    17,
+    19,
+    16,
+    18,
+    15,
+    20,
+    17,
+    16,
+    18,
+    19,
+    15,
+    17,
+    18,
   ];
 
   @override
@@ -427,10 +444,7 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
 
   Future<void> _warm(String key, int gen) async {
     try {
-      await Future.any<void>([
-        _prefetch(widget.tapes),
-        _budgetGate(),
-      ]);
+      await Future.any<void>([_prefetch(widget.tapes), _budgetGate()]);
     } catch (_) {
       // Still reveal — procedural spines / errors shouldn't trap the bay.
     } finally {
@@ -451,9 +465,7 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
   Future<void> _prefetch(List<Tape> tapes) async {
     if (tapes.isEmpty) return;
 
-    final arts = await Future.wait(
-      tapes.map(widget.resolveSpineArt),
-    );
+    final arts = await Future.wait(tapes.map(widget.resolveSpineArt));
 
     final byId = <String, VhsSpineArt?>{};
     final urls = <String>{};
@@ -558,12 +570,12 @@ class _ShelfTapeRow extends StatelessWidget {
       builder: (context, constraints) {
         var used = tapes.isEmpty ? 0.0 : (tapes.length - 1) * gap;
         for (final tape in tapes) {
-          final selected = tape.id == loadedId ||
-              (tape.kind == TapeKind.series && tape.id == loadedSeriesId);
+          final selected =
+              tape.kind == TapeKind.series && tape.id == loadedSeriesId;
           used += selected ? 34.0 : VhsSpine.nominalWidth;
         }
         final leftover = constraints.maxWidth - used;
-        const baseHeight = 168.0;
+        const baseHeight = VhsSpine.nominalHeight;
         final tips = VhsSpine.tipsForRow(
           ids: tapes.map((t) => t.id).toList(),
           leftover: leftover,
@@ -583,6 +595,7 @@ class _ShelfTapeRow extends StatelessWidget {
                   tapeId: tapes[i].id,
                 );
                 final isSource = flightSourceKey == instanceKey;
+                final loadedIntoDeck = tapes[i].id == loadedId;
                 return RepaintBoundary(
                   child: KeyedSubtree(
                     // GlobalKey only on the tapped instance — duplicates stay put.
@@ -593,11 +606,13 @@ class _ShelfTapeRow extends StatelessWidget {
                       tape: tapes[i],
                       art: arts[tapes[i].id],
                       height: baseHeight,
-                      selected: tapes[i].id == loadedId ||
-                          (tapes[i].kind == TapeKind.series &&
-                              tapes[i].id == loadedSeriesId),
+                      selected:
+                          tapes[i].kind == TapeKind.series &&
+                          tapes[i].id == loadedSeriesId,
                       tipRadians: tips[i],
-                      ghosted: flyingTapeId == tapes[i].id && isSource,
+                      ghosted:
+                          loadedIntoDeck ||
+                          flyingTapeId == tapes[i].id && isSource,
                       onTap: () => onTap(tapes[i], instanceKey),
                     ),
                   ),

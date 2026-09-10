@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
-import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 enum VcrPower { off, inserting, playing, ejecting }
@@ -49,8 +48,9 @@ class VcrDeckState {
   }
 }
 
-final vcrDeckProvider =
-    NotifierProvider<VcrDeckNotifier, VcrDeckState>(VcrDeckNotifier.new);
+final vcrDeckProvider = NotifierProvider<VcrDeckNotifier, VcrDeckState>(
+  VcrDeckNotifier.new,
+);
 
 class VcrDeckNotifier extends Notifier<VcrDeckState> {
   @override
@@ -62,9 +62,10 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
   }) async {
     Duration? resumeAt;
     if (ref.read(experiencePrefsProvider).saveTimestampOnEject) {
-      resumeAt = ref.read(tapeResumePositionsProvider.notifier).positionFor(
-            tape.id,
-          );
+      final positions = ref.read(tapeResumePositionsProvider.notifier);
+      await positions.ready;
+      if (!ref.mounted) return;
+      resumeAt = positions.positionFor(tape.id);
     }
 
     // Wait until the clunk is actually playing, then fly.
@@ -97,10 +98,9 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
 
     if (tape != null &&
         ref.read(experiencePrefsProvider).saveTimestampOnEject) {
-      await ref.read(tapeResumePositionsProvider.notifier).save(
-            tape.id,
-            player.position,
-          );
+      await ref
+          .read(tapeResumePositionsProvider.notifier)
+          .save(tape.id, player.position);
     }
 
     unawaited(sfx.stopShuttle());
@@ -111,7 +111,6 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     state = state.copyWith(power: VcrPower.ejecting);
     await Future<void>.delayed(const Duration(milliseconds: 780));
     if (!ref.mounted) return;
-    ref.read(flyingTapeIdProvider.notifier).set(null);
     state = const VcrDeckState();
   }
 

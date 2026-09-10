@@ -264,10 +264,14 @@ class _BookshelfBody extends StatelessWidget {
     if (shelvesError != null) {
       return Text('Could not load shelves: $shelvesError');
     }
+    final loadedIntoDeck =
+        deck.power == VcrPower.playing || deck.power == VcrPower.ejecting
+        ? deck.loadedTape?.id
+        : null;
     return BookshelfView(
       embedded: true,
       shelves: shelves!,
-      loadedId: deck.loadedTape?.id,
+      loadedId: loadedIntoDeck,
       loadedSeriesId: deck.loadedTape?.seriesId,
       vhsOnly: vhsOnly,
       flightAnchors: flightAnchors,

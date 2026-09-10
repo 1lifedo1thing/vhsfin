@@ -17,13 +17,16 @@ class VhsSpine extends StatelessWidget {
     this.art,
     this.selected = false,
     this.onTap,
-    this.height = 168,
+    this.height = nominalHeight,
     this.tipRadians,
     this.ghosted = false,
   });
 
   /// Upright (non-selected) spine thickness — used for shelf packing.
   static const double nominalWidth = 28;
+
+  /// Upright spine height shared by the shelf, slot, and flight animation.
+  static const double nominalHeight = 168;
 
   /// Peak |angle| for a trailing bookend lean (~12.5°).
   static const double bookendTipAbs = 0.22;
@@ -180,8 +183,9 @@ class VhsSpine extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: selected ? 0.55 : 0.35),
+                          color: Colors.black.withValues(
+                            alpha: selected ? 0.55 : 0.35,
+                          ),
                           blurRadius: selected ? 14 : 8,
                           offset: Offset(selected ? 4 : 2, selected ? 8 : 4),
                         ),
@@ -203,6 +207,7 @@ class VhsSpine extends StatelessWidget {
     );
   }
 }
+
 /// Packing-sized box whose hit region covers lean/pop overhang.
 ///
 /// [Transform] moves the paint, but parent [SizedBox] still owns layout width —
@@ -304,11 +309,11 @@ class RenderSpineTapTarget extends RenderProxyBox {
   }
 
   Rect get _hitRect => Rect.fromLTRB(
-        -_expandLeft,
-        -_expandTop,
-        size.width + _expandRight,
-        size.height,
-      );
+    -_expandLeft,
+    -_expandTop,
+    size.width + _expandRight,
+    size.height,
+  );
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
@@ -327,6 +332,7 @@ class RenderSpineTapTarget extends RenderProxyBox {
     }
   }
 }
+
 class _RealSpine extends StatelessWidget {
   const _RealSpine({required this.art});
 
@@ -346,12 +352,8 @@ class _RealSpine extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
-                left: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.14),
-                ),
-                right: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.4),
-                ),
+                left: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+                right: BorderSide(color: Colors.black.withValues(alpha: 0.4)),
               ),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -466,8 +468,7 @@ class ProceduralVhsSpine extends StatelessWidget {
         else
           ColoredBox(color: palette.shell),
         // Dim wash — keeps the poster readable without a tinted shell cast.
-        if (hasCover)
-          ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
+        if (hasCover) ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -568,12 +569,8 @@ class ProceduralVhsSpine extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
-                left: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.14),
-                ),
-                right: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.38),
-                ),
+                left: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+                right: BorderSide(color: Colors.black.withValues(alpha: 0.38)),
               ),
             ),
           ),
@@ -612,7 +609,8 @@ class _ProceduralSpineStyle {
 
   factory _ProceduralSpineStyle.fromTape(Tape tape, SpinePalette palette) {
     // Same show → same plate / wash / foot treatment.
-    final seed = tape.seriesId ??
+    final seed =
+        tape.seriesId ??
         (tape.seriesTitle != null && tape.seriesTitle!.isNotEmpty
             ? tape.seriesTitle!
             : tape.id);
@@ -628,8 +626,7 @@ class _ProceduralSpineStyle {
       'CLAMSHELL',
     ];
     final badge = badges[hash % badges.length];
-    final catalog =
-        'C${(hash % 9000 + 1000)}-${(hash ~/ 7 % 90 + 10)}';
+    final catalog = 'C${(hash % 9000 + 1000)}-${(hash ~/ 7 % 90 + 10)}';
 
     return _ProceduralSpineStyle(
       stripe: palette.accent,
@@ -674,35 +671,36 @@ class _SpineTitlePlate extends StatelessWidget {
       softWrap: true,
       overflow: TextOverflow.clip,
       textAlign: TextAlign.center,
-      style: (style.useDisplayFont
-              ? GoogleFonts.bungee(
-                  fontSize: style.fontSize,
-                  letterSpacing: style.letterSpacing,
-                  height: 1.05,
-                )
-              : TextStyle(
-                  fontSize: style.fontSize,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: style.letterSpacing,
-                  height: 1.05,
-                ))
-          .copyWith(
-        color: style.titleColor,
-        shadows: style.plate == _TitlePlateKind.ghost
-            ? const [
-                Shadow(
-                  color: Colors.black87,
-                  blurRadius: 5,
-                  offset: Offset(0, 1),
-                ),
-                Shadow(
-                  color: Colors.black54,
-                  blurRadius: 1,
-                  offset: Offset(0, 0),
-                ),
-              ]
-            : null,
-      ),
+      style:
+          (style.useDisplayFont
+                  ? GoogleFonts.bungee(
+                      fontSize: style.fontSize,
+                      letterSpacing: style.letterSpacing,
+                      height: 1.05,
+                    )
+                  : TextStyle(
+                      fontSize: style.fontSize,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: style.letterSpacing,
+                      height: 1.05,
+                    ))
+              .copyWith(
+                color: style.titleColor,
+                shadows: style.plate == _TitlePlateKind.ghost
+                    ? const [
+                        Shadow(
+                          color: Colors.black87,
+                          blurRadius: 5,
+                          offset: Offset(0, 1),
+                        ),
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 1,
+                          offset: Offset(0, 0),
+                        ),
+                      ]
+                    : null,
+              ),
     );
 
     switch (style.plate) {
@@ -801,10 +799,7 @@ class ShelfPlank extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF4A2E1C),
-                Color(0xFF2A1810),
-              ],
+              colors: [Color(0xFF4A2E1C), Color(0xFF2A1810)],
             ),
             boxShadow: [
               BoxShadow(
