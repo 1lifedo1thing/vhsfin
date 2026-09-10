@@ -265,10 +265,30 @@ class JellyfinClient {
   }
 
   String streamUrl(JellyfinSession session, String itemId) {
-    final base = session.normalizedServerUrl;
-    return '$base/Videos/$itemId/stream'
-        '?Static=true'
-        '&api_key=${session.accessToken}';
+    final endpoint = Uri.parse(
+      '${session.normalizedServerUrl}/Videos/$itemId/stream.mp4',
+    );
+    return endpoint
+        .replace(
+          queryParameters: {
+            // Progressive H.264/AAC works in browsers. Jellyfin may still copy
+            // already-compatible streams instead of re-encoding them.
+            'Static': 'false',
+            'VideoCodec': 'h264',
+            'AudioCodec': 'aac',
+            'EnableAutoStreamCopy': 'true',
+            'AllowVideoStreamCopy': 'true',
+            'AllowAudioStreamCopy': 'true',
+            'VideoBitRate': '8000000',
+            'AudioBitRate': '192000',
+            'MaxWidth': '1920',
+            'MaxHeight': '1080',
+            'MaxAudioChannels': '2',
+            'DeviceId': session.deviceId,
+            'api_key': session.accessToken,
+          },
+        )
+        .toString();
   }
 
   String primaryImageUrl(JellyfinSession session, String itemId) {
