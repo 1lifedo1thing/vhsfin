@@ -259,7 +259,7 @@ class _FlyingCassette extends StatelessWidget {
       width: _length,
       height: _thickness,
       child: Transform.rotate(
-        angle: -stand,
+        angle: stand,
         child: _CassetteFace(tape: tape, art: art),
       ),
     );
