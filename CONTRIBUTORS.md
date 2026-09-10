@@ -8,8 +8,9 @@ Thanks for helping make a tiny Jellyfin living-room client better.
 flutter pub get
 flutter analyze
 flutter test
-flutter run -d chrome   # or macos
 ```
+
+Platform run/build commands (Android, iOS, web, APK): [README.md](README.md).
 
 ## Architecture expectations
 
