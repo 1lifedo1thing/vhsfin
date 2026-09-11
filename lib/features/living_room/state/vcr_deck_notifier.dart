@@ -53,24 +53,30 @@ final vcrDeckProvider = NotifierProvider<VcrDeckNotifier, VcrDeckState>(
 );
 
 class VcrDeckNotifier extends Notifier<VcrDeckState> {
+  int _operation = 0;
+
   @override
-  VcrDeckState build() => const VcrDeckState();
+  VcrDeckState build() {
+    _operation++;
+    return const VcrDeckState();
+  }
 
   Future<void> insertTape(
     Tape tape, {
     PlaybackStyle style = PlaybackStyle.vhsCrt,
   }) async {
+    final operation = ++_operation;
     Duration? resumeAt;
     if (ref.read(experiencePrefsProvider).saveTimestampOnEject) {
       final positions = ref.read(tapeResumePositionsProvider.notifier);
       await positions.ready;
-      if (!ref.mounted) return;
+      if (!ref.mounted || operation != _operation) return;
       resumeAt = positions.positionFor(tape.id);
     }
 
     // Wait until the clunk is actually playing, then fly.
     await ref.read(deckSfxProvider).playInsert();
-    if (!ref.mounted) return;
+    if (!ref.mounted || operation != _operation) return;
     state = state.copyWith(
       power: VcrPower.inserting,
       loadedTape: tape,
@@ -79,11 +85,12 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
       clearResume: resumeAt == null,
     );
     await Future<void>.delayed(const Duration(milliseconds: 780));
-    if (!ref.mounted) return;
+    if (!ref.mounted || operation != _operation) return;
     state = state.copyWith(power: VcrPower.playing);
   }
 
   void playCleanFullscreen(Tape tape) {
+    _operation++;
     state = state.copyWith(
       power: VcrPower.playing,
       loadedTape: tape,
@@ -92,6 +99,7 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
   }
 
   Future<void> eject() async {
+    final operation = ++_operation;
     final sfx = ref.read(deckSfxProvider);
     final player = ref.read(deckPlayerProvider);
     final tape = state.loadedTape;
@@ -103,13 +111,14 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
           .save(tape.id, player.position);
     }
 
+    if (!ref.mounted || operation != _operation) return;
     unawaited(sfx.stopShuttle());
     // Request the clunk, then leave playback before the intentional stop can
     // be mistaken for a stream failure.
     unawaited(sfx.playEject());
     state = state.copyWith(power: VcrPower.ejecting);
     await Future<void>.delayed(const Duration(milliseconds: 780));
-    if (!ref.mounted) return;
+    if (!ref.mounted || operation != _operation) return;
     state = const VcrDeckState();
   }
 

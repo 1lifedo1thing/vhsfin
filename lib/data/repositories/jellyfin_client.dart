@@ -1,29 +1,30 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vhsfin/features/auth/model/session.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
+enum JellyfinStreamTransport { progressiveMp4, hls }
+
 /// Minimal Jellyfin REST client — auth, views, shelves, streams.
 class JellyfinClient {
   JellyfinClient({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                connectTimeout: const Duration(seconds: 8),
-                receiveTimeout: const Duration(seconds: 20),
-                sendTimeout: const Duration(seconds: 20),
-              ),
-            );
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 8),
+              receiveTimeout: const Duration(seconds: 20),
+              sendTimeout: const Duration(seconds: 20),
+            ),
+          );
 
   final Dio _dio;
   static const _appName = 'VHSFin';
   static const _appVersion = '0.1.0';
 
-  String _authHeader({
-    required String deviceId,
-    String? token,
-  }) {
+  String _authHeader({required String deviceId, String? token}) {
     final parts = <String>[
       'MediaBrowser Client="$_appName"',
       'Device="VHSFin"',
@@ -56,10 +57,7 @@ class JellyfinClient {
 
     final response = await _dio.post<Map<String, dynamic>>(
       '$base/Users/AuthenticateByName',
-      data: {
-        'Username': username,
-        'Pw': password,
-      },
+      data: {'Username': username, 'Pw': password},
       options: Options(
         headers: {
           'Authorization': _authHeader(deviceId: id),
@@ -131,7 +129,7 @@ class JellyfinClient {
         'SortOrder': 'Ascending',
         'Fields':
             'PrimaryImageAspectRatio,Overview,RunTimeTicks,ChildCount,ImageTags,'
-                'ProductionYear,Genres,CommunityRating,OfficialRating',
+            'ProductionYear,Genres,CommunityRating,OfficialRating',
         'Limit': 300,
       },
       options: _authed(session),
@@ -140,11 +138,7 @@ class JellyfinClient {
     final items = response.data?['Items'] as List<dynamic>? ?? const [];
     return items
         .map(
-          (raw) => _tapeFromItem(
-            raw as Map<String, dynamic>,
-            session,
-            source,
-          ),
+          (raw) => _tapeFromItem(raw as Map<String, dynamic>, session, source),
         )
         .toList();
   }
@@ -165,8 +159,8 @@ class JellyfinClient {
         'SortOrder': 'Ascending',
         'Fields':
             'PrimaryImageAspectRatio,Overview,RunTimeTicks,IndexNumber,'
-                'ParentIndexNumber,ImageTags,ProductionYear,SeriesName,Genres,'
-                'CommunityRating,OfficialRating',
+            'ParentIndexNumber,ImageTags,ProductionYear,SeriesName,Genres,'
+            'CommunityRating,OfficialRating',
         'Limit': 400,
       },
       options: _authed(session),
@@ -264,16 +258,33 @@ class JellyfinClient {
     return Duration(microseconds: ticks ~/ 10);
   }
 
-  String streamUrl(JellyfinSession session, String itemId) {
+  String streamUrl(
+    JellyfinSession session,
+    String itemId, {
+    JellyfinStreamTransport? transport,
+  }) {
+    final resolvedTransport =
+        transport ??
+        (kIsWeb
+            ? JellyfinStreamTransport.progressiveMp4
+            : JellyfinStreamTransport.hls);
+    final hls = resolvedTransport == JellyfinStreamTransport.hls;
     final endpoint = Uri.parse(
-      '${session.normalizedServerUrl}/Videos/$itemId/stream.mp4',
+      '${session.normalizedServerUrl}/Videos/$itemId/'
+      '${hls ? 'master.m3u8' : 'stream.mp4'}',
     );
     return endpoint
         .replace(
           queryParameters: {
-            // Progressive H.264/AAC works in browsers. Jellyfin may still copy
-            // already-compatible streams instead of re-encoding them.
-            'Static': 'false',
+            if (hls) ...{
+              // VOD HLS publishes the complete segment timeline up front, so
+              // native controls know the real runtime and can seek anywhere.
+              'MediaSourceId': itemId,
+              'SegmentContainer': 'ts',
+              'MinSegments': '1',
+            } else
+              // Progressive H.264/AAC remains the most reliable web path.
+              'Static': 'false',
             'VideoCodec': 'h264',
             'AudioCodec': 'aac',
             'EnableAutoStreamCopy': 'true',
@@ -334,10 +345,7 @@ class JellyfinClient {
 
       await _dio.post<void>(
         '${session.normalizedServerUrl}/Items/$itemId/RemoteImages/Download',
-        queryParameters: {
-          'Type': 'Box',
-          'ImageUrl': imageUrl,
-        },
+        queryParameters: {'Type': 'Box', 'ImageUrl': imageUrl},
         options: _authed(session),
       );
       return true;
