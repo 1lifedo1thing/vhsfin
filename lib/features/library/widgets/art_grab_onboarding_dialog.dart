@@ -51,19 +51,16 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  'VHSFin',
-                  style: vhsBrandStyle(size: 28),
-                ),
+                Text('VHSFin', style: vhsBrandStyle(size: 28)),
                 const SizedBox(height: 10),
                 Text(
                   _finished
                       ? 'Found VHS posters for ${progress.foundCount} of '
-                          '${progress.total} titles. Spines will use sleeve '
-                          'art when available.'
+                            '${progress.total} titles. Spines will use sleeve '
+                            'art when available.'
                       : 'Looking up VHS tapes and posters for your shelves. '
-                          'Titles already in the cache skip the network — '
-                          'only new ones take longer.',
+                            'Titles already in the cache skip the network — '
+                            'only new ones take longer.',
                   style: TextStyle(
                     color: VhsColors.brand.withValues(alpha: 0.75),
                     height: 1.35,
@@ -84,9 +81,9 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                   _finished
                       ? '${progress.foundCount} posters ready'
                       : progress.total == 0
-                          ? 'Starting…'
-                          : '${progress.completed} / ${progress.total}'
-                              '${progress.foundCount > 0 ? ' · ${progress.foundCount} hits' : ''}',
+                      ? 'Starting…'
+                      : '${progress.completed} / ${progress.total}'
+                            '${progress.foundCount > 0 ? ' · ${progress.foundCount} hits' : ''}',
                   style: TextStyle(
                     color: VhsColors.brand.withValues(alpha: 0.55),
                     fontSize: 12,
@@ -94,13 +91,17 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                     letterSpacing: 0.6,
                   ),
                 ),
-                if (_finished) ...[
-                  const SizedBox(height: 18),
+                const SizedBox(height: 18),
+                if (_finished)
                   ElevatedButton(
                     onPressed: onDone,
                     child: const Text('CONTINUE'),
+                  )
+                else
+                  TextButton(
+                    onPressed: onDone,
+                    child: const Text('CONTINUE IN BACKGROUND'),
                   ),
-                ],
               ],
             ),
           ),

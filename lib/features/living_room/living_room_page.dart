@@ -80,6 +80,11 @@ class LivingRoomPage extends ConsumerWidget {
     ref.listen<AsyncValue<List<Shelf>>>(shelvesProvider, (prev, next) {
       next.whenData((value) {
         if (!value.any((s) => s.items.isNotEmpty)) return;
+        // Seed Box-backed ids immediately so VHS-only filtering works before
+        // the slower warm pass finishes (and on devices that skip warm).
+        ref
+            .read(vhsArtIndexProvider.notifier)
+            .seedFromTapes(value.expand((s) => s.items));
         Future(() => _kickArtWarm(ref));
       });
     });
@@ -185,7 +190,22 @@ class LivingRoomPage extends ConsumerWidget {
     await ref.read(artOnboardingDoneProvider.notifier).ready;
     // Page may have been disposed while prefs loaded.
     try {
-      final needOnboarding = !ref.read(artOnboardingDoneProvider);
+      var needOnboarding = !ref.read(artOnboardingDoneProvider);
+      final shelves = ref.read(shelvesProvider).asData?.value;
+      if (shelves != null) {
+        ref
+            .read(vhsArtIndexProvider.notifier)
+            .seedFromTapes(shelves.expand((s) => s.items));
+      }
+      if (needOnboarding &&
+          shelves != null &&
+          hasExistingAccountVhsArt(shelves)) {
+        // Local preferences do not follow a Jellyfin account to a new device.
+        // Existing server-side Box art proves this account has already run the
+        // onboarding pass, so keep any remaining warm-up in the background.
+        await ref.read(artOnboardingDoneProvider.notifier).markDone();
+        needOnboarding = false;
+      }
       final vhsOnly = ref.read(shelfDisplayPrefsProvider).vhsOnly;
       if (!needOnboarding && !vhsOnly) return;
       if (needOnboarding) {

@@ -70,6 +70,7 @@ class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
       (m) => m.name == sortName,
       orElse: () => ShelfSortMode.titleAsc,
     );
+    if (!ref.mounted || epoch != _epoch) return;
     state = ShelfDisplayPrefs(
       vhsOnly: prefs.getBool(_vhsOnlyKey) ?? true,
       sort: sort,

@@ -10,6 +10,18 @@ import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
+/// Jellyfin Box sleeves already on the [Tape] — no network lookup required.
+Map<String, VhsSpineArt?> immediateBoxSpineArts(Iterable<Tape> tapes) {
+  return {
+    for (final tape in tapes)
+      if (tape.hasBoxImage)
+        tape.id: VhsSpineArt(
+          imageUrl: tape.boxImageUrl!,
+          centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
+        ),
+  };
+}
+
 /// Bookshelf content — props only; page owns Riverpod.
 class BookshelfView extends StatelessWidget {
   const BookshelfView({
@@ -436,6 +448,9 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
     final key = _tapeKey(widget.tapes);
     _warmKey = key;
     final gen = ++_warmGen;
+    // Seed known Jellyfin Box sleeves while the bay stays hidden, so a budget
+    // timeout still fades in real spines together — not a procedural stampede.
+    _arts = immediateBoxSpineArts(widget.tapes);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || gen != _warmGen) return;
       _warm(key, gen);
@@ -444,7 +459,10 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
 
   Future<void> _warm(String key, int gen) async {
     try {
-      await Future.any<void>([_prefetch(widget.tapes), _budgetGate()]);
+      await Future.any<void>([
+        _prefetch(widget.tapes, gen: gen, key: key),
+        _budgetGate(),
+      ]);
     } catch (_) {
       // Still reveal — procedural spines / errors shouldn't trap the bay.
     } finally {
@@ -452,6 +470,7 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
       _budgetTimer = null;
     }
     if (!mounted || gen != _warmGen || _warmKey != key) return;
+    // One opacity fade for the whole bay — never drip-feed spine swaps.
     setState(() => _visible = true);
   }
 
@@ -462,15 +481,23 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
     return gate.future;
   }
 
-  Future<void> _prefetch(List<Tape> tapes) async {
+  Future<void> _prefetch(
+    List<Tape> tapes, {
+    required int gen,
+    required String key,
+  }) async {
     if (tapes.isEmpty) return;
 
     final arts = await Future.wait(tapes.map(widget.resolveSpineArt));
+    if (!mounted || gen != _warmGen || _warmKey != key || _visible) return;
 
-    final byId = <String, VhsSpineArt?>{};
+    final byId = <String, VhsSpineArt?>{
+      // Keep Box seeds if a resolve returns null (e.g. reject suppress).
+      ...immediateBoxSpineArts(tapes),
+    };
     final urls = <String>{};
     for (var i = 0; i < tapes.length; i++) {
-      final art = arts[i];
+      final art = arts[i] ?? byId[tapes[i].id];
       byId[tapes[i].id] = art;
       if (art != null) {
         urls.add(art.imageUrl);
@@ -482,21 +509,24 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
       }
     }
 
-    if (mounted) setState(() => _arts = byId);
+    if (urls.isNotEmpty) {
+      // Warm bytes before committing arts so the fade-in isn't a drip of
+      // CachedNetworkImage placeholders. If the budget wins first, we keep the
+      // Box seed snapshot and ignore this result.
+      await Future.wait(
+        urls.map((url) async {
+          try {
+            await VhsImageCache.warm(url, context: context);
+          } catch (error) {
+            debugPrint('vhs-art warm miss $url: $error');
+          }
+        }),
+      );
+    }
 
-    if (!mounted || urls.isEmpty) return;
-
-    // One failure must not abort the rest — on web CORS/file-cache misses used
-    // to trip Future.wait and reveal a blank shelf while <img> loads continued.
-    await Future.wait(
-      urls.map((url) async {
-        try {
-          await VhsImageCache.warm(url, context: context);
-        } catch (error) {
-          debugPrint('vhs-art warm miss $url: $error');
-        }
-      }),
-    );
+    if (!mounted || gen != _warmGen || _warmKey != key || _visible) return;
+    // Commit only while still hidden — the reveal setState paints once.
+    _arts = byId;
   }
 
   @override

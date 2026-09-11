@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
@@ -11,8 +12,8 @@ import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
 /// Whether the first-time VHS art-grab tour has been finished.
 final artOnboardingDoneProvider =
     NotifierProvider<ArtOnboardingDoneNotifier, bool>(
-  ArtOnboardingDoneNotifier.new,
-);
+      ArtOnboardingDoneNotifier.new,
+    );
 
 class ArtOnboardingDoneNotifier extends Notifier<bool> {
   static const prefsKey = 'vhsfin.art_onboarding_done.v1';
@@ -61,8 +62,7 @@ class ArtOnboardingDoneNotifier extends Notifier<bool> {
 
 /// Session-only: show the art-grab dialog. Persisted "done" alone would hide
 /// the finished screen the moment warm completes; this keeps it until CONTINUE.
-final artOnboardingUiProvider =
-    NotifierProvider<ArtOnboardingUiNotifier, bool>(
+final artOnboardingUiProvider = NotifierProvider<ArtOnboardingUiNotifier, bool>(
   ArtOnboardingUiNotifier.new,
 );
 
@@ -76,6 +76,13 @@ class ArtOnboardingUiNotifier extends Notifier<bool> {
 }
 
 enum ArtWarmPhase { idle, running, done }
+
+/// Server-backed evidence that this Jellyfin library has already completed an
+/// art pass. Unlike [artOnboardingDoneProvider], Box images follow the account
+/// to new devices and browsers.
+bool hasExistingAccountVhsArt(Iterable<Shelf> shelves) {
+  return shelves.any((shelf) => shelf.items.any((tape) => tape.hasBoxImage));
+}
 
 class ArtWarmProgress {
   const ArtWarmProgress({
@@ -112,11 +119,13 @@ class ArtWarmProgress {
 
 final artWarmProgressProvider =
     NotifierProvider<ArtWarmProgressNotifier, ArtWarmProgress>(
-  ArtWarmProgressNotifier.new,
-);
+      ArtWarmProgressNotifier.new,
+    );
 
 /// Resolves sleeve art for shelf tapes with progress for the onboarding UI.
 class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
+  static const lookupTimeout = Duration(seconds: 30);
+
   var _running = false;
   var _generation = 0;
 
@@ -180,34 +189,36 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
         if (gen != _generation) return;
         final slice = tapes.sublist(i, math.min(i + cacheChunk, tapes.length));
         final batch = <String, bool>{};
-        final outcomes = await Future.wait(slice.map((tape) async {
-          if (tape.hasBoxImage || tape.isDemo) {
-            return (tape: tape, cached: true, hasArt: true);
-          }
-          final cached = await resolver.hasCachedLookup(
-            title: tape.title,
-            year: tape.productionYear,
-            seriesTitle: tape.seriesTitle,
-            seasonNumber: tape.seasonNumber,
-            kind: tape.kind,
-          );
-          if (!cached) {
-            return (tape: tape, cached: false, hasArt: false);
-          }
-          try {
-            final art = await resolver.spineArtFor(
+        final outcomes = await Future.wait(
+          slice.map((tape) async {
+            if (tape.hasBoxImage || tape.isDemo) {
+              return (tape: tape, cached: true, hasArt: true);
+            }
+            final cached = await resolver.hasCachedLookup(
               title: tape.title,
               year: tape.productionYear,
               seriesTitle: tape.seriesTitle,
               seasonNumber: tape.seasonNumber,
               kind: tape.kind,
-              allowNetwork: false,
             );
-            return (tape: tape, cached: true, hasArt: art != null);
-          } catch (_) {
-            return (tape: tape, cached: true, hasArt: false);
-          }
-        }));
+            if (!cached) {
+              return (tape: tape, cached: false, hasArt: false);
+            }
+            try {
+              final art = await resolver.spineArtFor(
+                title: tape.title,
+                year: tape.productionYear,
+                seriesTitle: tape.seriesTitle,
+                seasonNumber: tape.seasonNumber,
+                kind: tape.kind,
+                allowNetwork: false,
+              );
+              return (tape: tape, cached: true, hasArt: art != null);
+            } catch (_) {
+              return (tape: tape, cached: true, hasArt: false);
+            }
+          }),
+        );
         if (gen != _generation) return;
 
         for (final outcome in outcomes) {
@@ -236,14 +247,18 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
           math.min(i + netChunk, needsNetwork.length),
         );
         final batch = <String, bool>{};
-        await Future.wait(slice.map((tape) async {
-          try {
-            final art = await ref.read(vhsSpineArtProvider(tape).future);
-            batch[tape.id] = art != null || tape.hasBoxImage || tape.isDemo;
-          } catch (_) {
-            batch[tape.id] = tape.hasBoxImage || tape.isDemo;
-          }
-        }));
+        await Future.wait(
+          slice.map((tape) async {
+            try {
+              final art = await ref
+                  .read(vhsSpineArtProvider(tape).future)
+                  .timeout(lookupTimeout);
+              batch[tape.id] = art != null || tape.hasBoxImage || tape.isDemo;
+            } catch (_) {
+              batch[tape.id] = tape.hasBoxImage || tape.isDemo;
+            }
+          }),
+        );
         if (gen != _generation) return;
 
         index.markMany(batch);
