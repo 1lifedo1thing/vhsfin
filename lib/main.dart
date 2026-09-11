@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:vhsfin/app_orientation.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/router/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
+  await AppOrientation.lockPortrait();
   runApp(const ProviderScope(child: VhsFinApp()));
 }
 

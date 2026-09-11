@@ -124,8 +124,9 @@ void main() {
     await tester.pump();
     expect(chosen, CrtTvSkin.aquaGraphite);
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
+    await tester.tapAt(const Offset(4, 4));
+    await tester.pumpAndSettle();
+    expect(find.text('SETTINGS'), findsNothing);
   });
 
   testWidgets('loaded tape stays absent from its shelf', (tester) async {

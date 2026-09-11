@@ -24,6 +24,8 @@ Future<void> showDeckSettingsSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
     builder: (context) => _DeckSettingsSheet(
       connected: connected,
       userName: userName,
@@ -90,6 +92,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
       padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
       child: Align(
         alignment: Alignment.bottomCenter,
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Material(
@@ -469,6 +472,8 @@ Future<void> showShelfSortSheet(
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
+    isDismissible: true,
+    enableDrag: true,
     builder: (context) => _ShelfSortSheet(current: current, onSelect: onSelect),
   );
 }
@@ -487,6 +492,7 @@ class _ShelfSortSheet extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
       child: Align(
         alignment: Alignment.bottomCenter,
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Material(

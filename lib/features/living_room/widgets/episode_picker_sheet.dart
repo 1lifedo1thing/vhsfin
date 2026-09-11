@@ -21,6 +21,8 @@ Future<void> showEpisodePicker(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
     builder: (context) => EpisodePickerSheet(
       series: series,
       loadedId: loadedId,
@@ -103,6 +105,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
       padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
       child: Align(
         alignment: Alignment.bottomCenter,
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 560,
@@ -175,89 +178,88 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                             style: CrtLoadStyle.tape,
                           )
                         : _error != null
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Text(
-                                    'Could not load episodes.\n$_error',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: VhsColors.brand
-                                          .withValues(alpha: 0.7),
-                                    ),
-                                  ),
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                'Could not load episodes.\n$_error',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: VhsColors.brand.withValues(alpha: 0.7),
                                 ),
-                              )
-                            : episodes == null || episodes.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'No tapes in this box.',
-                                      style: TextStyle(
-                                        color: VhsColors.brand
-                                            .withValues(alpha: 0.6),
-                                      ),
-                                    ),
-                                  )
-                                : LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      const padH = 20.0;
-                                      final inner = (constraints.maxWidth -
-                                              padH)
-                                          .clamp(1.0, 4000.0);
-                                      final perRow =
-                                          (inner / VhsSpine.nominalWidth)
-                                              .floor()
-                                              .clamp(1, 100);
-                                      final rows = <List<Tape>>[];
-                                      for (var i = 0;
-                                          i < episodes.length;
-                                          i += perRow) {
-                                        final end =
-                                            (i + perRow < episodes.length)
-                                                ? i + perRow
-                                                : episodes.length;
-                                        rows.add(episodes.sublist(i, end));
-                                      }
+                              ),
+                            ),
+                          )
+                        : episodes == null || episodes.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No tapes in this box.',
+                              style: TextStyle(
+                                color: VhsColors.brand.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          )
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              const padH = 20.0;
+                              final inner = (constraints.maxWidth - padH).clamp(
+                                1.0,
+                                4000.0,
+                              );
+                              final perRow = (inner / VhsSpine.nominalWidth)
+                                  .floor()
+                                  .clamp(1, 100);
+                              final rows = <List<Tape>>[];
+                              for (
+                                var i = 0;
+                                i < episodes.length;
+                                i += perRow
+                              ) {
+                                final end = (i + perRow < episodes.length)
+                                    ? i + perRow
+                                    : episodes.length;
+                                rows.add(episodes.sublist(i, end));
+                              }
 
-                                      return ListView.separated(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          10,
-                                          0,
-                                          10,
-                                          16,
-                                        ),
-                                        itemCount: rows.length,
-                                        separatorBuilder: (_, _) =>
-                                            const SizedBox(height: 14),
-                                        itemBuilder: (context, rowIndex) {
-                                          final row = rows[rowIndex];
-                                          return SizedBox(
-                                            height: 196,
-                                            child: _EpisodeShelfRow(
-                                              episodes: row,
-                                              arts: _arts,
-                                              loadedId: widget.loadedId,
-                                              onTap: (episode) {
-                                                showTapeInspectSheet(
-                                                  context,
-                                                  tape: episode,
-                                                  art: _arts[episode.id],
-                                                  loadArt: () => widget
-                                                      .resolveArt(episode),
-                                                  onRejectSleeve: () => widget
-                                                      .onRejectSleeve(episode),
-                                                  onInsert: () {
-                                                    Navigator.pop(context);
-                                                    widget.onInsert(episode);
-                                                  },
-                                                );
-                                              },
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
+                              return ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  10,
+                                  0,
+                                  10,
+                                  16,
+                                ),
+                                itemCount: rows.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 14),
+                                itemBuilder: (context, rowIndex) {
+                                  final row = rows[rowIndex];
+                                  return SizedBox(
+                                    height: 196,
+                                    child: _EpisodeShelfRow(
+                                      episodes: row,
+                                      arts: _arts,
+                                      loadedId: widget.loadedId,
+                                      onTap: (episode) {
+                                        showTapeInspectSheet(
+                                          context,
+                                          tape: episode,
+                                          art: _arts[episode.id],
+                                          loadArt: () =>
+                                              widget.resolveArt(episode),
+                                          onRejectSleeve: () =>
+                                              widget.onRejectSleeve(episode),
+                                          onInsert: () {
+                                            Navigator.pop(context);
+                                            widget.onInsert(episode);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -321,9 +323,7 @@ class _EpisodeShelfRow extends StatelessWidget {
               children: [
                 for (final episode in episodes)
                   SizedBox(
-                    width: episode.id == loadedId
-                        ? 34
-                        : VhsSpine.nominalWidth,
+                    width: episode.id == loadedId ? 34 : VhsSpine.nominalWidth,
                     child: Text(
                       episode.title,
                       maxLines: 2,

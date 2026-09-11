@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:vhsfin/app_orientation.dart';
 
 import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
@@ -70,10 +71,10 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
               key: widget.videoKey,
               controller: widget.controller,
               controls: (state) => state.isFullscreen()
-                  ? _FullscreenBackControls(videoState: state)
+                  ? AdaptiveVideoControls(state)
                   : const SizedBox.shrink(),
-              onEnterFullscreen: _resumePlaybackAfterFullscreenChange,
-              onExitFullscreen: _resumePlaybackAfterFullscreenChange,
+              onEnterFullscreen: _enterFullscreen,
+              onExitFullscreen: _exitFullscreen,
               fill: Colors.black,
               fit: BoxFit.fitHeight,
               alignment: Alignment.center,
@@ -84,31 +85,18 @@ class _LetterboxedVideoState extends State<LetterboxedVideo> {
     );
   }
 
+  Future<void> _enterFullscreen() async {
+    await AppOrientation.enterVideoFullscreen();
+    await _resumePlaybackAfterFullscreenChange();
+  }
+
+  Future<void> _exitFullscreen() async {
+    await AppOrientation.leaveVideoFullscreen();
+    await _resumePlaybackAfterFullscreenChange();
+  }
+
   Future<void> _resumePlaybackAfterFullscreenChange() async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     await widget.player.play();
-  }
-}
-
-class _FullscreenBackControls extends StatelessWidget {
-  const _FullscreenBackControls({required this.videoState});
-
-  final VideoState videoState;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: FilledButton.tonalIcon(
-            onPressed: videoState.exitFullscreen,
-            icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('BACK TO CRT'),
-          ),
-        ),
-      ),
-    );
   }
 }

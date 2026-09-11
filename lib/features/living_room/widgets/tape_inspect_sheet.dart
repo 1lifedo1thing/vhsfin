@@ -48,6 +48,8 @@ Future<void> showTapeInspectSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.72),
     builder: (_) => content,
@@ -111,6 +113,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
       padding: outerPadding,
       child: Align(
         alignment: widget.desktop ? Alignment.center : Alignment.bottomCenter,
+        heightFactor: widget.desktop ? null : 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: widget.desktop ? 780 : 520,

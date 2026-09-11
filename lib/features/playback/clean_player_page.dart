@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vhsfin/app_orientation.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 import 'package:vhsfin/features/playback/views/clean_player_view.dart';
@@ -26,7 +28,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    unawaited(AppOrientation.enterVideoFullscreen());
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tape = ref.read(vcrDeckProvider).loadedTape;
       if (tape == null) {
@@ -45,7 +47,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    unawaited(AppOrientation.leaveVideoFullscreen());
     super.dispose();
   }
 
@@ -81,7 +83,8 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
     final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
     final owner = ref.watch(deckSurfaceOwnerProvider);
     final controller = player.controllerOrNull;
-    final showVideo = _bindVideo &&
+    final showVideo =
+        _bindVideo &&
         !_leaving &&
         owner == DeckSurfaceOwner.fullscreen &&
         controller != null;

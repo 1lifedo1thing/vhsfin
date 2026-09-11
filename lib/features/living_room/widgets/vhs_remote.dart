@@ -19,6 +19,8 @@ Future<void> showVhsRemote(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
     builder: (context) => VhsRemoteSheet(
       title: title,
       live: live,
@@ -66,6 +68,7 @@ class VhsRemoteSheet extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       child: Align(
         alignment: Alignment.bottomCenter,
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 340),
           child: Material(
