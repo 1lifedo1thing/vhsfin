@@ -15,67 +15,64 @@ import 'package:vhsfin/features/playback/state/deck_player.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-    'living room: settings FAB opens sheet; no strip / REPLAY ART GRAB',
-    (tester) async {
-      var settingsOpened = false;
-      final player = DeckPlayerController();
-      addTearDown(player.dispose);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: LivingRoomView(
-            deck: const VcrDeckState(),
-            player: player,
-            surfaceEpoch: 0,
-            surfaceOwner: DeckSurfaceOwner.crt,
-            crtSkin: CrtTvSkin.zenith,
-            flightAnchors: TapeFlightAnchors(),
-            flyingTapeId: null,
-            flightSourceKey: null,
-            slotArt: null,
-            shelvesLoading: false,
-            shelves: const [],
-            vhsOnly: true,
-            rewinding: false,
-            onRew: () {},
-            onRewEnd: () {},
-            onPlay: () {},
-            onFf: () {},
-            onFfEnd: () {},
-            onEject: () {},
-            resolveSpineArt: (_) async => null,
-            onTapeTap: (tape, key) {},
-            onFlyingTapeIdChanged: (_) {},
-            artForFlight: (_) => null,
-            onShowRemote: () {},
-            onShowSettings: () => settingsOpened = true,
-            onConnectPrompt: () {},
-            onArtOnboardingDone: () {},
-          ),
-        ),
-      );
-      await tester.pump();
-
-      expect(find.text('REPLAY ART GRAB'), findsNothing);
-      expect(find.text('DECK SETTINGS'), findsNothing);
-      expect(find.text('PLAY/PAUSE'), findsOneWidget);
-      expect(find.byTooltip('Settings'), findsOneWidget);
-
-      await tester.tap(find.byTooltip('Settings'));
-      await tester.pump();
-      expect(settingsOpened, isTrue);
-
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
-    },
-  );
-
-  testWidgets('settings sheet: VHS only + CRT skins; no REPLAY ART GRAB', (
+  testWidgets('living room: settings opens sheet; no strip / REPLAY ART GRAB', (
     tester,
   ) async {
-    CrtTvSkin? chosen;
+    var settingsOpened = false;
+    final player = DeckPlayerController();
+    addTearDown(player.dispose);
 
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LivingRoomView(
+          deck: const VcrDeckState(),
+          player: player,
+          surfaceEpoch: 0,
+          surfaceOwner: DeckSurfaceOwner.crt,
+          flightAnchors: TapeFlightAnchors(),
+          flyingTapeId: null,
+          flightSourceKey: null,
+          slotArt: null,
+          shelvesLoading: false,
+          shelves: const [],
+          vhsOnly: true,
+          rewinding: false,
+          onRew: () {},
+          onRewEnd: () {},
+          onPlay: () {},
+          onFf: () {},
+          onFfEnd: () {},
+          onEject: () {},
+          resolveSpineArt: (_) async => null,
+          onTapeTap: (tape, key) {},
+          onFlyingTapeIdChanged: (_) {},
+          artForFlight: (_) => null,
+          onShowRemote: () {},
+          onShowSettings: () => settingsOpened = true,
+          onConnectPrompt: () {},
+          onArtOnboardingDone: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('REPLAY ART GRAB'), findsNothing);
+    expect(find.text('DECK SETTINGS'), findsNothing);
+    expect(find.byTooltip('PLAY'), findsOneWidget);
+    expect(find.byTooltip('Settings'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+    expect(settingsOpened, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('settings sheet: VHS controls and working CRT look selector', (
+    tester,
+  ) async {
+    CrtTvSkin? selected;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -94,7 +91,7 @@ void main() {
                 onVhsOnlyChanged: (_) {},
                 onOpenSort: () {},
                 onSaveTimestampChanged: (_) {},
-                onCrtSkinChanged: (s) => chosen = s,
+                onCrtSkinChanged: (skin) => selected = skin,
               ),
               child: const Text('open'),
             ),
@@ -116,13 +113,10 @@ void main() {
     expect(find.text('CRT LOOK'), findsOneWidget);
     expect(find.text('ZENITH'), findsOneWidget);
     expect(find.text('WEGA'), findsOneWidget);
-    expect(find.text('TUBE'), findsOneWidget);
-    expect(find.text('AQUA'), findsOneWidget);
-    expect(find.text('REPLAY ART GRAB'), findsNothing);
-
     await tester.tap(find.text('AQUA'));
     await tester.pump();
-    expect(chosen, CrtTvSkin.aquaGraphite);
+    expect(selected, CrtTvSkin.aquaGraphite);
+    expect(find.text('REPLAY ART GRAB'), findsNothing);
 
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();

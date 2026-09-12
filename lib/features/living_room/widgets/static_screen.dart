@@ -17,19 +17,31 @@ class StaticScreen extends StatefulWidget {
 class _StaticScreenState extends State<StaticScreen>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
-  double _time = 0;
+  final _time = ValueNotifier<double>(0);
 
   @override
   void initState() {
     super.initState();
     _ticker = createTicker((elapsed) {
-      setState(() => _time = elapsed.inMilliseconds / 1000);
-    })..start();
+      final frame = (elapsed.inMilliseconds / 50).floor() / 20;
+      if (_time.value != frame) _time.value = frame;
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _ticker.stop();
+    } else if (!_ticker.isActive) {
+      _ticker.start();
+    }
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    _time.dispose();
     super.dispose();
   }
 
@@ -37,24 +49,28 @@ class _StaticScreenState extends State<StaticScreen>
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.black,
-      child: CustomPaint(
-        painter: _StaticPainter(time: _time, intensity: widget.intensity),
-        child: const SizedBox.expand(),
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _StaticPainter(time: _time, intensity: widget.intensity),
+          child: const SizedBox.expand(),
+        ),
       ),
     );
   }
 }
 
 class _StaticPainter extends CustomPainter {
-  _StaticPainter({required this.time, required this.intensity});
+  _StaticPainter({required this.time, required this.intensity})
+    : super(repaint: time);
 
-  final double time;
+  final ValueNotifier<double> time;
   final double intensity;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final random = math.Random((time * 60).floor());
-    final cell = 3.0;
+    final random = math.Random((time.value * 20).floor());
+    // Bound the noise grid on wide displays; it is texture, not detail.
+    final cell = math.max(1.5, size.width / 180);
     final cols = (size.width / cell).ceil();
     final rows = (size.height / cell).ceil();
     final paint = Paint();
@@ -62,8 +78,8 @@ class _StaticPainter extends CustomPainter {
     for (var y = 0; y < rows; y++) {
       for (var x = 0; x < cols; x++) {
         final v = random.nextDouble();
-        final grey = (40 + v * 200 * intensity).clamp(0, 255).toInt();
-        paint.color = Color.fromARGB(255, grey, grey, grey);
+        final grey = (12 + v * 165 * intensity).clamp(0, 245).toInt();
+        paint.color = Color.fromARGB(255, grey, grey + 4, grey + 1);
         canvas.drawRect(
           Rect.fromLTWH(x * cell, y * cell, cell + 0.5, cell + 0.5),
           paint,

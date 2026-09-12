@@ -75,6 +75,34 @@ void main() {
     expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
   });
 
+  testWidgets(
+    'pausing does not report a stalled signal; resume still detects stalls',
+    (tester) async {
+      await tester.pumpWidget(
+        _StatusHarness(
+          playing: playing.stream,
+          buffering: buffering.stream,
+          position: position.stream,
+          errors: errors.stream,
+          initialBuffering: false,
+        ),
+      );
+      position.add(const Duration(seconds: 1));
+      buffering.add(true);
+      playing.add(false);
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('ADJUSTING TRACKING'), findsNothing);
+
+      playing.add(true);
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+      buffering.add(false);
+      position.add(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.text('ADJUSTING TRACKING'), findsNothing);
+    },
+  );
+
   testWidgets('recognizes replay progress after position resets', (
     tester,
   ) async {
@@ -101,6 +129,32 @@ void main() {
     );
     await tester.pump();
     expect(find.text('ADJUSTING TRACKING'), findsNothing);
+  });
+
+  testWidgets('small CRT error stays scrollable with large text', (
+    tester,
+  ) async {
+    var retries = 0;
+    await tester.pumpWidget(
+      _StatusHarness(
+        playing: playing.stream,
+        buffering: buffering.stream,
+        position: position.stream,
+        errors: errors.stream,
+        size: const Size(220, 150),
+        textScale: 2,
+        onRetry: () async => retries++,
+      ),
+    );
+    errors.add('failed');
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('RE-TRACK'));
+    await tester.tap(find.text('RE-TRACK'));
+    await tester.pump();
+    expect(retries, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('does not show a transient error when playback advances', (
@@ -139,6 +193,8 @@ class _StatusHarness extends StatelessWidget {
     this.initialError,
     this.onRetry,
     this.onRecovered,
+    this.size = const Size(320, 240),
+    this.textScale = 1,
   });
 
   final Stream<bool> playing;
@@ -150,14 +206,21 @@ class _StatusHarness extends StatelessWidget {
   final String? initialError;
   final Future<void> Function()? onRetry;
   final VoidCallback? onRecovered;
+  final Size size;
+  final double textScale;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: Scaffold(
         body: SizedBox(
-          width: 320,
-          height: 240,
+          width: size.width,
+          height: size.height,
           child: VhsPlaybackStatusOverlay(
             playing: playing,
             buffering: buffering,

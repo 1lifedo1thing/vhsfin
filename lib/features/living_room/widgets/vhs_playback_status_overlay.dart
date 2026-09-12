@@ -94,6 +94,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
 
   void _armTrackingTimer() {
     _trackingTimer?.cancel();
+    if (!_playing && _pendingError == null) return;
     _trackingTimer = Timer(widget.trackingDelay, () {
       if (!mounted || _error != null) return;
       if (_hasPlaybackProgress) return;
@@ -106,14 +107,18 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
 
   void _onPlaying(bool value) {
     _playing = value;
-    if (!value && !_hasPlaybackProgress) {
-      _armTrackingTimer();
+    if (!value && _pendingError == null) {
+      _trackingTimer?.cancel();
+      if (_showTracking) setState(() => _showTracking = false);
+      return;
     }
+    _hasPlaybackProgress = false;
+    _armTrackingTimer();
   }
 
   void _onBuffering(bool value) {
     _buffering = value;
-    if (value) {
+    if (value && _playing) {
       _hasPlaybackProgress = false;
       _armTrackingTimer();
     } else if (_playing && _hasPlaybackProgress) {
@@ -191,9 +196,11 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
           Center(
             child: Padding(
               padding: const EdgeInsets.all(18),
-              child: _PlaybackStatusCard(
-                failed: _error != null,
-                onRetry: _retry,
+              child: SingleChildScrollView(
+                child: _PlaybackStatusCard(
+                  failed: _error != null,
+                  onRetry: _retry,
+                ),
               ),
             ),
           ),

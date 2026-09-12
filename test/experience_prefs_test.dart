@@ -9,12 +9,15 @@ import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('crtSkin defaults to zenith and persists selection', () async {
+  test('crtSkin defaults to skeuomorphic and persists selection', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.zenith);
+    expect(
+      container.read(experiencePrefsProvider).crtSkin,
+      CrtTvSkin.skeuomorphic,
+    );
 
     await container
         .read(experiencePrefsProvider.notifier)

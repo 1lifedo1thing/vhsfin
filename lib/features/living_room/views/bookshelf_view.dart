@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
@@ -115,7 +116,7 @@ class _ShelfBlock extends StatelessWidget {
   static const _spineSlotWidth = VhsSpine.nominalWidth + _spineGap;
   // Room for upright spines + lean slack inside the bay.
   static const _rowHeight = 192.0;
-  static const _lipHeight = 8.0;
+  static const _lipHeight = 16.0;
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +143,7 @@ class _ShelfBlock extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               // Inner cavity width after horizontal padding.
-              const padH = 16.0;
+              const padH = 20.0;
               final inner = (constraints.maxWidth - padH).clamp(1.0, 4000.0);
               final perRow = (inner / _spineSlotWidth).floor().clamp(1, 100);
               final rows = <List<Tape>>[];
@@ -198,14 +199,8 @@ class _ShelfBlock extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: _lipHeight,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
-                ),
-                color: Colors.black.withValues(alpha: embedded ? 0.28 : 0.22),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.35)),
-              ),
+            child: WalnutSurface(
+              recessed: true,
               child: Padding(
                 // No bottom pad — spines rest on the cavity floor / lip seam.
                 padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
@@ -218,7 +213,7 @@ class _ShelfBlock extends StatelessWidget {
             right: 0,
             bottom: 0,
             height: _lipHeight,
-            child: const CustomPaint(painter: ShelfLipPainter()),
+            child: const CabinetLedge(height: _lipHeight),
           ),
         ],
       ),
@@ -244,14 +239,16 @@ class _EmptyShelfPrompt extends StatelessWidget {
     final title = isConnect
         ? 'Connect to load your tapes'
         : shelfId == 'empty'
-        ? 'Pick collections below'
+        ? 'Make room for your favorites'
         : vhsOnly
         ? 'No VHS titles on this shelf'
         : 'Empty shelf';
     final subtitle = isConnect
-        ? 'Tap here or use CONNECT on the deck'
+        ? 'Tap to connect your Jellyfin server'
         : shelfId == 'empty'
-        ? 'Choose libraries from DECK SETTINGS'
+        ? 'Tap to choose your shelves'
+        : vhsOnly
+        ? 'Turn off VHS-only in Settings to see all your titles.'
         : null;
 
     final content = Stack(
@@ -308,7 +305,9 @@ class _EmptyShelfPrompt extends StatelessWidget {
       ],
     );
 
-    if (!isConnect || onConnectPrompt == null) return content;
+    if ((!isConnect && shelfId != 'empty') || onConnectPrompt == null) {
+      return content;
+    }
 
     return Material(
       color: Colors.transparent,

@@ -8,7 +8,7 @@ import 'package:vhsfin/features/living_room/widgets/static_screen.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_playback_status_overlay.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
-/// The CRT screen inside the VCR bezel — static, insert anim, or playback.
+/// The CRT screen inside the VCR bezel — static, loading, or playback.
 class VcrCrtScreen extends StatefulWidget {
   const VcrCrtScreen({
     super.key,
@@ -41,27 +41,15 @@ class VcrCrtScreen extends StatefulWidget {
   State<VcrCrtScreen> createState() => _VcrCrtScreenState();
 }
 
-class _VcrCrtScreenState extends State<VcrCrtScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _insertController;
-  late final Animation<Offset> _insertSlide;
+class _VcrCrtScreenState extends State<VcrCrtScreen> {
   var _syncGen = 0;
 
   @override
   void initState() {
     super.initState();
-    _insertController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 850),
-    );
-    _insertSlide = Tween<Offset>(begin: const Offset(0, 1.15), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _insertController,
-            curve: Curves.easeInOutCubic,
-          ),
-        );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPlayback());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncPlayback();
+    });
   }
 
   @override
@@ -94,11 +82,11 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
 
     switch (widget.power) {
       case VcrPower.off:
-        _insertController.value = 0;
+        break;
       case VcrPower.ejecting:
         await deck.stop();
         if (!mounted || gen != _syncGen) return;
-        _insertController.value = 0;
+        break;
       case VcrPower.inserting:
         if (tape != null && tape.streamUrl.isNotEmpty) {
           try {
@@ -108,9 +96,8 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
           }
         }
         if (!mounted || gen != _syncGen) return;
-        await _insertController.forward(from: 0);
+        break;
       case VcrPower.playing:
-        _insertController.value = 1;
         if (tape == null || tape.streamUrl.isEmpty) return;
         try {
           await deck.load(tape.streamUrl, play: true, seekTo: widget.resumeAt);
@@ -126,12 +113,6 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
     await widget.player.stop();
     if (!mounted) return;
     await widget.player.load(tape.streamUrl, play: true);
-  }
-
-  @override
-  void dispose() {
-    _insertController.dispose();
-    super.dispose();
   }
 
   @override
@@ -151,15 +132,26 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
             const ColoredBox(color: Colors.black),
             if (showVideo && widget.videoSurface != null) widget.videoSurface!,
             // Ejecting = black while the clunk plays; off = snow.
-            if (widget.power == VcrPower.off) const StaticScreen(),
-            if (widget.power == VcrPower.inserting)
-              SlideTransition(
-                position: _insertSlide,
-                child: _InsertingTapeLabel(title: widget.tape?.title ?? ''),
+            if (widget.power == VcrPower.off)
+              const StaticScreen(intensity: 0.38),
+            if (widget.power == VcrPower.off)
+              const Positioned(
+                left: 22,
+                top: 24,
+                child: Text(
+                  'AV 1',
+                  style: TextStyle(
+                    color: Color(0xFFB3CDB3),
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    letterSpacing: 2,
+                    shadows: [Shadow(color: Color(0xFF729B78), blurRadius: 5)],
+                  ),
+                ),
               ),
-            if (widget.power == VcrPower.playing &&
-                widget.style == PlaybackStyle.vhsCrt)
-              const CrtGlassOverlay(),
+            if (widget.power == VcrPower.inserting)
+              _InsertingTapeLabel(title: widget.tape?.title ?? ''),
+            if (widget.style == PlaybackStyle.vhsCrt) const CrtGlassOverlay(),
             if (widget.rewinding && widget.power == VcrPower.playing)
               const CrtRewindOverlay(),
             if (widget.power == VcrPower.playing &&
@@ -178,6 +170,29 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
                 onRetry: _retryPlayback,
                 onRecovered: widget.player.clearLastError,
               ),
+            // Curved glass highlight, drawn without filters over the video.
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(widget.screenRadius),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0, 0.12, 0.42, 0.7, 1],
+                    colors: [
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0.04),
+                      Colors.transparent,
+                      Colors.transparent,
+                      VhsColors.phosphor.withValues(alpha: 0.035),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+            ),
             IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -190,7 +205,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen>
                     radius: 1.15,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.35),
+                      Colors.black.withValues(alpha: 0.65),
                     ],
                   ),
                 ),
@@ -211,16 +226,41 @@ class _InsertingTapeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: VhsColors.tapeShell.withValues(alpha: 0.92),
+      color: const Color(0xE608100D),
       child: Center(
-        child: Text(
-          'LOADING\n${title.toUpperCase()}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFF2A1810),
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-            height: 1.3,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.play_arrow_rounded,
+                color: VhsColors.phosphor,
+                size: 24,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'READING TAPE',
+                style: TextStyle(
+                  color: VhsColors.phosphor,
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title.toUpperCase(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: VhsColors.phosphor.withValues(alpha: 0.6),
+                  fontSize: 9,
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
         ),
       ),

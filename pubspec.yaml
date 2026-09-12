@@ -1,5 +1,5 @@
 name: vhsfin
-description: Bare-bones Jellyfin client for kids — VHSFin living-room VCR playback.
+description: A small Jellyfin client with VHS shelves and a living-room player.
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -34,6 +34,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/icons/app_icon_1024.png
+    - assets/branding/crt-90s.png
+    - assets/branding/walnut.jpg
     - assets/sounds/vhs_insert.ogg
     - assets/sounds/vhs_eject.ogg
     - assets/sounds/vhs_ff.ogg

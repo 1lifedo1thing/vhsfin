@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
@@ -6,9 +9,9 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/widgets/art_grab_onboarding_dialog.dart';
-import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
@@ -26,7 +29,6 @@ class LivingRoomView extends StatelessWidget {
     required this.player,
     required this.surfaceEpoch,
     required this.surfaceOwner,
-    required this.crtSkin,
     required this.flightAnchors,
     required this.flyingTapeId,
     required this.flightSourceKey,
@@ -52,17 +54,18 @@ class LivingRoomView extends StatelessWidget {
     this.artWarmProgress = const ArtWarmProgress(),
     this.shelvesError,
     this.shelves,
+    this.crtSkin = CrtTvSkin.skeuomorphic,
   });
 
   final VcrDeckState deck;
   final DeckPlayerController player;
   final int surfaceEpoch;
   final DeckSurfaceOwner surfaceOwner;
-  final CrtTvSkin crtSkin;
   final TapeFlightAnchors flightAnchors;
   final String? flyingTapeId;
   final String? flightSourceKey;
   final VhsSpineArt? slotArt;
+  final CrtTvSkin crtSkin;
   final bool shelvesLoading;
   final String? shelvesError;
   final List<Shelf>? shelves;
@@ -105,29 +108,8 @@ class LivingRoomView extends StatelessWidget {
           );
 
     return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'vhsfin_settings',
-            onPressed: onShowSettings,
-            backgroundColor: const Color(0xFF2A2A28),
-            foregroundColor: VhsColors.brand,
-            tooltip: 'Settings',
-            child: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton.small(
-            heroTag: 'vhsfin_remote',
-            onPressed: onShowRemote,
-            backgroundColor: const Color(0xFF2A2A28),
-            foregroundColor: VhsColors.brand,
-            tooltip: 'Remote',
-            child: const Icon(Icons.settings_remote_rounded),
-          ),
-        ],
-      ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           DecoratedBox(
             decoration: const BoxDecoration(
@@ -147,46 +129,92 @@ class LivingRoomView extends StatelessWidget {
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth > 820;
                   final pad = wide ? 32.0 : 12.0;
-                  final maxConsole = wide ? 920.0 : double.infinity;
+                  final maxTv = math.min(
+                    constraints.maxWidth - pad * 2 - 24,
+                    (constraints.maxHeight * 0.53).clamp(300.0, 530.0),
+                  );
+                  const maxConsole = 800.0;
 
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(pad, wide ? 28 : 16, pad, 40),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: maxConsole),
-                        child: _EntertainmentCenter(
-                          vcr: VcrBox(
-                            deck: deck,
-                            player: player,
-                            surfaceEpoch: surfaceEpoch,
-                            surfaceOwner: surfaceOwner,
-                            crtSkin: crtSkin,
-                            slotKey: flightAnchors.slotKey,
-                            flyingTapeId: flyingTapeId,
-                            slotArt: slotArt,
-                            rewinding: rewinding,
-                            onRew: onRew,
-                            onRewEnd: onRewEnd,
-                            onPlay: onPlay,
-                            onFf: onFf,
-                            onFfEnd: onFfEnd,
-                            onEject: onEject,
-                            onFull: player.enterFullscreen,
-                            videoSurface: videoSurface,
-                          ),
-                          bookshelf: _BookshelfBody(
-                            shelvesLoading: shelvesLoading,
-                            shelvesError: shelvesError,
-                            shelves: shelves,
-                            deck: deck,
-                            vhsOnly: vhsOnly,
-                            flightAnchors: flightAnchors,
-                            flyingTapeId: flyingTapeId,
-                            flightSourceKey: flightSourceKey,
-                            resolveSpineArt: resolveSpineArt,
-                            onTapeTap: onTapeTap,
-                            onConnectPrompt: onConnectPrompt,
-                          ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 0, 4, 14),
+                              child: Row(
+                                children: [
+                                  const Expanded(
+                                    child: Text(
+                                      'HOME VIDEO',
+                                      style: TextStyle(
+                                        color: Color(0xFFBAA58A),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 3,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: onShowRemote,
+                                    tooltip: 'Remote',
+                                    color: const Color(0xFFCCB994),
+                                    icon: const Icon(
+                                      Icons.settings_remote_rounded,
+                                      size: 21,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: onShowSettings,
+                                    tooltip: 'Settings',
+                                    color: const Color(0xFFCCB994),
+                                    icon: const Icon(
+                                      Icons.tune_rounded,
+                                      size: 21,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _EntertainmentCenter(
+                              maxTvWidth: maxTv,
+                              vcr: VcrBox(
+                                deck: deck,
+                                player: player,
+                                surfaceEpoch: surfaceEpoch,
+                                surfaceOwner: surfaceOwner,
+                                crtSkin: crtSkin,
+                                slotKey: flightAnchors.slotKey,
+                                flyingTapeId: flyingTapeId,
+                                slotArt: slotArt,
+                                rewinding: rewinding,
+                                onRew: onRew,
+                                onRewEnd: onRewEnd,
+                                onPlay: onPlay,
+                                onFf: onFf,
+                                onFfEnd: onFfEnd,
+                                onEject: onEject,
+                                onFull: player.enterFullscreen,
+                                onRemote: onShowRemote,
+                                videoSurface: videoSurface,
+                              ),
+                              bookshelf: _BookshelfBody(
+                                shelvesLoading: shelvesLoading,
+                                shelvesError: shelvesError,
+                                shelves: shelves,
+                                deck: deck,
+                                vhsOnly: vhsOnly,
+                                flightAnchors: flightAnchors,
+                                flyingTapeId: flyingTapeId,
+                                flightSourceKey: flightSourceKey,
+                                resolveSpineArt: resolveSpineArt,
+                                onTapeTap: onTapeTap,
+                                onConnectPrompt: onConnectPrompt,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -286,35 +314,52 @@ class _BookshelfBody extends StatelessWidget {
 
 /// VCR + shelf bay as one wooden entertainment center (no fat settings drawer).
 class _EntertainmentCenter extends StatelessWidget {
-  const _EntertainmentCenter({required this.vcr, required this.bookshelf});
+  const _EntertainmentCenter({
+    required this.vcr,
+    required this.bookshelf,
+    required this.maxTvWidth,
+  });
 
   final Widget vcr;
   final Widget bookshelf;
+  final double maxTvWidth;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF5A3A24), Color(0xFF3A2416), Color(0xFF24160E)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 28,
-            offset: const Offset(0, 16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxTvWidth),
+            child: vcr,
           ),
-        ],
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [vcr, const SizedBox(height: 14), bookshelf],
-      ),
+        ),
+        // The artwork feet terminate at this ledge; no controls or gap intervene.
+        const CabinetLedge(height: 22),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: WalnutSurface(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+            child: bookshelf,
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: CabinetLedge(height: 16),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'BE KIND. REWIND.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.18),
+            fontSize: 8,
+            letterSpacing: 3,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

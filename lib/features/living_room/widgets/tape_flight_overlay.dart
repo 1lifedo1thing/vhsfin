@@ -138,6 +138,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
 
   void _beginFlight({required Tape tape, required _FlightKind kind}) {
     if (!mounted) return;
+    if (MediaQuery.disableAnimationsOf(context)) return;
     final expectedPower = kind == _FlightKind.insert
         ? VcrPower.inserting
         : VcrPower.ejecting;
@@ -154,8 +155,8 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
     var slot = _localRect(slotGlobal) ?? _fallbackSlotLocal();
     slot = Rect.fromCenter(
       center: slot.center,
-      width: VhsSpine.nominalHeight,
-      height: VhsSpine.nominalWidth,
+      width: math.min(slot.width, VhsSpine.nominalHeight * 1.5),
+      height: math.min(slot.height, VhsSpine.nominalWidth),
     );
 
     var spine = _localRect(spineGlobal) ?? _fallbackShelfLocal(slot);
@@ -207,7 +208,7 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
             AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {
-                final raw = Curves.easeInOut.transform(_controller.value);
+                final raw = _controller.value;
                 return _FlyingCassette(
                   progress: raw,
                   kind: flight.kind,
@@ -224,7 +225,8 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
   }
 }
 
-/// Straight shelf ↔ slot move. One rotation from upright to flat. No arcs.
+/// Lift and turn the sleeve, then draw the cassette into the physical slot.
+/// Eject reverses the same motion so both endpoints stay attached to the room.
 class _FlyingCassette extends StatelessWidget {
   const _FlyingCassette({
     required this.progress,
@@ -250,9 +252,14 @@ class _FlyingCassette extends StatelessWidget {
     // Always shelf→slot; eject runs it backward.
     final t = kind == _FlightKind.insert ? progress : 1.0 - progress;
 
-    final pos = Offset.lerp(shelf.center, slot.center, t)!;
+    final travel = Curves.easeInOutCubic.transform((t / 0.82).clamp(0.0, 1.0));
+    final feed = Curves.easeIn.transform(((t - 0.82) / 0.18).clamp(0.0, 1.0));
+    final pos = Offset.lerp(shelf.center, slot.center, travel)!;
     // Horizontal mesh; π/2 = standing spine on the shelf.
-    final stand = (1.0 - t) * (math.pi / 2);
+    final stand = (1.0 - travel) * (math.pi / 2);
+    final scale =
+        (shelf.height / _length) * (1 - travel) +
+        (slot.width / _length) * travel;
     return Positioned(
       left: pos.dx - _length / 2,
       top: pos.dy - _thickness / 2,
@@ -260,7 +267,11 @@ class _FlyingCassette extends StatelessWidget {
       height: _thickness,
       child: Transform.rotate(
         angle: stand,
-        child: _CassetteFace(tape: tape, art: art),
+        child: Transform.scale(
+          scaleX: scale,
+          scaleY: scale * (1 - feed * 0.98),
+          child: _CassetteFace(tape: tape, art: art),
+        ),
       ),
     );
   }

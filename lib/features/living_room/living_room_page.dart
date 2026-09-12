@@ -39,7 +39,14 @@ class LivingRoomPage extends ConsumerWidget {
       crtSkin: experience.crtSkin,
       onCollection: () => context.push('/libraries'),
       onConnect: () => context.push('/connect'),
-      onSignOut: () => ref.read(sessionProvider.notifier).signOut(),
+      onSignOut: () async {
+        ref.invalidate(vcrDeckProvider);
+        await ref.read(deckPlayerProvider).stop();
+        if (!context.mounted) return;
+        await ref.read(deckSfxProvider).stopShuttle();
+        if (!context.mounted) return;
+        await ref.read(sessionProvider.notifier).signOut();
+      },
       onVhsOnlyChanged: (value) =>
           ref.read(shelfDisplayPrefsProvider.notifier).setVhsOnly(value),
       onOpenSort: () => showShelfSortSheet(
@@ -59,10 +66,10 @@ class LivingRoomPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final displayPrefs = ref.watch(shelfDisplayPrefsProvider);
-    final experience = ref.watch(experiencePrefsProvider);
     final shelvesAsync = ref.watch(shelvesProvider);
     final artWarm = ref.watch(artWarmProgressProvider);
     final shuttle = ref.watch(deckShuttleProvider);
+    final experience = ref.watch(experiencePrefsProvider);
 
     // Art-index warm only matters for VHS-only filtering — skip the extra
     // rebuild storm while browsing the full shelf (unless onboarding).
@@ -138,11 +145,11 @@ class LivingRoomPage extends ConsumerWidget {
       player: player,
       surfaceEpoch: surfaceEpoch,
       surfaceOwner: surfaceOwner,
-      crtSkin: experience.crtSkin,
       flightAnchors: flightAnchors,
       flyingTapeId: flyingTapeId,
       flightSourceKey: flightSourceKey,
       slotArt: slotArt,
+      crtSkin: experience.crtSkin,
       shelvesLoading: shelvesAsync.isLoading && !shelvesAsync.hasValue,
       shelvesError: shelvesAsync.hasError
           ? userFacingError(shelvesAsync.error)
@@ -178,7 +185,9 @@ class LivingRoomPage extends ConsumerWidget {
       artForFlight: (tape) => ref.read(vhsSpineArtProvider(tape)).asData?.value,
       onShowRemote: () => _showRemote(context, ref),
       onShowSettings: () => _showSettings(context, ref),
-      onConnectPrompt: () => context.push('/connect'),
+      onConnectPrompt: () => context.push(
+        ref.read(sessionProvider).value == null ? '/connect' : '/libraries',
+      ),
       onArtOnboardingDone: () {
         ref.read(artOnboardingDoneProvider.notifier).markDone();
         ref.read(artOnboardingUiProvider.notifier).dismiss();

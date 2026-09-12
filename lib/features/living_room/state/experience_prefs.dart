@@ -9,7 +9,7 @@ import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 class ExperiencePrefs {
   const ExperiencePrefs({
     this.saveTimestampOnEject = false,
-    this.crtSkin = CrtTvSkin.zenith,
+    this.crtSkin = CrtTvSkin.skeuomorphic,
   });
 
   /// Remember playback position on eject; seek there on next insert.
