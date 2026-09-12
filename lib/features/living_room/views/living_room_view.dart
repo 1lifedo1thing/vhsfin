@@ -32,7 +32,6 @@ class LivingRoomView extends StatelessWidget {
     required this.flightAnchors,
     required this.flyingTapeId,
     required this.flightSourceKey,
-    required this.slotArt,
     required this.shelvesLoading,
     required this.vhsOnly,
     required this.rewinding,
@@ -54,7 +53,7 @@ class LivingRoomView extends StatelessWidget {
     this.artWarmProgress = const ArtWarmProgress(),
     this.shelvesError,
     this.shelves,
-    this.crtSkin = CrtTvSkin.skeuomorphic,
+    this.crtSkin = CrtTvSkin.crt90s,
   });
 
   final VcrDeckState deck;
@@ -64,7 +63,6 @@ class LivingRoomView extends StatelessWidget {
   final TapeFlightAnchors flightAnchors;
   final String? flyingTapeId;
   final String? flightSourceKey;
-  final VhsSpineArt? slotArt;
   final CrtTvSkin crtSkin;
   final bool shelvesLoading;
   final String? shelvesError;
@@ -188,7 +186,6 @@ class LivingRoomView extends StatelessWidget {
                                 crtSkin: crtSkin,
                                 slotKey: flightAnchors.slotKey,
                                 flyingTapeId: flyingTapeId,
-                                slotArt: slotArt,
                                 rewinding: rewinding,
                                 onRew: onRew,
                                 onRewEnd: onRewEnd,

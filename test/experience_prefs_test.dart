@@ -9,27 +9,21 @@ import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('crtSkin defaults to skeuomorphic and persists selection', () async {
+  test('crtSkin defaults to crt90s and persists selection', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    expect(
-      container.read(experiencePrefsProvider).crtSkin,
-      CrtTvSkin.skeuomorphic,
-    );
+    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.crt90s);
 
     await container
         .read(experiencePrefsProvider.notifier)
-        .setCrtSkin(CrtTvSkin.bubbleTube);
-    expect(
-      container.read(experiencePrefsProvider).crtSkin,
-      CrtTvSkin.bubbleTube,
-    );
+        .setCrtSkin(CrtTvSkin.ivory);
+    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.ivory);
 
     await Future<void>.delayed(const Duration(milliseconds: 20));
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('vhsfin.crt_tv_skin.v1'), 'bubbleTube');
+    expect(prefs.getString('vhsfin.crt_tv_skin.v1'), 'ivory');
   });
 
   test('crtSkin restore reads stored skin and legacy names', () async {
@@ -41,10 +35,7 @@ void main() {
 
     container.read(experiencePrefsProvider);
     await Future<void>.delayed(const Duration(milliseconds: 20));
-    expect(
-      container.read(experiencePrefsProvider).crtSkin,
-      CrtTvSkin.aquaGraphite,
-    );
+    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.knob);
   });
 
   test(

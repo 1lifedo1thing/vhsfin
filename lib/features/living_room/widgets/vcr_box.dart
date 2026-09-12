@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
-import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/widgets/crt_sprite_bezel.dart';
 import 'package:vhsfin/features/living_room/widgets/vcr_crt_screen.dart';
-import 'package:vhsfin/features/living_room/widgets/classic_vcr_box.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 
-/// A real generated CRT cabinet is the living-room centerpiece. The playback
-/// surface is placed into the glass aperture while the cassette bay and deck
-/// controls remain interactive overlays below it.
+/// A cabinet from the CRT atlas is the living-room centerpiece. Playback sits
+/// in the transparent screen hole; the cassette bay and deck keys stay as
+/// interactive overlays on the painted fascia.
 class VcrBox extends StatelessWidget {
   const VcrBox({
     super.key,
@@ -17,10 +17,9 @@ class VcrBox extends StatelessWidget {
     required this.player,
     required this.surfaceEpoch,
     required this.surfaceOwner,
-    this.crtSkin = CrtTvSkin.skeuomorphic,
+    this.crtSkin = CrtTvSkin.crt90s,
     required this.slotKey,
     required this.flyingTapeId,
-    required this.slotArt,
     required this.onRew,
     required this.onRewEnd,
     required this.onPlay,
@@ -40,7 +39,6 @@ class VcrBox extends StatelessWidget {
   final CrtTvSkin crtSkin;
   final GlobalKey slotKey;
   final String? flyingTapeId;
-  final VhsSpineArt? slotArt;
   final VoidCallback onRew;
   final VoidCallback onRewEnd;
   final VoidCallback onPlay;
@@ -54,43 +52,35 @@ class VcrBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (crtSkin != CrtTvSkin.skeuomorphic) {
-      return ClassicVcrBox(
-        screenKey: _CrtScreenKey(player),
-        deck: deck,
-        player: player,
-        surfaceEpoch: surfaceEpoch,
-        surfaceOwner: surfaceOwner,
-        crtSkin: crtSkin,
-        slotKey: slotKey,
-        flyingTapeId: flyingTapeId,
-        slotArt: slotArt,
-        onRew: onRew,
-        onRewEnd: onRewEnd,
-        onPlay: onPlay,
-        onFf: onFf,
-        onFfEnd: onFfEnd,
-        onEject: onEject,
-        onFull: onFull,
-        rewinding: rewinding,
-        videoSurface: videoSurface,
-      );
-    }
+    final layout = CrtSpriteLayout.of(crtSkin);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = constraints.maxWidth;
-        // Artwork is square, but the feet end at 97.3% of its canvas. Removing
-        // that transparent tail puts the feet directly on the shelf surface.
+        final width = constraints.maxWidth;
+        final naturalHeight =
+            width * layout.sourceRect.height / layout.sourceRect.width;
+        // Drop the feet a few pixels into the shelf ledge so the cabinet
+        // reads as planted instead of hovering above the bevel.
+        final plant = (width * CrtSpriteLayout.shelfPlant).clamp(2.0, 6.0);
+        final height = naturalHeight - plant;
+        Rect box(Rect frac) => Rect.fromLTWH(
+          width * frac.left,
+          naturalHeight * frac.top,
+          width * frac.width,
+          naturalHeight * frac.height,
+        );
+        final screen = box(layout.screen);
+        final slot = box(layout.slot);
+        final keys = box(layout.keys);
+        final remote = box(layout.remote);
+        final full = box(layout.full);
         return SizedBox(
-          height: size * 0.973,
+          width: width,
+          height: height,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Positioned(
-                left: size * 0.09,
-                top: size * 0.095,
-                width: size * 0.82,
-                height: size * 0.60,
+              Positioned.fromRect(
+                rect: screen,
                 child: GestureDetector(
                   onTap: deck.isPowered ? onPlay : null,
                   onDoubleTap: deck.isPowered ? onFull : null,
@@ -109,26 +99,15 @@ class VcrBox extends StatelessWidget {
                   ),
                 ),
               ),
-              // The alpha aperture owns the visible contour, not a guessed
-              // screen radius. Playback extends behind the opaque bezel on every side.
               Positioned(
                 left: 0,
                 top: 0,
-                width: size,
-                height: size,
-                child: IgnorePointer(
-                  child: Image.asset(
-                    'assets/branding/crt-90s.png',
-                    excludeFromSemantics: true,
-                    fit: BoxFit.fill,
-                  ),
-                ),
+                width: width,
+                height: naturalHeight,
+                child: IgnorePointer(child: CrtSpriteBezel(skin: crtSkin)),
               ),
-              Positioned(
-                left: size * 0.05,
-                top: size * 0.785,
-                width: size * 0.09,
-                height: size * 0.09,
+              Positioned.fromRect(
+                rect: remote,
                 child: Semantics(
                   button: true,
                   label: 'Open remote controls',
@@ -143,11 +122,25 @@ class VcrBox extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: size * 0.23,
-                top: size * 0.767,
-                width: size * 0.54,
-                height: size * 0.062,
+              Positioned.fromRect(
+                rect: full,
+                child: Semantics(
+                  button: true,
+                  enabled: deck.isPowered,
+                  label: 'FULL',
+                  child: Tooltip(
+                    message: 'FULL',
+                    excludeFromSemantics: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: deck.isPowered ? onFull : null,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fromRect(
+                rect: slot,
                 child: SizedBox(
                   key: slotKey,
                   child:
@@ -156,7 +149,7 @@ class VcrBox extends StatelessWidget {
                           flyingTapeId != deck.loadedTape!.id
                       ? Container(
                           alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF151511),
                             borderRadius: BorderRadius.circular(2),
@@ -168,7 +161,7 @@ class VcrBox extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: VhsColors.phosphor.withValues(alpha: 0.8),
-                              fontSize: (size * 0.018).clamp(7.0, 11.0),
+                              fontSize: (width * 0.018).clamp(7.0, 11.0),
                               letterSpacing: 1,
                               fontWeight: FontWeight.w700,
                             ),
@@ -177,11 +170,8 @@ class VcrBox extends StatelessWidget {
                       : null,
                 ),
               ),
-              Positioned(
-                left: size * 0.263,
-                right: size * 0.263,
-                top: size * 0.827,
-                height: size * 0.116,
+              Positioned.fromRect(
+                rect: keys,
                 child: StreamBuilder<bool>(
                   stream: player.isReady ? player.player.stream.playing : null,
                   initialData: player.isReady
@@ -197,22 +187,6 @@ class VcrBox extends StatelessWidget {
                     onFf: onFf,
                     onFfEnd: onFfEnd,
                     onEject: onEject,
-                    onFull: onFull,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: size * 0.712,
-                left: size * 0.18,
-                right: size * 0.18,
-                child: Center(
-                  child: Text(
-                    'VHSFIN',
-                    style: vhsBrandStyle(size: (size * 0.018).clamp(7.0, 11.0))
-                        .copyWith(
-                          color: const Color(0xFFB0A28A),
-                          letterSpacing: 2.5,
-                        ),
                   ),
                 ),
               ),
@@ -241,7 +215,6 @@ class _DeckButtons extends StatelessWidget {
     required this.onFf,
     required this.onFfEnd,
     required this.onEject,
-    required this.onFull,
   });
 
   final bool enabled;
@@ -253,7 +226,6 @@ class _DeckButtons extends StatelessWidget {
   final VoidCallback onFf;
   final VoidCallback onFfEnd;
   final VoidCallback onEject;
-  final VoidCallback onFull;
 
   @override
   Widget build(BuildContext context) {
@@ -288,12 +260,6 @@ class _DeckButtons extends StatelessWidget {
           label: 'EJECT',
           enabled: enabled,
           onTap: onEject,
-        ),
-        _DeckKey(
-          icon: Icons.fullscreen_rounded,
-          label: 'FULL',
-          enabled: enabled,
-          onTap: onFull,
         ),
       ],
     );

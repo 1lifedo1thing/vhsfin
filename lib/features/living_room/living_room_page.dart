@@ -112,9 +112,6 @@ class LivingRoomPage extends ConsumerWidget {
     final player = ref.watch(deckPlayerProvider);
     final surfaceEpoch = ref.watch(deckSurfaceEpochProvider);
     final surfaceOwner = ref.watch(deckSurfaceOwnerProvider);
-    final slotArt = deck.loadedTape == null
-        ? null
-        : ref.watch(vhsSpineArtProvider(deck.loadedTape!)).asData?.value;
     final sfx = ref.watch(deckSfxProvider);
     final showArtOnboardingUi = ref.watch(artOnboardingUiProvider);
 
@@ -148,7 +145,6 @@ class LivingRoomPage extends ConsumerWidget {
       flightAnchors: flightAnchors,
       flyingTapeId: flyingTapeId,
       flightSourceKey: flightSourceKey,
-      slotArt: slotArt,
       crtSkin: experience.crtSkin,
       shelvesLoading: shelvesAsync.isLoading && !shelvesAsync.hasValue,
       shelvesError: shelvesAsync.hasError

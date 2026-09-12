@@ -35,6 +35,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/app_icon_1024.png
+    - assets/crts.png
+    - assets/knob.png
+    - assets/knob2.png
     - assets/branding/crt-90s.png
     - assets/branding/walnut.jpg
     - assets/sounds/vhs_insert.ogg

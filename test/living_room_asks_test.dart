@@ -32,7 +32,6 @@ void main() {
           flightAnchors: TapeFlightAnchors(),
           flyingTapeId: null,
           flightSourceKey: null,
-          slotArt: null,
           shelvesLoading: false,
           shelves: const [],
           vhsOnly: true,
@@ -84,7 +83,7 @@ void main() {
                 vhsOnly: true,
                 sortLabel: 'A–Z',
                 saveTimestampOnEject: false,
-                crtSkin: CrtTvSkin.zenith,
+                crtSkin: CrtTvSkin.crt90s,
                 onCollection: () {},
                 onConnect: () {},
                 onSignOut: () {},
@@ -111,11 +110,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('CRT LOOK'), findsOneWidget);
-    expect(find.text('ZENITH'), findsOneWidget);
-    expect(find.text('WEGA'), findsOneWidget);
-    await tester.tap(find.text('AQUA'));
+    expect(find.text('90S'), findsOneWidget);
+    expect(find.text('GRAPHITE'), findsOneWidget);
+    await tester.ensureVisible(find.text('CRIMSON'));
+    await tester.tap(find.text('CRIMSON'));
     await tester.pump();
-    expect(selected, CrtTvSkin.aquaGraphite);
+    expect(selected, CrtTvSkin.crimson);
     expect(find.text('REPLAY ART GRAB'), findsNothing);
 
     await tester.tapAt(const Offset(4, 4));
@@ -157,7 +157,7 @@ void main() {
   });
 
   test('all CRT skins are selectable labels', () {
-    expect(CrtTvSkin.values.length, greaterThanOrEqualTo(4));
+    expect(CrtTvSkin.values, hasLength(6));
     for (final skin in CrtTvSkin.values) {
       expect(skin.settingsLabel, isNotEmpty);
     }

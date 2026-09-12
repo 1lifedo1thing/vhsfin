@@ -1,47 +1,54 @@
-/// Selectable classic CRT TV bezels for the living-room deck.
+/// Selectable CRT cabinets for the living-room deck.
 enum CrtTvSkin {
-  /// Photographic late-90s TV/VCR cabinet with integrated transport keys.
-  skeuomorphic,
+  /// Late-90s TV/VCR combo (`assets/branding/crt-90s.png`).
+  crt90s,
 
-  /// Original charcoal Zenith-style all-in-one.
-  zenith,
+  graphite,
+  ivory,
+  crimson,
 
-  /// Late-90s silver WEGA / flat-tube look with a squircle screen.
-  wegaSilver,
+  /// Wood CRT on a charcoal deck (`assets/knob.png`).
+  knob,
 
-  /// Deep bubble tube — heavy rounded CRT aperture like a classic curved set.
-  bubbleTube,
-
-  /// 90s teal / graphite sports-set plastic.
-  aquaGraphite,
+  /// Wood CRT on a putty deck (`assets/knob2.png`).
+  knob2,
 }
 
 extension CrtTvSkinLabels on CrtTvSkin {
   String get settingsLabel => switch (this) {
-    CrtTvSkin.skeuomorphic => 'SKEUOMORPHIC',
-    CrtTvSkin.zenith => 'ZENITH',
-    CrtTvSkin.wegaSilver => 'WEGA',
-    CrtTvSkin.bubbleTube => 'TUBE',
-    CrtTvSkin.aquaGraphite => 'AQUA',
+    CrtTvSkin.crt90s => '90S',
+    CrtTvSkin.graphite => 'GRAPHITE',
+    CrtTvSkin.ivory => 'IVORY',
+    CrtTvSkin.crimson => 'CRIMSON',
+    CrtTvSkin.knob => 'KNOBS',
+    CrtTvSkin.knob2 => 'WALNUT',
   };
 
   String get menuTitle => switch (this) {
-    CrtTvSkin.skeuomorphic => 'Late-90s TV / VCR',
-    CrtTvSkin.zenith => 'Zenith charcoal',
-    CrtTvSkin.wegaSilver => '90s silver WEGA',
-    CrtTvSkin.bubbleTube => 'Bubble tube',
-    CrtTvSkin.aquaGraphite => 'Aqua graphite',
+    CrtTvSkin.crt90s => 'Late-90s TV / VCR',
+    CrtTvSkin.graphite => 'Graphite portable',
+    CrtTvSkin.ivory => 'Ivory portable',
+    CrtTvSkin.crimson => 'Crimson portable',
+    CrtTvSkin.knob => 'Walnut on charcoal deck',
+    CrtTvSkin.knob2 => 'Walnut on putty deck',
   };
 
-  /// Map legacy prefs keys from earlier skin names.
+  /// Map current and legacy prefs keys onto the six cabinets.
   static CrtTvSkin fromPrefs(String? raw) {
     return switch (raw) {
-      'skeuomorphic' => CrtTvSkin.skeuomorphic,
-      'zenith' => CrtTvSkin.zenith,
-      'wegaSilver' || 'consumerCream' => CrtTvSkin.wegaSilver,
-      'bubbleTube' || 'portable' => CrtTvSkin.bubbleTube,
-      'aquaGraphite' || 'woodConsole' => CrtTvSkin.aquaGraphite,
-      _ => CrtTvSkin.skeuomorphic,
+      'crt90s' || 'skeuomorphic' || 'zenith' => CrtTvSkin.crt90s,
+      'graphite' => CrtTvSkin.graphite,
+      'ivory' ||
+      'bubbleTube' ||
+      'portable' ||
+      'silver' ||
+      'wegaSilver' ||
+      'consumerCream' ||
+      'beige' => CrtTvSkin.ivory,
+      'crimson' || 'aquaGraphite' => CrtTvSkin.crimson,
+      'knob' || 'walnutKnobs' || 'woodConsole' => CrtTvSkin.knob,
+      'knob2' || 'walnutGrille' => CrtTvSkin.knob2,
+      _ => CrtTvSkin.crt90s,
     };
   }
 }

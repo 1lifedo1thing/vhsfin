@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
+import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
+import 'package:vhsfin/features/living_room/widgets/crt_sprite_bezel.dart';
 
 /// Deck / experience settings as a bottom sheet (no Riverpod).
 Future<void> showDeckSettingsSheet(
@@ -94,7 +96,10 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
+          constraints: BoxConstraints(
+            maxWidth: 480,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+          ),
           child: Material(
             color: const Color(0xFF1A1A1E),
             borderRadius: BorderRadius.circular(14),
@@ -197,13 +202,17 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 1.12,
                       children: [
                         for (final skin in CrtTvSkin.values)
-                          _SkinChip(
-                            label: skin.settingsLabel,
+                          _SkinThumb(
+                            skin: skin,
                             selected: skin == _crtSkin,
                             onTap: () {
                               setState(() => _crtSkin = skin);
@@ -259,14 +268,14 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   }
 }
 
-class _SkinChip extends StatelessWidget {
-  const _SkinChip({
-    required this.label,
+class _SkinThumb extends StatelessWidget {
+  const _SkinThumb({
+    required this.skin,
     required this.selected,
     required this.onTap,
   });
 
-  final String label;
+  final CrtTvSkin skin;
   final bool selected;
   final VoidCallback onTap;
 
@@ -274,30 +283,50 @@ class _SkinChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected ? const Color(0xFF243528) : const Color(0xFF222226),
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 5),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: selected
-                  ? VhsColors.phosphor.withValues(alpha: 0.4)
+                  ? VhsColors.phosphor.withValues(alpha: 0.45)
                   : Colors.white.withValues(alpha: 0.08),
             ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected
-                  ? VhsColors.phosphor
-                  : VhsColors.brand.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w800,
-              fontSize: 11,
-              letterSpacing: 1.1,
-            ),
+          child: Column(
+            children: [
+              Expanded(
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: CrtSpriteLayout.of(skin).sourceRect.width,
+                      height: CrtSpriteLayout.of(skin).sourceRect.height,
+                      child: CrtSpriteBezel(skin: skin),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                skin.settingsLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: selected
+                      ? VhsColors.phosphor
+                      : VhsColors.brand.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 9,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
           ),
         ),
       ),
