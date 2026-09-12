@@ -13,6 +13,10 @@ class JellyfinSession {
   final String accessToken;
   final String deviceId;
 
+  /// A stable, token-free namespace for preferences belonging to this account.
+  String get preferenceScope =>
+      Uri.encodeComponent('$normalizedServerUrl|$userId');
+
   String get normalizedServerUrl {
     var url = serverUrl.trim();
     if (url.endsWith('/')) {
@@ -22,12 +26,12 @@ class JellyfinSession {
   }
 
   Map<String, dynamic> toJson() => {
-        'serverUrl': serverUrl,
-        'userId': userId,
-        'userName': userName,
-        'accessToken': accessToken,
-        'deviceId': deviceId,
-      };
+    'serverUrl': serverUrl,
+    'userId': userId,
+    'userName': userName,
+    'accessToken': accessToken,
+    'deviceId': deviceId,
+  };
 
   factory JellyfinSession.fromJson(Map<String, dynamic> json) {
     return JellyfinSession(

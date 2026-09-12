@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:vhsfin/features/auth/model/server_address.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
@@ -21,6 +23,14 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    final session = ref.read(sessionProvider).value;
+    _serverController.text = session?.serverUrl ?? '';
+    _userController.text = session?.userName ?? '';
+  }
+
+  @override
   void dispose() {
     _serverController.dispose();
     _userController.dispose();
@@ -29,6 +39,7 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -37,15 +48,17 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
       await ref
           .read(sessionProvider.notifier)
           .signIn(
-            serverUrl: _serverController.text,
-            username: _userController.text,
+            serverUrl: normalizeServerAddress(_serverController.text),
+            username: _userController.text.trim(),
             password: _passwordController.text,
           );
+      if (!mounted) return;
+      TextInput.finishAutofillContext();
       ref.invalidate(shelvesProvider);
       ref.invalidate(librariesProvider);
       if (mounted) context.go('/libraries');
     } catch (error) {
-      setState(() => _error = userFacingError(error));
+      if (mounted) setState(() => _error = userFacingError(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -60,7 +73,7 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
       busy: _busy,
       error: _error,
       onSubmit: _submit,
-      onBack: () => context.pop(),
+      onBack: () => context.canPop() ? context.pop() : context.go('/'),
     );
   }
 }

@@ -24,7 +24,7 @@ ThemeData buildVhsTheme() {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: VhsColors.woodDeep,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: ColorScheme.dark(
       primary: VhsColors.phosphor,
       secondary: VhsColors.accent,
       surface: VhsColors.vcrBody,
@@ -35,17 +35,12 @@ ThemeData buildVhsTheme() {
   );
 
   return base.copyWith(
-    textTheme: GoogleFonts.nunitoTextTheme(base.textTheme).apply(
-      bodyColor: VhsColors.brand,
-      displayColor: VhsColors.brand,
-    ),
+    textTheme: GoogleFonts.nunitoTextTheme(base.textTheme)
+        .apply(bodyColor: VhsColors.brand, displayColor: VhsColors.brand),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: GoogleFonts.bungee(
-        fontSize: 22,
-        color: VhsColors.brand,
-      ),
+      titleTextStyle: GoogleFonts.bungee(fontSize: 22, color: VhsColors.brand),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -73,5 +68,36 @@ TextStyle vhsBrandStyle({double size = 48}) {
     color: VhsColors.brand,
     letterSpacing: 2,
     height: 1.05,
+  );
+}
+
+/// Shared generated artwork for welcome and launch surfaces.
+class VhsBrandIcon extends StatelessWidget {
+  const VhsBrandIcon({super.key, this.size = 96});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'VHSFin',
+    image: true,
+    child: Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.23),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.asset(
+        'assets/icons/app_icon_1024.png',
+        excludeFromSemantics: true,
+      ),
+    ),
   );
 }

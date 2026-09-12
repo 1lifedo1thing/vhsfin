@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/auth/model/server_address.dart';
 
-/// Dumb connect form — page owns controllers and submit.
-class ConnectView extends StatelessWidget {
+/// Local form state stays in the view; the page owns authentication.
+class ConnectView extends StatefulWidget {
   const ConnectView({
     super.key,
     required this.serverController,
@@ -23,75 +24,252 @@ class ConnectView extends StatelessWidget {
   final VoidCallback onBack;
 
   @override
+  State<ConnectView> createState() => _ConnectViewState();
+}
+
+class _ConnectViewState extends State<ConnectView> {
+  final _formKey = GlobalKey<FormState>();
+  bool _showPassword = false;
+
+  void _submit() {
+    if (widget.busy || !_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    widget.onSubmit();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: VhsColors.woodDeep,
       appBar: AppBar(
-        title: const Text('CONNECT'),
+        title: const Text('WELCOME HOME'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: onBack,
+          tooltip: 'Back to the living room',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: widget.busy ? null : widget.onBack,
         ),
       ),
       body: DecoratedBox(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [VhsColors.woodMid, VhsColors.woodDeep],
+          gradient: RadialGradient(
+            center: Alignment(0, -0.65),
+            radius: 1.3,
+            colors: [Color(0xFF423023), VhsColors.woodDeep, Color(0xFF100D0B)],
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('JELLYFIN', style: vhsBrandStyle(size: 28)),
-                  const SizedBox(height: 28),
-                  TextField(
-                    controller: serverController,
-                    decoration: const InputDecoration(
-                      labelText: 'Server URL',
-                      hintText: 'http://jellyfin.local:8096',
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Center(child: VhsBrandIcon(size: 112)),
+                        const SizedBox(height: 20),
+                        Text(
+                          'MOVIE NIGHT,\nREWOUND.',
+                          textAlign: TextAlign.center,
+                          style: vhsBrandStyle(size: 30),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Your favorites. A shelf full of tapes. Just press play.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: VhsColors.brand.withValues(alpha: 0.72),
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 26),
+                        const Row(
+                          children: [
+                            _SetupStep(
+                              number: '01',
+                              label: 'CONNECT',
+                              active: true,
+                            ),
+                            SizedBox(width: 12),
+                            _SetupStep(number: '02', label: 'PICK SHELVES'),
+                            SizedBox(width: 12),
+                            _SetupStep(number: '03', label: 'PLAY'),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF211E1A),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: VhsColors.brand.withValues(alpha: 0.12),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 30,
+                                offset: Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'Connect your Jellyfin',
+                                style: TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Sign in with an existing Jellyfin account.\nYour server brings the movies; we bring the nostalgia.',
+                                style: TextStyle(
+                                  color: VhsColors.brand.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                  height: 1.5,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              TextFormField(
+                                controller: widget.serverController,
+                                enabled: !widget.busy,
+                                decoration: const InputDecoration(
+                                  labelText: 'Server address',
+                                  hintText: 'http://jellyfin.local:8096',
+                                  prefixIcon: Icon(Icons.dns_outlined),
+                                  helperText: 'Include http:// or https://',
+                                  errorMaxLines: 3,
+                                ),
+                                keyboardType: TextInputType.url,
+                                textInputAction: TextInputAction.next,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                validator: (value) {
+                                  try {
+                                    normalizeServerAddress(value ?? '');
+                                    return null;
+                                  } on FormatException catch (error) {
+                                    return error.message;
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 18),
+                              TextFormField(
+                                controller: widget.userController,
+                                enabled: !widget.busy,
+                                decoration: const InputDecoration(
+                                  labelText: 'Username',
+                                  prefixIcon: Icon(
+                                    Icons.person_outline_rounded,
+                                  ),
+                                ),
+                                autofillHints: const [AutofillHints.username],
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                textInputAction: TextInputAction.next,
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
+                                    ? 'Enter your Jellyfin username.'
+                                    : null,
+                              ),
+                              const SizedBox(height: 18),
+                              TextFormField(
+                                controller: widget.passwordController,
+                                enabled: !widget.busy,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    tooltip: _showPassword
+                                        ? 'Hide password'
+                                        : 'Show password',
+                                    onPressed: () => setState(
+                                      () => _showPassword = !_showPassword,
+                                    ),
+                                    icon: Icon(
+                                      _showPassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                  ),
+                                ),
+                                autofillHints: const [AutofillHints.password],
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                obscureText: !_showPassword,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) => _submit(),
+                              ),
+                              if (widget.error != null) ...[
+                                const SizedBox(height: 18),
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF492C24),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      widget.error!,
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFC4AF),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 22),
+                              FilledButton.icon(
+                                onPressed: widget.busy ? null : _submit,
+                                icon: widget.busy
+                                    ? const SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                label: Text(
+                                  widget.busy
+                                      ? 'Connecting…'
+                                      : 'Connect & choose shelves',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(54),
+                                  textStyle: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const _ConnectionHelp(),
+                      ],
                     ),
-                    keyboardType: TextInputType.url,
-                    textInputAction: TextInputAction.next,
-                    style: const TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: userController,
-                    decoration: const InputDecoration(labelText: 'Username'),
-                    textInputAction: TextInputAction.next,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                    onSubmitted: (_) => onSubmit(),
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      error!,
-                      style: const TextStyle(color: VhsColors.accent),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: busy ? null : onSubmit,
-                      child: Text(busy ? 'TUNING…' : 'POWER ON'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -99,4 +277,71 @@ class ConnectView extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SetupStep extends StatelessWidget {
+  const _SetupStep({
+    required this.number,
+    required this.label,
+    this.active = false,
+  });
+  final String number;
+  final String label;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 2,
+          color: active
+              ? VhsColors.phosphor
+              : VhsColors.brand.withValues(alpha: 0.16),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '$number  $label',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.7,
+            color: active
+                ? VhsColors.phosphor
+                : VhsColors.brand.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ConnectionHelp extends StatelessWidget {
+  const _ConnectionHelp();
+
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+    child: ExpansionTile(
+      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+      title: const Text(
+        'First time here?',
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+      leading: const Icon(Icons.help_outline_rounded, size: 20),
+      childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+      children: const [
+        Text(
+          'VHSFin plays the movies and shows on your own Jellyfin server. '
+          'It does not include movies or create Jellyfin accounts. Ask the person who manages your server for its address and your login.\n\n'
+          'At home, join the same Wi-Fi as your server. Use the server’s base address, not a /web page. '
+          'A browser opened over HTTPS also needs an HTTPS server.\n\n'
+          'For little viewers, use a Jellyfin account with access only to their libraries. '
+          'Shelf selection is a display preference, not a parental lock.',
+          style: TextStyle(fontSize: 13, height: 1.6, color: VhsColors.brand),
+        ),
+      ],
+    ),
+  );
 }

@@ -11,8 +11,8 @@ final jellyfinClientProvider = Provider<JellyfinClient>((ref) {
 
 final sessionProvider =
     AsyncNotifierProvider<SessionNotifier, JellyfinSession?>(
-  SessionNotifier.new,
-);
+      SessionNotifier.new,
+    );
 
 class SessionNotifier extends AsyncNotifier<JellyfinSession?> {
   static const _key = 'vhsfin.session';
@@ -23,9 +23,17 @@ class SessionNotifier extends AsyncNotifier<JellyfinSession?> {
     final raw = prefs.getString(_key);
     if (raw == null) return null;
     try {
-      return JellyfinSession.fromJson(
+      final session = JellyfinSession.fromJson(
         jsonDecode(raw) as Map<String, dynamic>,
       );
+      // Claim unscoped shelf preferences for the account that created them.
+      if (!prefs.containsKey('vhsfin.shelf_legacy_owner')) {
+        await prefs.setString(
+          'vhsfin.shelf_legacy_owner',
+          session.preferenceScope,
+        );
+      }
+      return session;
     } catch (_) {
       await prefs.remove(_key);
       return null;
@@ -37,6 +45,8 @@ class SessionNotifier extends AsyncNotifier<JellyfinSession?> {
     required String username,
     required String password,
   }) async {
+    // Finish restoring the previous account before replacing its session.
+    await future;
     final client = ref.read(jellyfinClientProvider);
     final session = await client.authenticate(
       serverUrl: serverUrl,
@@ -44,13 +54,17 @@ class SessionNotifier extends AsyncNotifier<JellyfinSession?> {
       password: password,
     );
     final prefs = await SharedPreferences.getInstance();
+    if (!ref.mounted) return;
+    if (!prefs.containsKey('vhsfin.shelf_legacy_owner')) {
+      await prefs.setString('vhsfin.shelf_legacy_owner', '');
+    }
     await prefs.setString(_key, jsonEncode(session.toJson()));
-    state = AsyncData(session);
+    if (ref.mounted) state = AsyncData(session);
   }
 
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
-    state = const AsyncData(null);
+    if (ref.mounted) state = const AsyncData(null);
   }
 }

@@ -20,16 +20,12 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(browseStackProvider.notifier).openRoot();
+      if (mounted) ref.read(browseStackProvider.notifier).openRoot();
     });
   }
 
   ShelfSource _sourceFor(LibraryNode node, List<String> breadcrumb) {
-    return ShelfSource(
-      id: node.id,
-      name: node.name,
-      breadcrumb: breadcrumb,
-    );
+    return ShelfSource(id: node.id, name: node.name, breadcrumb: breadcrumb);
   }
 
   Future<void> _toggle(ShelfSource source) async {
@@ -65,12 +61,12 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
         if (stack.isNotEmpty) {
           ref.read(browseStackProvider.notifier).pop();
         } else {
-          context.pop();
+          context.canPop() ? context.pop() : context.go('/');
         }
       },
       onDone: () {
         ref.invalidate(shelvesProvider);
-        context.pop();
+        context.go('/');
       },
       onOpenRoot: () => ref.read(browseStackProvider.notifier).openRoot(),
       onCrumbTap: (i) => ref.read(browseStackProvider.notifier).popTo(i),
@@ -81,13 +77,13 @@ class _LibrariesPageState extends ConsumerState<LibrariesPage> {
       onToggleCurrent: current == null
           ? null
           : () => _toggle(
-                _sourceFor(
-                  current,
-                  breadcrumb.length <= 1
-                      ? const []
-                      : breadcrumb.sublist(0, breadcrumb.length - 1),
-                ),
+              _sourceFor(
+                current,
+                breadcrumb.length <= 1
+                    ? const []
+                    : breadcrumb.sublist(0, breadcrumb.length - 1),
               ),
+            ),
       onToggleNode: (node) => _toggle(_sourceFor(node, breadcrumb)),
       onOpenNode: (node) => ref.read(browseStackProvider.notifier).push(node),
     );
