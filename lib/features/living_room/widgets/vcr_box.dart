@@ -84,18 +84,22 @@ class VcrBox extends StatelessWidget {
                 child: GestureDetector(
                   onTap: deck.isPowered ? onPlay : null,
                   onDoubleTap: deck.isPowered ? onFull : null,
-                  child: VcrCrtScreen(
-                    key: _CrtScreenKey(player),
-                    power: deck.power,
-                    style: deck.style,
-                    tape: deck.loadedTape,
-                    player: player,
-                    surfaceEpoch: surfaceEpoch,
-                    surfaceOwner: surfaceOwner,
-                    resumeAt: deck.resumeAt,
-                    rewinding: rewinding,
-                    screenRadius: 0,
-                    videoSurface: videoSurface,
+                  // Fill the glass hole; [layout.screen] is centered on the
+                  // transparent aperture so playback stays behind the bezel.
+                  child: SizedBox.expand(
+                    child: VcrCrtScreen(
+                      key: _CrtScreenKey(player),
+                      power: deck.power,
+                      style: deck.style,
+                      tape: deck.loadedTape,
+                      player: player,
+                      surfaceEpoch: surfaceEpoch,
+                      surfaceOwner: surfaceOwner,
+                      resumeAt: deck.resumeAt,
+                      rewinding: rewinding,
+                      screenRadius: 0,
+                      videoSurface: videoSurface,
+                    ),
                   ),
                 ),
               ),

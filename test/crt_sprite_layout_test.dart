@@ -55,6 +55,22 @@ void main() {
     }
   });
 
+  test('screen aperture stays centered on the glass hole', () {
+    for (final skin in CrtTvSkin.values) {
+      final layout = CrtSpriteLayout.of(skin);
+      // Screen is a hair larger than the alpha hole but must share its center
+      // so playback does not drift under the bezel.
+      expect(layout.screen.center.dx, closeTo(0.5, 0.12), reason: skin.name);
+      expect(
+        layout.screen.center.dy,
+        lessThan(layout.slot.top - 0.05),
+        reason: skin.name,
+      );
+      expect(layout.screen.width, greaterThan(0.5), reason: skin.name);
+      expect(layout.screen.height, greaterThan(0.4), reason: skin.name);
+    }
+  });
+
   test('six CRT looks are available', () {
     expect(CrtTvSkin.values, hasLength(6));
   });

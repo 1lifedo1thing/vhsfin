@@ -1,202 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Kids Jellyfin client with a living-room VCR.">
-
-  <!-- iOS meta tags & icons -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your Jellyfin library, rewound. A cozy shelf of VHS tapes, a glowing CRT, and your favorite movies. Just press play.">
+  <meta name="theme-color" content="#1A100C">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="VHSFin">
-  <link rel="apple-touch-icon" href="favicon.svg">
-
-  <!-- Favicon -->
-  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
-  <link rel="alternate icon" href="favicon.png"/>
-
-  <title>VHSFin</title>
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+  <link rel="preload" href="icons/Icon-512.png" as="image">
+  <title>VHSFin · Movie night, rewound.</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: radial-gradient(ellipse at 50% 30%, #3A2418 0%, #1A100C 55%, #070504 100%);
-      overflow: hidden;
-    }
-
+    html, body { height: 100%; margin: 0; background: #1a100c; }
     #vhs-splash {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; box-sizing: border-box; text-align: center; color: #f2e6d0;
+      background: radial-gradient(ellipse at 50% 40%, #443024 0%, #1a100c 55%, #100d0b 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
       transition: opacity 280ms ease;
-      pointer-events: none;
     }
-
-    #vhs-splash.fade-out { opacity: 0; }
-
-    #vhs-splash .standby {
-      color: rgba(143, 232, 168, 0.85);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-    }
-
-    .vhs-shell {
-      width: min(248px, 72vw);
-      aspect-ratio: 1.81 / 1;
-      border-radius: 3px;
-      background:
-        repeating-linear-gradient(
-          180deg,
-          rgba(255,255,255,0.035) 0 1px,
-          rgba(0,0,0,0.16) 1px 2px,
-          transparent 2px 3.2px
-        ),
-        linear-gradient(180deg, #2C2C2E 0%, #161618 55%, #0E0E10 100%);
-      border: 1.6px solid #050506;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .vhs-flap {
-      position: absolute;
-      left: 1px; right: 1px; top: 1px;
-      height: 17.5%;
-      border-radius: 2.5px 2.5px 0 0;
-      background: linear-gradient(180deg, #3A3A3E, #1A1A1C);
-      border-bottom: 1px solid rgba(0,0,0,0.55);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5%;
-      box-sizing: border-box;
-      color: rgba(255,255,255,0.22);
-      font-family: ui-sans-serif, system-ui, sans-serif;
-      font-size: clamp(5px, 1.7vw, 8px);
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .vhs-flap .arrow {
-      font-size: 1.1em;
-      opacity: 0.85;
-    }
-
-    .vhs-window {
-      position: absolute;
-      top: 28%;
-      width: 26%;
-      height: 52%;
-      border-radius: 3px;
-      background: #08080A;
-      border: 1.3px solid rgba(0,0,0,0.75);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
-      overflow: hidden;
-    }
-    .vhs-window.left { left: 6%; }
-    .vhs-window.right { right: 6%; }
-
-    .vhs-label {
-      position: absolute;
-      left: 34%;
-      top: 32%;
-      width: 32%;
-      height: 44%;
-      border-radius: 3px;
-      background: linear-gradient(180deg, #F4F0E8, #E6E0D4);
-      border: 1px solid rgba(42,42,40,0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(42, 24, 16, 0.55);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: clamp(8px, 2.2vw, 11px);
-      font-weight: 900;
-      letter-spacing: 0.16em;
-    }
-
-    .vhs-reel {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 72%;
-      aspect-ratio: 1;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-    }
-
-    .vhs-window.left .vhs-reel {
-      background: radial-gradient(circle at center,
-        #0C0C0E 0 8%,
-        #2A2824 8% 12%,
-        #ECE8E0 12% 34%,
-        #0A0806 34% 92%,
-        #12100E 92% 100%);
-      animation: reel-spin 1.6s linear infinite;
-    }
-
-    .vhs-window.right .vhs-reel {
-      background: radial-gradient(circle at center,
-        #0C0C0E 0 8%,
-        #2A2824 8% 12%,
-        #ECE8E0 12% 34%,
-        #0A0806 34% 48%,
-        #12100E 48% 100%);
-      animation: reel-spin-rev 1.48s linear infinite;
-    }
-
-    @keyframes reel-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
-    @keyframes reel-spin-rev { to { transform: translate(-50%, -50%) rotate(-360deg); } }
+    #vhs-splash.fade-out { opacity: 0; pointer-events: none; }
+    .brand-icon { width: clamp(120px, 26vw, 188px); height: auto; border-radius: 23%; box-shadow: 0 24px 60px #0009; }
+    .wordmark { margin: 30px 0 8px; font-size: clamp(30px, 7vw, 44px); font-weight: 900; letter-spacing: .08em; }
+    .tagline { margin: 0; font-size: 15px; color: #c9b7a2; letter-spacing: .02em; }
+    .status { margin-top: 36px; display: flex; gap: 10px; align-items: center; font: 11px ui-monospace, monospace; letter-spacing: .18em; color: #8fe8a8; }
+    .led { width: 6px; height: 6px; border-radius: 50%; background: #8fe8a8; box-shadow: 0 0 12px #8fe8a8; animation: breathe 1.8s ease-in-out infinite; }
+    @keyframes breathe { 50% { opacity: .35; } }
+    #load-help { max-width: 340px; margin-top: 20px; color: #c9b7a2; font-size: 13px; line-height: 1.6; }
+    #load-help button { margin-top: 8px; padding: 10px 20px; border: 1px solid #8fe8a866; border-radius: 10px; background: #8fe8a815; color: #8fe8a8; font: inherit; cursor: pointer; }
+    @media (prefers-reduced-motion: reduce) { .led { animation: none; } #vhs-splash { transition: none; } }
   </style>
 </head>
 <body>
-  <div id="vhs-splash" aria-hidden="true">
-    <div class="vhs-shell" role="img" aria-label="Loading VHS">
-      <div class="vhs-flap">
-        <span>Insert this side into recorder</span>
-        <span class="arrow">↑</span>
-        <span>Do not touch the tape inside</span>
-      </div>
-      <div class="vhs-window left"><div class="vhs-reel"></div></div>
-      <div class="vhs-label">LOADING</div>
-      <div class="vhs-window right"><div class="vhs-reel"></div></div>
+  <div id="vhs-splash" role="status" aria-live="polite">
+    <img class="brand-icon" src="icons/Icon-512.png" width="188" height="188" alt="VHS cassette with a play button">
+    <h1 class="wordmark">VHSFIN</h1>
+    <p class="tagline">Movie night, rewound.</p>
+    <div class="status"><span class="led" aria-hidden="true"></span><span id="load-status">WARMING UP THE VCR</span></div>
+    <div id="load-help" hidden>
+      This is taking longer than expected. Check your connection, then give it another try.<br>
+      <button type="button" onclick="window.location.reload()">Try again</button>
     </div>
-    <div class="standby">Stand by</div>
+    <noscript><p>Turn on JavaScript to load your living room.</p></noscript>
   </div>
-
   <script>
+    const slowLoad = setTimeout(function () {
+      const help = document.getElementById('load-help');
+      if (help) help.hidden = false;
+    }, 25000);
     window.addEventListener('flutter-first-frame', function () {
-      var splash = document.getElementById('vhs-splash');
+      clearTimeout(slowLoad);
+      const splash = document.getElementById('vhs-splash');
       if (!splash) return;
       splash.classList.add('fade-out');
       setTimeout(function () { splash.remove(); }, 320);
-    });
+    }, { once: true });
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
