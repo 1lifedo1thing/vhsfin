@@ -52,6 +52,7 @@ class VcrBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    CrtSpriteBezel.precacheAll(context);
     final layout = CrtSpriteLayout.of(crtSkin);
     return LayoutBuilder(
       builder: (context, constraints) {

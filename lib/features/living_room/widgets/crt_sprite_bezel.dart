@@ -8,6 +8,20 @@ class CrtSpriteBezel extends StatelessWidget {
 
   final CrtTvSkin skin;
 
+  static bool _warmed = false;
+
+  /// Decode every cabinet sheet once, so the settings grid and skin switches
+  /// don't flash black while a large atlas decodes.
+  static void precacheAll(BuildContext context) {
+    if (_warmed) return;
+    _warmed = true;
+    for (final asset in {
+      for (final skin in CrtTvSkin.values) CrtSpriteLayout.of(skin).asset,
+    }) {
+      precacheImage(AssetImage(asset), context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final layout = CrtSpriteLayout.of(skin);
@@ -33,6 +47,7 @@ class CrtSpriteBezel extends StatelessWidget {
                 height: assetSize.height,
                 fit: BoxFit.fill,
                 filterQuality: FilterQuality.high,
+                gaplessPlayback: true,
                 excludeFromSemantics: true,
               ),
             ),
