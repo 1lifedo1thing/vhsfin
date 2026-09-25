@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
+import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
@@ -72,6 +74,7 @@ void main() {
     tester,
   ) async {
     CrtTvSkin? selected;
+    CabinetStyle? cabinet;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -91,6 +94,8 @@ void main() {
                 onOpenSort: () {},
                 onSaveTimestampChanged: (_) {},
                 onCrtSkinChanged: (skin) => selected = skin,
+                cabinetStyle: CabinetStyle.flat,
+                onCabinetStyleChanged: (style) => cabinet = style,
               ),
               child: const Text('open'),
             ),
@@ -109,7 +114,11 @@ void main() {
       find.text('Keeps your place. Rewinding is still on you.'),
       findsOneWidget,
     );
-    expect(find.text('CRT LOOK'), findsOneWidget);
+    expect(find.text('SHELF'), findsOneWidget);
+    await tester.tap(find.text('WALNUT'));
+    await tester.pump();
+    expect(cabinet, CabinetStyle.walnut);
+    expect(find.text('TV'), findsOneWidget);
     expect(find.text('90S'), findsOneWidget);
     expect(find.text('GRAPHITE'), findsOneWidget);
     await tester.ensureVisible(find.text('CRIMSON'));
@@ -121,6 +130,12 @@ void main() {
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
     expect(find.text('SETTINGS'), findsNothing);
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('SETTINGS'), findsNothing, reason: 'Escape closes');
   });
 
   testWidgets('loaded tape stays absent from its shelf', (tester) async {

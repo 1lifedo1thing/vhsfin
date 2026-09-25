@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
+import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
+import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_sprite_bezel.dart';
 
 /// Deck / experience settings as a bottom sheet (no Riverpod).
@@ -20,6 +22,8 @@ Future<void> showDeckSettingsSheet(
   required VoidCallback onOpenSort,
   required ValueChanged<bool> onSaveTimestampChanged,
   required ValueChanged<CrtTvSkin> onCrtSkinChanged,
+  required CabinetStyle cabinetStyle,
+  required ValueChanged<CabinetStyle> onCabinetStyleChanged,
   String? userName,
 }) {
   return showModalBottomSheet<void>(
@@ -28,20 +32,24 @@ Future<void> showDeckSettingsSheet(
     isScrollControlled: true,
     isDismissible: true,
     enableDrag: true,
-    builder: (context) => _DeckSettingsSheet(
-      connected: connected,
-      userName: userName,
-      vhsOnly: vhsOnly,
-      sortLabel: sortLabel,
-      saveTimestampOnEject: saveTimestampOnEject,
-      crtSkin: crtSkin,
-      onCollection: onCollection,
-      onConnect: onConnect,
-      onSignOut: onSignOut,
-      onVhsOnlyChanged: onVhsOnlyChanged,
-      onOpenSort: onOpenSort,
-      onSaveTimestampChanged: onSaveTimestampChanged,
-      onCrtSkinChanged: onCrtSkinChanged,
+    builder: (context) => DismissOnEscape(
+      child: _DeckSettingsSheet(
+        connected: connected,
+        userName: userName,
+        vhsOnly: vhsOnly,
+        sortLabel: sortLabel,
+        saveTimestampOnEject: saveTimestampOnEject,
+        crtSkin: crtSkin,
+        onCollection: onCollection,
+        onConnect: onConnect,
+        onSignOut: onSignOut,
+        onVhsOnlyChanged: onVhsOnlyChanged,
+        onOpenSort: onOpenSort,
+        onSaveTimestampChanged: onSaveTimestampChanged,
+        onCrtSkinChanged: onCrtSkinChanged,
+        cabinetStyle: cabinetStyle,
+        onCabinetStyleChanged: onCabinetStyleChanged,
+      ),
     ),
   );
 }
@@ -60,6 +68,8 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.onOpenSort,
     required this.onSaveTimestampChanged,
     required this.onCrtSkinChanged,
+    required this.cabinetStyle,
+    required this.onCabinetStyleChanged,
     this.userName,
   });
 
@@ -76,6 +86,8 @@ class _DeckSettingsSheet extends StatefulWidget {
   final VoidCallback onOpenSort;
   final ValueChanged<bool> onSaveTimestampChanged;
   final ValueChanged<CrtTvSkin> onCrtSkinChanged;
+  final CabinetStyle cabinetStyle;
+  final ValueChanged<CabinetStyle> onCabinetStyleChanged;
 
   @override
   State<_DeckSettingsSheet> createState() => _DeckSettingsSheetState();
@@ -85,6 +97,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   late bool _vhsOnly = widget.vhsOnly;
   late bool _saveOnEject = widget.saveTimestampOnEject;
   late CrtTvSkin _crtSkin = widget.crtSkin;
+  late CabinetStyle _cabinet = widget.cabinetStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +114,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
             maxHeight: MediaQuery.sizeOf(context).height * 0.88,
           ),
           child: Material(
-            color: const Color(0xFF1A1A1E),
+            color: VhsColors.surface,
             borderRadius: BorderRadius.circular(14),
             elevation: 18,
             child: Container(
@@ -111,7 +124,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF2E2E32), Color(0xFF141418)],
+                  colors: [VhsColors.surfaceRaised, VhsColors.surface],
                 ),
               ),
               child: SingleChildScrollView(
@@ -146,7 +159,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                         Text(
                           'SETTINGS',
                           style: TextStyle(
-                            color: VhsColors.phosphor.withValues(alpha: 0.75),
+                            color: VhsColors.accent.withValues(alpha: 0.75),
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 2.2,
@@ -157,7 +170,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                           onPressed: () => Navigator.of(context).pop(),
                           icon: Icon(
                             Icons.close_rounded,
-                            color: VhsColors.brand.withValues(alpha: 0.55),
+                            color: VhsColors.ink.withValues(alpha: 0.55),
                           ),
                         ),
                       ],
@@ -192,15 +205,28 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                       },
                     ),
                     const SizedBox(height: 14),
-                    Text(
-                      'CRT LOOK',
-                      style: TextStyle(
-                        color: VhsColors.phosphor.withValues(alpha: 0.65),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2,
-                      ),
+                    const _SectionLabel('SHELF'),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        for (final style in CabinetStyle.values) ...[
+                          if (style != CabinetStyle.values.first)
+                            const SizedBox(width: 6),
+                          Expanded(
+                            child: _CabinetThumb(
+                              style: style,
+                              selected: style == _cabinet,
+                              onTap: () {
+                                setState(() => _cabinet = style);
+                                widget.onCabinetStyleChanged(style);
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
+                    const SizedBox(height: 14),
+                    const _SectionLabel('TV'),
                     const SizedBox(height: 8),
                     GridView.count(
                       crossAxisCount: 3,
@@ -268,6 +294,124 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   }
 }
 
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: TextStyle(
+      color: VhsColors.accent.withValues(alpha: 0.75),
+      fontSize: 10,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 2,
+    ),
+  );
+}
+
+/// A tiny live shelf rendered in [style] — the preview is the real material.
+class _CabinetThumb extends StatelessWidget {
+  const _CabinetThumb({
+    required this.style,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CabinetStyle style;
+  final bool selected;
+  final VoidCallback onTap;
+
+  static const _spines = [
+    Color(0xFF5B4BC4),
+    Color(0xFFD94A3A),
+    Color(0xFFE8DCC0),
+    Color(0xFF2F6FD6),
+    Color(0xFF1F1F22),
+    Color(0xFFE0A030),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: style.menuTitle,
+      child: Material(
+        color: selected ? VhsColors.accentWash : VhsColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(6, 6, 6, 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: selected
+                    ? VhsColors.accent.withValues(alpha: 0.55)
+                    : Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Column(
+              children: [
+                CabinetScope(
+                  style: style,
+                  child: SizedBox(
+                    height: 52,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: CabinetPanel(
+                            recessed: true,
+                            grain: const Alignment(-0.4, 0.3),
+                            padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                for (final c in _spines) ...[
+                                  Container(
+                                    width: 7,
+                                    decoration: BoxDecoration(
+                                      color: c,
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(1),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 1.5),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                        const CabinetLedge(height: 7),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  style.settingsLabel,
+                  style: TextStyle(
+                    color: selected
+                        ? VhsColors.accent
+                        : VhsColors.ink.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 9,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SkinThumb extends StatelessWidget {
   const _SkinThumb({
     required this.skin,
@@ -282,7 +426,7 @@ class _SkinThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFF243528) : const Color(0xFF222226),
+      color: selected ? VhsColors.accentWash : VhsColors.surfaceRaised,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -293,7 +437,7 @@ class _SkinThumb extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: selected
-                  ? VhsColors.phosphor.withValues(alpha: 0.45)
+                  ? VhsColors.accent.withValues(alpha: 0.45)
                   : Colors.white.withValues(alpha: 0.08),
             ),
           ),
@@ -319,8 +463,8 @@ class _SkinThumb extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: selected
-                      ? VhsColors.phosphor
-                      : VhsColors.brand.withValues(alpha: 0.7),
+                      ? VhsColors.accent
+                      : VhsColors.ink.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w800,
                   fontSize: 9,
                   letterSpacing: 0.8,
@@ -350,7 +494,7 @@ class _DeckToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: value ? const Color(0xFF243528) : const Color(0xFF222226),
+      color: value ? VhsColors.accentWash : VhsColors.surfaceRaised,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: () => onChanged(!value),
@@ -362,7 +506,7 @@ class _DeckToggle extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color: value
-                  ? VhsColors.phosphor.withValues(alpha: 0.35)
+                  ? VhsColors.accent.withValues(alpha: 0.35)
                   : Colors.white.withValues(alpha: 0.08),
             ),
           ),
@@ -377,8 +521,8 @@ class _DeckToggle extends StatelessWidget {
                       label,
                       style: TextStyle(
                         color: value
-                            ? VhsColors.phosphor
-                            : VhsColors.brand.withValues(alpha: 0.7),
+                            ? VhsColors.accent
+                            : VhsColors.ink.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w800,
                         fontSize: 11,
                         letterSpacing: 1.2,
@@ -388,7 +532,7 @@ class _DeckToggle extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: VhsColors.brand.withValues(alpha: 0.45),
+                        color: VhsColors.ink.withValues(alpha: 0.45),
                         fontSize: 10,
                         height: 1.2,
                       ),
@@ -400,8 +544,8 @@ class _DeckToggle extends StatelessWidget {
                 value ? 'ON' : 'OFF',
                 style: TextStyle(
                   color: value
-                      ? VhsColors.phosphor.withValues(alpha: 0.75)
-                      : VhsColors.brand.withValues(alpha: 0.4),
+                      ? VhsColors.accent.withValues(alpha: 0.75)
+                      : VhsColors.ink.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w700,
                   fontSize: 9,
                   letterSpacing: 1,
@@ -410,9 +554,9 @@ class _DeckToggle extends StatelessWidget {
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: VhsColors.phosphor,
-                activeTrackColor: VhsColors.phosphorDim,
-                inactiveThumbColor: VhsColors.brand.withValues(alpha: 0.7),
+                activeThumbColor: VhsColors.accent,
+                activeTrackColor: VhsColors.accentDim,
+                inactiveThumbColor: VhsColors.ink.withValues(alpha: 0.7),
                 inactiveTrackColor: Colors.black.withValues(alpha: 0.45),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -440,11 +584,11 @@ class _DeckKey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = dim
-        ? VhsColors.brand.withValues(alpha: 0.55)
-        : VhsColors.phosphor.withValues(alpha: 0.9);
+        ? VhsColors.ink.withValues(alpha: 0.55)
+        : VhsColors.accent.withValues(alpha: 0.9);
 
     return Material(
-      color: const Color(0xFF222226),
+      color: VhsColors.surfaceRaised,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: onPressed,
@@ -478,7 +622,7 @@ class _DeckKey extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: (sublabel != null && sublabel!.trim().isNotEmpty)
-                      ? VhsColors.brand.withValues(alpha: 0.45)
+                      ? VhsColors.ink.withValues(alpha: 0.45)
                       : Colors.transparent,
                   fontWeight: FontWeight.w600,
                   fontSize: 9,
@@ -503,7 +647,9 @@ Future<void> showShelfSortSheet(
     backgroundColor: Colors.transparent,
     isDismissible: true,
     enableDrag: true,
-    builder: (context) => _ShelfSortSheet(current: current, onSelect: onSelect),
+    builder: (context) => DismissOnEscape(
+      child: _ShelfSortSheet(current: current, onSelect: onSelect),
+    ),
   );
 }
 
@@ -525,7 +671,7 @@ class _ShelfSortSheet extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Material(
-            color: const Color(0xFF2A1810),
+            color: VhsColors.surface,
             borderRadius: BorderRadius.circular(14),
             elevation: 18,
             child: Container(
@@ -535,7 +681,7 @@ class _ShelfSortSheet extends StatelessWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF3A2418), Color(0xFF1A100C)],
+                  colors: [VhsColors.surfaceRaised, VhsColors.surface],
                 ),
               ),
               child: Column(
@@ -550,7 +696,7 @@ class _ShelfSortSheet extends StatelessWidget {
                           child: Text(
                             'SORT BY',
                             style: TextStyle(
-                              color: VhsColors.phosphor.withValues(alpha: 0.8),
+                              color: VhsColors.accent.withValues(alpha: 0.8),
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 2,
@@ -561,7 +707,7 @@ class _ShelfSortSheet extends StatelessWidget {
                           onPressed: () => Navigator.of(context).pop(),
                           icon: Icon(
                             Icons.close_rounded,
-                            color: VhsColors.brand.withValues(alpha: 0.55),
+                            color: VhsColors.ink.withValues(alpha: 0.55),
                           ),
                         ),
                       ],
@@ -611,8 +757,8 @@ class _SortOption extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: selected
-                      ? VhsColors.phosphor
-                      : VhsColors.brand.withValues(alpha: 0.85),
+                      ? VhsColors.accent
+                      : VhsColors.ink.withValues(alpha: 0.85),
                   fontSize: 15,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   letterSpacing: 0.3,
@@ -623,7 +769,7 @@ class _SortOption extends StatelessWidget {
               Icon(
                 Icons.check_rounded,
                 size: 20,
-                color: VhsColors.phosphor.withValues(alpha: 0.9),
+                color: VhsColors.accent.withValues(alpha: 0.9),
               ),
           ],
         ),

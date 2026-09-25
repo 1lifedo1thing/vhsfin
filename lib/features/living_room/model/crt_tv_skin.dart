@@ -21,7 +21,7 @@ extension CrtTvSkinLabels on CrtTvSkin {
     CrtTvSkin.ivory => 'IVORY',
     CrtTvSkin.crimson => 'CRIMSON',
     CrtTvSkin.knob => 'KNOBS',
-    CrtTvSkin.knob2 => 'WALNUT',
+    CrtTvSkin.knob2 => 'PUTTY',
   };
 
   String get menuTitle => switch (this) {

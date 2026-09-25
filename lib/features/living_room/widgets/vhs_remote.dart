@@ -21,17 +21,19 @@ Future<void> showVhsRemote(
     isScrollControlled: true,
     isDismissible: true,
     enableDrag: true,
-    builder: (context) => VhsRemoteSheet(
-      title: title,
-      live: live,
-      powered: powered,
-      onRewStart: onRewStart,
-      onRewEnd: onRewEnd,
-      onPlay: onPlay,
-      onFfStart: onFfStart,
-      onFfEnd: onFfEnd,
-      onFullScreen: onFullScreen,
-      onEject: onEject,
+    builder: (context) => DismissOnEscape(
+      child: VhsRemoteSheet(
+        title: title,
+        live: live,
+        powered: powered,
+        onRewStart: onRewStart,
+        onRewEnd: onRewEnd,
+        onPlay: onPlay,
+        onFfStart: onFfStart,
+        onFfEnd: onFfEnd,
+        onFullScreen: onFullScreen,
+        onEject: onEject,
+      ),
     ),
   );
 }
@@ -108,7 +110,7 @@ class VhsRemoteSheet extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.55),
+                      color: VhsColors.ink.withValues(alpha: 0.55),
                       fontSize: 12,
                     ),
                   ),
@@ -171,7 +173,7 @@ class VhsRemoteSheet extends StatelessWidget {
                   Text(
                     'Hold REW / FF to wind the tape',
                     style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.35),
+                      color: VhsColors.ink.withValues(alpha: 0.35),
                       fontSize: 11,
                     ),
                   ),
@@ -210,8 +212,8 @@ class _RemoteKey extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = large ? 72.0 : 58.0;
     final color = enabled
-        ? VhsColors.brand
-        : VhsColors.brand.withValues(alpha: 0.25);
+        ? VhsColors.ink
+        : VhsColors.ink.withValues(alpha: 0.25);
 
     return Column(
       children: [
@@ -272,8 +274,8 @@ class _RemoteWideButton extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: enabled
-                  ? VhsColors.phosphor
-                  : VhsColors.brand.withValues(alpha: 0.25),
+                  ? VhsColors.accent
+                  : VhsColors.ink.withValues(alpha: 0.25),
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2,
               fontSize: 12,

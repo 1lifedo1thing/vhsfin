@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 
@@ -36,6 +37,31 @@ void main() {
     container.read(experiencePrefsProvider);
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.knob);
+  });
+
+  test('cabinet style defaults to flat, persists, and restores', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(
+      container.read(experiencePrefsProvider).cabinetStyle,
+      CabinetStyle.flat,
+    );
+    await container
+        .read(experiencePrefsProvider.notifier)
+        .setCabinetStyle(CabinetStyle.walnut);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('vhsfin.cabinet_style.v1'), 'walnut');
+
+    final restored = ProviderContainer();
+    addTearDown(restored.dispose);
+    restored.read(experiencePrefsProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(
+      restored.read(experiencePrefsProvider).cabinetStyle,
+      CabinetStyle.walnut,
+    );
   });
 
   test(

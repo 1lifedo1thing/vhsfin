@@ -128,12 +128,12 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF3E2A1E),
-                    Color(0xFF241610),
-                    Color(0xFF140E0A),
+                    VhsColors.surfaceRaised,
+                    VhsColors.surface,
+                    VhsColors.surface,
                   ],
                 ),
-                border: Border.all(color: const Color(0xFF6A4A32), width: 1.5),
+                border: Border.all(color: VhsColors.line),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.55),
@@ -141,7 +141,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
                     offset: const Offset(0, 14),
                   ),
                   BoxShadow(
-                    color: VhsColors.phosphor.withValues(alpha: 0.06),
+                    color: VhsColors.accent.withValues(alpha: 0.06),
                     blurRadius: 18,
                     spreadRadius: -2,
                   ),
@@ -230,7 +230,7 @@ class _PopupHeader extends StatelessWidget {
           Text(
             'TAPE INFO',
             style: TextStyle(
-              color: VhsColors.phosphor.withValues(alpha: 0.9),
+              color: VhsColors.accent.withValues(alpha: 0.9),
               fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: 2.4,
@@ -242,14 +242,14 @@ class _PopupHeader extends StatelessWidget {
               tooltip: 'More',
               padding: EdgeInsets.zero,
               offset: const Offset(0, 36),
-              color: const Color(0xFF2A1810),
+              color: VhsColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
               icon: Icon(
                 Icons.more_vert_rounded,
-                color: VhsColors.brand.withValues(alpha: 0.7),
+                color: VhsColors.ink.withValues(alpha: 0.7),
                 size: 22,
               ),
               onSelected: (action) {
@@ -263,7 +263,7 @@ class _PopupHeader extends StatelessWidget {
                   child: Text(
                     'Wrong sleeve',
                     style: TextStyle(
-                      color: VhsColors.brand.withValues(alpha: 0.9),
+                      color: VhsColors.ink.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -276,7 +276,7 @@ class _PopupHeader extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(
               Icons.close,
-              color: VhsColors.brand.withValues(alpha: 0.7),
+              color: VhsColors.ink.withValues(alpha: 0.7),
               size: 22,
             ),
           ),
@@ -692,7 +692,7 @@ class _TapeTitleBlock extends StatelessWidget {
           Text(
             tape.subtitle!,
             style: TextStyle(
-              color: VhsColors.brand.withValues(alpha: 0.7),
+              color: VhsColors.ink.withValues(alpha: 0.7),
               fontSize: 14,
               height: 1.35,
             ),
@@ -750,7 +750,7 @@ class _TapeMetaBlock extends StatelessWidget {
                 Text(
                   'SYNOPSIS',
                   style: TextStyle(
-                    color: VhsColors.phosphor.withValues(alpha: 0.75),
+                    color: VhsColors.accent.withValues(alpha: 0.75),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.8,
@@ -760,7 +760,7 @@ class _TapeMetaBlock extends StatelessWidget {
                 Text(
                   tape.overview!,
                   style: TextStyle(
-                    color: VhsColors.brand.withValues(alpha: 0.7),
+                    color: VhsColors.ink.withValues(alpha: 0.7),
                     fontSize: 12,
                     height: 1.45,
                   ),
@@ -772,7 +772,7 @@ class _TapeMetaBlock extends StatelessWidget {
           Text(
             tape.genres.take(4).join(' · '),
             style: TextStyle(
-              color: VhsColors.brand.withValues(alpha: 0.55),
+              color: VhsColors.ink.withValues(alpha: 0.55),
               fontSize: 12,
               height: 1.4,
             ),
@@ -818,20 +818,18 @@ class _MetaChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: dim
             ? Colors.black.withValues(alpha: 0.35)
-            : VhsColors.phosphor.withValues(alpha: 0.1),
+            : VhsColors.accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
           color: dim
               ? Colors.white.withValues(alpha: 0.08)
-              : VhsColors.phosphor.withValues(alpha: 0.28),
+              : VhsColors.accent.withValues(alpha: 0.28),
         ),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: dim
-              ? VhsColors.brand.withValues(alpha: 0.55)
-              : VhsColors.phosphor,
+          color: dim ? VhsColors.ink.withValues(alpha: 0.55) : VhsColors.accent,
           fontSize: 10,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.1,
@@ -852,7 +850,7 @@ class _ActionBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1410),
+        color: VhsColors.surfaceSunken,
         border: Border(
           top: BorderSide(color: Colors.black.withValues(alpha: 0.5)),
         ),
@@ -862,10 +860,8 @@ class _ActionBar extends StatelessWidget {
           Expanded(
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                foregroundColor: VhsColors.brand,
-                side: BorderSide(
-                  color: VhsColors.brand.withValues(alpha: 0.35),
-                ),
+                foregroundColor: VhsColors.ink,
+                side: BorderSide(color: VhsColors.ink.withValues(alpha: 0.35)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
@@ -886,8 +882,8 @@ class _ActionBar extends StatelessWidget {
             flex: 2,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: VhsColors.accent,
-                foregroundColor: VhsColors.brand,
+                backgroundColor: VhsColors.record,
+                foregroundColor: VhsColors.ink,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
@@ -923,7 +919,7 @@ class _FrontArt extends StatelessWidget {
         child: Center(
           child: Text(
             'No cover',
-            style: TextStyle(color: VhsColors.brand, fontSize: 12),
+            style: TextStyle(color: VhsColors.ink, fontSize: 12),
           ),
         ),
       );

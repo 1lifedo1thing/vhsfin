@@ -23,13 +23,15 @@ Future<void> showEpisodePicker(
     isScrollControlled: true,
     isDismissible: true,
     enableDrag: true,
-    builder: (context) => EpisodePickerSheet(
-      series: series,
-      loadedId: loadedId,
-      loadEpisodes: loadEpisodes,
-      resolveArt: resolveArt,
-      onInsert: onInsert,
-      onRejectSleeve: onRejectSleeve,
+    builder: (context) => DismissOnEscape(
+      child: EpisodePickerSheet(
+        series: series,
+        loadedId: loadedId,
+        loadEpisodes: loadEpisodes,
+        resolveArt: resolveArt,
+        onInsert: onInsert,
+        onRejectSleeve: onRejectSleeve,
+      ),
     ),
   );
 }
@@ -112,7 +114,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
             maxHeight: MediaQuery.sizeOf(context).height * 0.78,
           ),
           child: Material(
-            color: const Color(0xFF2A1810),
+            color: VhsColors.surface,
             borderRadius: BorderRadius.circular(14),
             elevation: 18,
             child: Container(
@@ -122,7 +124,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                 gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF3A2418), Color(0xFF1A100C)],
+                  colors: [VhsColors.surfaceRaised, VhsColors.surface],
                 ),
               ),
               child: Column(
@@ -139,7 +141,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                               Text(
                                 'TAPE SELECT',
                                 style: TextStyle(
-                                  color: VhsColors.brand.withValues(alpha: 0.5),
+                                  color: VhsColors.ink.withValues(alpha: 0.5),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 2,
@@ -156,7 +158,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: VhsColors.brand),
+                          icon: const Icon(Icons.close, color: VhsColors.ink),
                         ),
                       ],
                     ),
@@ -166,7 +168,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                     child: Text(
                       'Tap a spine for the art',
                       style: TextStyle(
-                        color: VhsColors.brand.withValues(alpha: 0.45),
+                        color: VhsColors.ink.withValues(alpha: 0.45),
                         fontSize: 12,
                       ),
                     ),
@@ -185,7 +187,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                                 'Could not load episodes.\n$_error',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: VhsColors.brand.withValues(alpha: 0.7),
+                                  color: VhsColors.ink.withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -195,7 +197,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                             child: Text(
                               'No tapes in this box.',
                               style: TextStyle(
-                                color: VhsColors.brand.withValues(alpha: 0.6),
+                                color: VhsColors.ink.withValues(alpha: 0.6),
                               ),
                             ),
                           )
@@ -332,8 +334,8 @@ class _EpisodeShelfRow extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: episode.id == loadedId
-                            ? VhsColors.phosphor
-                            : VhsColors.brand,
+                            ? VhsColors.accent
+                            : VhsColors.ink,
                         fontSize: 8,
                         fontWeight: FontWeight.w700,
                         height: 1.15,

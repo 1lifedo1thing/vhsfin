@@ -164,7 +164,7 @@ class VcrBox extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: VhsColors.phosphor.withValues(alpha: 0.8),
+                              color: VhsColors.accent.withValues(alpha: 0.8),
                               fontSize: (width * 0.018).clamp(7.0, 11.0),
                               letterSpacing: 1,
                               fontWeight: FontWeight.w700,
@@ -346,7 +346,7 @@ class _DeckKeyState extends State<_DeckKey> {
                         widget.icon,
                         size: 17,
                         color: widget.enabled && widget.emphasized
-                            ? const Color(0xFF183B23)
+                            ? const Color(0xFF0F3A3D)
                             : const Color(0xFF171A1C)
                                   .withValues(alpha: widget.enabled ? 1 : .5),
                       ),

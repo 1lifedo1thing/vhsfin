@@ -39,7 +39,7 @@ class CrtLoadingIndicator extends StatelessWidget {
           Text(
             message,
             style: TextStyle(
-              color: VhsColors.phosphor.withValues(alpha: 0.85),
+              color: VhsColors.accent.withValues(alpha: 0.85),
               fontSize: compact ? 10 : 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 2.4,
@@ -128,10 +128,7 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
           width: w,
           height: h,
           child: CustomPaint(
-            painter: _VhsCassettePainter(
-              leftAngle: t,
-              rightAngle: -t * 1.08,
-            ),
+            painter: _VhsCassettePainter(leftAngle: t, rightAngle: -t * 1.08),
           ),
         );
       },
@@ -140,10 +137,7 @@ class _VhsTapeSpinnerState extends State<VhsTapeSpinner>
 }
 
 class _VhsCassettePainter extends CustomPainter {
-  _VhsCassettePainter({
-    required this.leftAngle,
-    required this.rightAngle,
-  });
+  _VhsCassettePainter({required this.leftAngle, required this.rightAngle});
 
   final double leftAngle;
   final double rightAngle;
@@ -320,20 +314,8 @@ class _VhsCassettePainter extends CustomPainter {
 
     // Reels inside windows (supply full, take-up emptier)
     final reelR = math.min(winW, winH) * 0.38;
-    _drawReel(
-      canvas,
-      leftWin.center,
-      reelR,
-      leftAngle,
-      fill: 0.92,
-    );
-    _drawReel(
-      canvas,
-      rightWin.center,
-      reelR * 0.95,
-      rightAngle,
-      fill: 0.28,
-    );
+    _drawReel(canvas, leftWin.center, reelR, leftAngle, fill: 0.92);
+    _drawReel(canvas, rightWin.center, reelR * 0.95, rightAngle, fill: 0.28);
 
     // Soft sheen
     canvas.drawRRect(
@@ -342,10 +324,7 @@ class _VhsCassettePainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.center,
-          colors: [
-            Colors.white.withValues(alpha: 0.07),
-            Colors.transparent,
-          ],
+          colors: [Colors.white.withValues(alpha: 0.07), Colors.transparent],
         ).createShader(Offset.zero & size),
     );
   }
@@ -378,11 +357,7 @@ class _VhsCassettePainter extends CustomPainter {
     required double fill,
   }) {
     // Dark magnetic tape pancake
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()..color = const Color(0xFF12100E),
-    );
+    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF12100E));
     final tapeR = r * (0.38 + 0.55 * fill.clamp(0.0, 1.0));
     canvas.drawCircle(
       c,

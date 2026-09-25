@@ -98,7 +98,7 @@ class _CrtPainter extends CustomPainter {
 
     canvas.drawRect(
       Offset.zero & size,
-      Paint()..color = VhsColors.phosphor.withValues(alpha: 0.04),
+      Paint()..color = VhsColors.accent.withValues(alpha: 0.04),
     );
   }
 

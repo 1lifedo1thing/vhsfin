@@ -88,7 +88,7 @@ class _RewindPainter extends CustomPainter {
 
     // REW chevrons sweeping left.
     final chevronPaint = Paint()
-      ..color = VhsColors.phosphor.withValues(alpha: 0.55)
+      ..color = VhsColors.accent.withValues(alpha: 0.55)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.5
       ..strokeJoin = StrokeJoin.round;
@@ -113,15 +113,12 @@ class _RewindPainter extends CustomPainter {
       text: TextSpan(
         text: '◀◀ REW',
         style: TextStyle(
-          color: VhsColors.phosphor.withValues(alpha: 0.9),
+          color: VhsColors.accent.withValues(alpha: 0.9),
           fontSize: math.max(11, size.width * 0.045),
           fontWeight: FontWeight.w800,
           letterSpacing: 2,
           shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.8),
-              blurRadius: 4,
-            ),
+            Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 4),
           ],
         ),
       ),

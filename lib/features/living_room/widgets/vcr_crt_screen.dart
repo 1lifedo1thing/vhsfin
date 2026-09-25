@@ -141,11 +141,11 @@ class _VcrCrtScreenState extends State<VcrCrtScreen> {
                 child: Text(
                   'AV 1',
                   style: TextStyle(
-                    color: Color(0xFFB3CDB3),
+                    color: Color(0xFFBCE6E8),
                     fontFamily: 'monospace',
                     fontSize: 12,
                     letterSpacing: 2,
-                    shadows: [Shadow(color: Color(0xFF729B78), blurRadius: 5)],
+                    shadows: [Shadow(color: Color(0xFF5FA9AD), blurRadius: 5)],
                   ),
                 ),
               ),
@@ -184,7 +184,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen> {
                       Colors.white.withValues(alpha: 0.04),
                       Colors.transparent,
                       Colors.transparent,
-                      VhsColors.phosphor.withValues(alpha: 0.035),
+                      VhsColors.accent.withValues(alpha: 0.035),
                     ],
                   ),
                   border: Border.all(
@@ -226,7 +226,7 @@ class _InsertingTapeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xE608100D),
+      color: const Color(0xE6080C0E),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -235,14 +235,14 @@ class _InsertingTapeLabel extends StatelessWidget {
             children: [
               const Icon(
                 Icons.play_arrow_rounded,
-                color: VhsColors.phosphor,
+                color: VhsColors.accent,
                 size: 24,
               ),
               const SizedBox(height: 8),
               const Text(
                 'READING TAPE',
                 style: TextStyle(
-                  color: VhsColors.phosphor,
+                  color: VhsColors.accent,
                   fontFamily: 'monospace',
                   fontSize: 11,
                   letterSpacing: 2,
@@ -255,7 +255,7 @@ class _InsertingTapeLabel extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: VhsColors.phosphor.withValues(alpha: 0.6),
+                  color: VhsColors.accent.withValues(alpha: 0.6),
                   fontSize: 9,
                   height: 1.4,
                 ),

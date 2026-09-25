@@ -93,9 +93,9 @@ class _StaticPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          VhsColors.phosphor.withValues(alpha: 0.04),
+          VhsColors.accent.withValues(alpha: 0.04),
           Colors.transparent,
-          VhsColors.phosphor.withValues(alpha: 0.06),
+          VhsColors.accent.withValues(alpha: 0.06),
         ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, wash);

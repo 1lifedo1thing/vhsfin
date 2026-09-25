@@ -162,6 +162,7 @@ class _ShelfBlock extends StatelessWidget {
                     for (var r = 0; r < rows.length; r++) ...[
                       if (r > 0) const SizedBox(height: 10),
                       _shelfBay(
+                        row: r,
                         child: _ShelfTapeRow(
                           shelfId: shelf.id,
                           rowIndex: r,
@@ -187,7 +188,13 @@ class _ShelfBlock extends StatelessWidget {
   }
 
   /// Cavity + lip as one unit so spine bases sit on the wood edge.
-  Widget _shelfBay({required Widget child}) {
+  Widget _shelfBay({required Widget child, int row = 0}) {
+    // Different wood for each bay and its lip; stable across rebuilds.
+    final seed = (shelf.id.hashCode + row * 7919) & 0x7fffffff;
+    Alignment grain(int salt) => Alignment(
+      ((seed >> salt) % 200) / 100 - 1,
+      ((seed >> (salt + 5)) % 200) / 100 - 1,
+    );
     return SizedBox(
       height: _rowHeight + _lipHeight,
       width: double.infinity,
@@ -199,8 +206,9 @@ class _ShelfBlock extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: _lipHeight,
-            child: WalnutSurface(
+            child: CabinetPanel(
               recessed: true,
+              grain: grain(0),
               child: Padding(
                 // No bottom pad — spines rest on the cavity floor / lip seam.
                 padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
@@ -213,7 +221,7 @@ class _ShelfBlock extends StatelessWidget {
             right: 0,
             bottom: 0,
             height: _lipHeight,
-            child: const CabinetLedge(height: _lipHeight),
+            child: CabinetLedge(height: _lipHeight, grain: grain(3)),
           ),
         ],
       ),
@@ -267,9 +275,7 @@ class _EmptyShelfPrompt extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.42),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: VhsColors.brand.withValues(alpha: 0.12),
-              ),
+              border: Border.all(color: VhsColors.ink.withValues(alpha: 0.12)),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
@@ -280,7 +286,7 @@ class _EmptyShelfPrompt extends StatelessWidget {
                     title,
                     textAlign: TextAlign.center,
                     style: vhsBrandStyle(size: 15).copyWith(
-                      color: VhsColors.brand.withValues(alpha: 0.92),
+                      color: VhsColors.ink.withValues(alpha: 0.92),
                       letterSpacing: 1.4,
                     ),
                   ),
@@ -290,7 +296,7 @@ class _EmptyShelfPrompt extends StatelessWidget {
                       subtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: VhsColors.phosphor.withValues(alpha: 0.65),
+                        color: VhsColors.accent.withValues(alpha: 0.65),
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.1,
@@ -314,8 +320,8 @@ class _EmptyShelfPrompt extends StatelessWidget {
       child: InkWell(
         onTap: onConnectPrompt,
         borderRadius: BorderRadius.circular(4),
-        hoverColor: VhsColors.phosphor.withValues(alpha: 0.06),
-        splashColor: VhsColors.phosphor.withValues(alpha: 0.12),
+        hoverColor: VhsColors.accent.withValues(alpha: 0.06),
+        splashColor: VhsColors.accent.withValues(alpha: 0.12),
         child: content,
       ),
     );

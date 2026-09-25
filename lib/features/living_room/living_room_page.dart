@@ -37,6 +37,7 @@ class LivingRoomPage extends ConsumerWidget {
       sortLabel: displayPrefs.sort.buttonLabel,
       saveTimestampOnEject: experience.saveTimestampOnEject,
       crtSkin: experience.crtSkin,
+      cabinetStyle: experience.cabinetStyle,
       onCollection: () => context.push('/libraries'),
       onConnect: () => context.push('/connect'),
       onSignOut: () async {
@@ -60,6 +61,8 @@ class LivingRoomPage extends ConsumerWidget {
           .setSaveTimestampOnEject(value),
       onCrtSkinChanged: (skin) =>
           ref.read(experiencePrefsProvider.notifier).setCrtSkin(skin),
+      onCabinetStyleChanged: (style) =>
+          ref.read(experiencePrefsProvider.notifier).setCabinetStyle(style),
     );
   }
 
@@ -146,6 +149,7 @@ class LivingRoomPage extends ConsumerWidget {
       flyingTapeId: flyingTapeId,
       flightSourceKey: flightSourceKey,
       crtSkin: experience.crtSkin,
+      cabinetStyle: experience.cabinetStyle,
       shelvesLoading: shelvesAsync.isLoading && !shelvesAsync.hasValue,
       shelvesError: shelvesAsync.hasError
           ? userFacingError(shelvesAsync.error)

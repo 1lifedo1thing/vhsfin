@@ -635,7 +635,7 @@ class _ProceduralSpineStyle {
       badge: badge.toUpperCase(),
       catalog: hash % 3 == 0 ? '' : catalog,
       plate: plate,
-      titleColor: VhsColors.brand,
+      titleColor: VhsColors.ink,
       letterSpacing: 0.4 + (hash % 5) * 0.25,
       fontSize: 10.0 + (hash % 3),
       useDisplayFont: hash.isEven,
@@ -755,7 +755,7 @@ class SpinePalette {
       Color(0xFFD9D3C5),
     ];
     const accents = <Color>[
-      VhsColors.accent,
+      VhsColors.record,
       Color(0xFF2F6FED),
       Color(0xFFD4A017),
       Color(0xFF2E8B57),
@@ -766,10 +766,10 @@ class SpinePalette {
     final light = shell.computeLuminance() > 0.45;
     return SpinePalette(
       shell: shell,
-      ink: light ? const Color(0xFF1A120C) : VhsColors.brand,
+      ink: light ? const Color(0xFF1A120C) : VhsColors.ink,
       accent: accents[(hash ~/ 7) % accents.length],
       label: accents[(hash ~/ 13) % accents.length],
-      labelInk: VhsColors.brand,
+      labelInk: VhsColors.ink,
     );
   }
 }

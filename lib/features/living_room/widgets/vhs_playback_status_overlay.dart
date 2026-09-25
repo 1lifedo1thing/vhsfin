@@ -220,8 +220,8 @@ class _PlaybackStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF101412).withValues(alpha: 0.92),
-        border: Border.all(color: VhsColors.phosphorDim),
+        color: VhsColors.surfaceSunken.withValues(alpha: 0.92),
+        border: Border.all(color: VhsColors.accentDim),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Padding(
@@ -231,7 +231,7 @@ class _PlaybackStatusCard extends StatelessWidget {
           children: [
             Icon(
               failed ? Icons.warning_amber_rounded : Icons.track_changes,
-              color: VhsColors.phosphor,
+              color: VhsColors.accent,
               size: 24,
             ),
             const SizedBox(height: 8),
@@ -239,7 +239,7 @@ class _PlaybackStatusCard extends StatelessWidget {
               failed ? 'TAPE READ ERROR' : 'ADJUSTING TRACKING',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: VhsColors.phosphor,
+                color: VhsColors.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.8,
@@ -252,7 +252,7 @@ class _PlaybackStatusCard extends StatelessWidget {
                   : 'THE SIGNAL IS TAKING A WHILE',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: VhsColors.brand.withValues(alpha: 0.72),
+                color: VhsColors.ink.withValues(alpha: 0.72),
                 fontSize: 8,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.9,

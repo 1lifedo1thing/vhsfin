@@ -59,7 +59,7 @@ class LibrariesView extends StatelessWidget {
             child: const Text(
               'DONE',
               style: TextStyle(
-                color: VhsColors.phosphor,
+                color: VhsColors.accent,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -71,7 +71,7 @@ class LibrariesView extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [VhsColors.woodMid, VhsColors.woodDeep],
+            colors: [VhsColors.surface, VhsColors.room],
           ),
         ),
         child: !connected
@@ -100,7 +100,7 @@ class LibrariesView extends StatelessWidget {
                             Text(
                               'Add as many shelves as you want — each checked folder gets its own row under the VCR.',
                               style: TextStyle(
-                                color: VhsColors.brand.withValues(alpha: 0.7),
+                                color: VhsColors.ink.withValues(alpha: 0.7),
                                 height: 1.35,
                               ),
                             ),
@@ -110,12 +110,17 @@ class LibrariesView extends StatelessWidget {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   _Crumb(label: 'Libraries', onTap: onOpenRoot),
-                                  for (var i = 0; i < breadcrumb.length; i++) ...[
+                                  for (
+                                    var i = 0;
+                                    i < breadcrumb.length;
+                                    i++
+                                  ) ...[
                                     Text(
                                       ' › ',
                                       style: TextStyle(
-                                        color: VhsColors.brand
-                                            .withValues(alpha: 0.4),
+                                        color: VhsColors.ink.withValues(
+                                          alpha: 0.4,
+                                        ),
                                       ),
                                     ),
                                     _Crumb(
@@ -131,8 +136,7 @@ class LibrariesView extends StatelessWidget {
                               Text(
                                 'ON THE CONSOLE',
                                 style: TextStyle(
-                                  color:
-                                      VhsColors.brand.withValues(alpha: 0.55),
+                                  color: VhsColors.ink.withValues(alpha: 0.55),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 1.2,
@@ -147,15 +151,15 @@ class LibrariesView extends StatelessWidget {
                                     InputChip(
                                       label: Text(source.pathLabel),
                                       selected: true,
-                                      selectedColor: VhsColors.phosphor
+                                      selectedColor: VhsColors.accent
                                           .withValues(alpha: 0.2),
-                                      checkmarkColor: VhsColors.phosphor,
+                                      checkmarkColor: VhsColors.accent,
                                       labelStyle: const TextStyle(
-                                        color: VhsColors.phosphor,
+                                        color: VhsColors.accent,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 12,
                                       ),
-                                      deleteIconColor: VhsColors.phosphor,
+                                      deleteIconColor: VhsColors.accent,
                                       onDeleted: () =>
                                           onRemoveSource(source.id),
                                     ),
@@ -197,7 +201,7 @@ class LibrariesView extends StatelessWidget {
                         child: Text(
                           'Tip: open Movies → Kids Movies and check it, then go back and check TV Shows too. Each becomes its own shelf.',
                           style: TextStyle(
-                            color: VhsColors.brand.withValues(alpha: 0.45),
+                            color: VhsColors.ink.withValues(alpha: 0.45),
                             fontSize: 12,
                             height: 1.35,
                           ),
@@ -241,13 +245,9 @@ class _ChildrenPane extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            atRoot
-                ? 'No libraries found.'
-                : 'No more folders here. Add this folder with the button above.',
+            atRoot ? 'No libraries found.' : 'No more folders here. Add this folder with the button above.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: VhsColors.brand.withValues(alpha: 0.7),
-            ),
+            style: TextStyle(color: VhsColors.ink.withValues(alpha: 0.7)),
           ),
         ),
       );
@@ -261,19 +261,21 @@ class _ChildrenPane extends StatelessWidget {
         final node = list[index];
         final isSelected = selected.any((s) => s.id == node.id);
         return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 4,
+          ),
           minVerticalPadding: 12,
           leading: Icon(
             atRoot ? Icons.video_library_rounded : Icons.folder_rounded,
-            color: isSelected ? VhsColors.phosphor : VhsColors.brand,
+            color: isSelected ? VhsColors.accent : VhsColors.ink,
           ),
           title: Text(
             node.name,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 16,
-              color: isSelected ? VhsColors.phosphor : VhsColors.brand,
+              color: isSelected ? VhsColors.accent : VhsColors.ink,
             ),
           ),
           subtitle: Text(
@@ -282,17 +284,15 @@ class _ChildrenPane extends StatelessWidget {
               if (node.type != null) node.type!,
               if (node.childCount != null) '${node.childCount} items',
             ].join(' · '),
-            style: TextStyle(
-              color: VhsColors.brand.withValues(alpha: 0.55),
-            ),
+            style: TextStyle(color: VhsColors.ink.withValues(alpha: 0.55)),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Checkbox(
                 value: isSelected,
-                activeColor: VhsColors.phosphor,
-                checkColor: VhsColors.woodDeep,
+                activeColor: VhsColors.accent,
+                checkColor: VhsColors.room,
                 onChanged: (_) => onToggleNode(node),
               ),
               const Icon(Icons.chevron_right),
@@ -318,7 +318,7 @@ class _Crumb extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          color: VhsColors.phosphor,
+          color: VhsColors.accent,
           fontWeight: FontWeight.w700,
           fontSize: 12,
         ),

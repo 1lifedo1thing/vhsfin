@@ -51,7 +51,7 @@ class CleanPlayerView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: VhsColors.brand,
+                          color: VhsColors.ink,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -61,7 +61,7 @@ class CleanPlayerView extends StatelessWidget {
                       child: const Text(
                         'BACK TO VCR',
                         style: TextStyle(
-                          color: VhsColors.phosphor,
+                          color: VhsColors.accent,
                           fontWeight: FontWeight.w800,
                         ),
                       ),

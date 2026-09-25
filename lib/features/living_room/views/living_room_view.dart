@@ -11,6 +11,7 @@ import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/widgets/art_grab_onboarding_dialog.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
+import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
@@ -54,6 +55,7 @@ class LivingRoomView extends StatelessWidget {
     this.shelvesError,
     this.shelves,
     this.crtSkin = CrtTvSkin.crt90s,
+    this.cabinetStyle = CabinetStyle.flat,
   });
 
   final VcrDeckState deck;
@@ -64,6 +66,7 @@ class LivingRoomView extends StatelessWidget {
   final String? flyingTapeId;
   final String? flightSourceKey;
   final CrtTvSkin crtSkin;
+  final CabinetStyle cabinetStyle;
   final bool shelvesLoading;
   final String? shelvesError;
   final List<Shelf>? shelves;
@@ -114,11 +117,7 @@ class LivingRoomView extends StatelessWidget {
               gradient: RadialGradient(
                 center: Alignment(0, -0.4),
                 radius: 1.2,
-                colors: [
-                  Color(0xFF3A2418),
-                  VhsColors.woodDeep,
-                  Color(0xFF070504),
-                ],
+                colors: [VhsColors.roomGlow, VhsColors.room, Color(0xFF030404)],
                 stops: [0, 0.55, 1],
               ),
             ),
@@ -148,7 +147,7 @@ class LivingRoomView extends StatelessWidget {
                                     child: Text(
                                       'HOME VIDEO',
                                       style: TextStyle(
-                                        color: Color(0xFFBAA58A),
+                                        color: VhsColors.inkMuted,
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 3,
@@ -158,7 +157,7 @@ class LivingRoomView extends StatelessWidget {
                                   IconButton(
                                     onPressed: onShowRemote,
                                     tooltip: 'Remote',
-                                    color: const Color(0xFFCCB994),
+                                    color: VhsColors.inkMuted,
                                     icon: const Icon(
                                       Icons.settings_remote_rounded,
                                       size: 21,
@@ -167,7 +166,7 @@ class LivingRoomView extends StatelessWidget {
                                   IconButton(
                                     onPressed: onShowSettings,
                                     tooltip: 'Settings',
-                                    color: const Color(0xFFCCB994),
+                                    color: VhsColors.inkMuted,
                                     icon: const Icon(
                                       Icons.tune_rounded,
                                       size: 21,
@@ -176,39 +175,42 @@ class LivingRoomView extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            _EntertainmentCenter(
-                              maxTvWidth: maxTv,
-                              vcr: VcrBox(
-                                deck: deck,
-                                player: player,
-                                surfaceEpoch: surfaceEpoch,
-                                surfaceOwner: surfaceOwner,
-                                crtSkin: crtSkin,
-                                slotKey: flightAnchors.slotKey,
-                                flyingTapeId: flyingTapeId,
-                                rewinding: rewinding,
-                                onRew: onRew,
-                                onRewEnd: onRewEnd,
-                                onPlay: onPlay,
-                                onFf: onFf,
-                                onFfEnd: onFfEnd,
-                                onEject: onEject,
-                                onFull: player.enterFullscreen,
-                                onRemote: onShowRemote,
-                                videoSurface: videoSurface,
-                              ),
-                              bookshelf: _BookshelfBody(
-                                shelvesLoading: shelvesLoading,
-                                shelvesError: shelvesError,
-                                shelves: shelves,
-                                deck: deck,
-                                vhsOnly: vhsOnly,
-                                flightAnchors: flightAnchors,
-                                flyingTapeId: flyingTapeId,
-                                flightSourceKey: flightSourceKey,
-                                resolveSpineArt: resolveSpineArt,
-                                onTapeTap: onTapeTap,
-                                onConnectPrompt: onConnectPrompt,
+                            CabinetScope(
+                              style: cabinetStyle,
+                              child: _EntertainmentCenter(
+                                maxTvWidth: maxTv,
+                                vcr: VcrBox(
+                                  deck: deck,
+                                  player: player,
+                                  surfaceEpoch: surfaceEpoch,
+                                  surfaceOwner: surfaceOwner,
+                                  crtSkin: crtSkin,
+                                  slotKey: flightAnchors.slotKey,
+                                  flyingTapeId: flyingTapeId,
+                                  rewinding: rewinding,
+                                  onRew: onRew,
+                                  onRewEnd: onRewEnd,
+                                  onPlay: onPlay,
+                                  onFf: onFf,
+                                  onFfEnd: onFfEnd,
+                                  onEject: onEject,
+                                  onFull: player.enterFullscreen,
+                                  onRemote: onShowRemote,
+                                  videoSurface: videoSurface,
+                                ),
+                                bookshelf: _BookshelfBody(
+                                  shelvesLoading: shelvesLoading,
+                                  shelvesError: shelvesError,
+                                  shelves: shelves,
+                                  deck: deck,
+                                  vhsOnly: vhsOnly,
+                                  flightAnchors: flightAnchors,
+                                  flyingTapeId: flyingTapeId,
+                                  flightSourceKey: flightSourceKey,
+                                  resolveSpineArt: resolveSpineArt,
+                                  onTapeTap: onTapeTap,
+                                  onConnectPrompt: onConnectPrompt,
+                                ),
                               ),
                             ),
                           ],
@@ -333,17 +335,18 @@ class _EntertainmentCenter extends StatelessWidget {
           ),
         ),
         // The artwork feet terminate at this ledge; no controls or gap intervene.
-        const CabinetLedge(height: 22),
+        const CabinetLedge(height: 22, grain: Alignment(-0.6, 0.4)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: WalnutSurface(
+          child: CabinetPanel(
+            grain: const Alignment(0.2, -0.7),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
             child: bookshelf,
           ),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
-          child: CabinetLedge(height: 16),
+          child: CabinetLedge(height: 16, grain: Alignment(0.8, 0.9)),
         ),
         const SizedBox(height: 12),
         Text(

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 
 /// User-tunable living-room behavior (persisted).
@@ -10,6 +11,7 @@ class ExperiencePrefs {
   const ExperiencePrefs({
     this.saveTimestampOnEject = false,
     this.crtSkin = CrtTvSkin.crt90s,
+    this.cabinetStyle = CabinetStyle.flat,
   });
 
   /// Remember playback position on eject; seek there on next insert.
@@ -18,10 +20,18 @@ class ExperiencePrefs {
   /// Classic CRT bezel / cabinet look.
   final CrtTvSkin crtSkin;
 
-  ExperiencePrefs copyWith({bool? saveTimestampOnEject, CrtTvSkin? crtSkin}) {
+  /// Shelf and TV-stand furniture look.
+  final CabinetStyle cabinetStyle;
+
+  ExperiencePrefs copyWith({
+    bool? saveTimestampOnEject,
+    CrtTvSkin? crtSkin,
+    CabinetStyle? cabinetStyle,
+  }) {
     return ExperiencePrefs(
       saveTimestampOnEject: saveTimestampOnEject ?? this.saveTimestampOnEject,
       crtSkin: crtSkin ?? this.crtSkin,
+      cabinetStyle: cabinetStyle ?? this.cabinetStyle,
     );
   }
 }
@@ -34,6 +44,7 @@ final experiencePrefsProvider =
 class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _saveTsKey = 'vhsfin.save_timestamp_on_eject';
   static const _crtSkinKey = 'vhsfin.crt_tv_skin.v1';
+  static const _cabinetKey = 'vhsfin.cabinet_style.v1';
 
   int _epoch = 0;
 
@@ -51,6 +62,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     state = ExperiencePrefs(
       saveTimestampOnEject: prefs.getBool(_saveTsKey) ?? false,
       crtSkin: skin,
+      cabinetStyle: CabinetStyleLabels.fromPrefs(prefs.getString(_cabinetKey)),
     );
   }
 
@@ -67,6 +79,14 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     state = state.copyWith(crtSkin: skin);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_crtSkinKey, skin.name);
+  }
+
+  Future<void> setCabinetStyle(CabinetStyle style) async {
+    if (state.cabinetStyle == style) return;
+    _epoch++;
+    state = state.copyWith(cabinetStyle: style);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_cabinetKey, style.name);
   }
 }
 

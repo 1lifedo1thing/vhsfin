@@ -40,7 +40,7 @@ class _ConnectViewState extends State<ConnectView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VhsColors.woodDeep,
+      backgroundColor: VhsColors.room,
       appBar: AppBar(
         title: const Text('WELCOME HOME'),
         leading: IconButton(
@@ -54,7 +54,7 @@ class _ConnectViewState extends State<ConnectView> {
           gradient: RadialGradient(
             center: Alignment(0, -0.65),
             radius: 1.3,
-            colors: [Color(0xFF423023), VhsColors.woodDeep, Color(0xFF100D0B)],
+            colors: [VhsColors.roomGlow, VhsColors.room, Color(0xFF030404)],
           ),
         ),
         child: SafeArea(
@@ -82,7 +82,7 @@ class _ConnectViewState extends State<ConnectView> {
                           'Your favorites. A shelf full of tapes. Just press play.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: VhsColors.brand.withValues(alpha: 0.72),
+                            color: VhsColors.ink.withValues(alpha: 0.72),
                             height: 1.5,
                           ),
                         ),
@@ -104,10 +104,10 @@ class _ConnectViewState extends State<ConnectView> {
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF211E1A),
+                            color: VhsColors.surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: VhsColors.brand.withValues(alpha: 0.12),
+                              color: VhsColors.ink.withValues(alpha: 0.12),
                             ),
                             boxShadow: const [
                               BoxShadow(
@@ -131,9 +131,7 @@ class _ConnectViewState extends State<ConnectView> {
                               Text(
                                 'Sign in with an existing Jellyfin account.\nYour server brings the movies; we bring the nostalgia.',
                                 style: TextStyle(
-                                  color: VhsColors.brand.withValues(
-                                    alpha: 0.65,
-                                  ),
+                                  color: VhsColors.ink.withValues(alpha: 0.65),
                                   height: 1.5,
                                   fontSize: 13,
                                 ),
@@ -218,7 +216,7 @@ class _ConnectViewState extends State<ConnectView> {
                                   child: Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF492C24),
+                                      color: VhsColors.recordWash,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -297,8 +295,8 @@ class _SetupStep extends StatelessWidget {
         Container(
           height: 2,
           color: active
-              ? VhsColors.phosphor
-              : VhsColors.brand.withValues(alpha: 0.16),
+              ? VhsColors.accent
+              : VhsColors.ink.withValues(alpha: 0.16),
         ),
         const SizedBox(height: 8),
         Text(
@@ -308,8 +306,8 @@ class _SetupStep extends StatelessWidget {
             fontWeight: FontWeight.w800,
             letterSpacing: 0.7,
             color: active
-                ? VhsColors.phosphor
-                : VhsColors.brand.withValues(alpha: 0.5),
+                ? VhsColors.accent
+                : VhsColors.ink.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -339,7 +337,7 @@ class _ConnectionHelp extends StatelessWidget {
           'A browser opened over HTTPS also needs an HTTPS server.\n\n'
           'For little viewers, use a Jellyfin account with access only to their libraries. '
           'Shelf selection is a display preference, not a parental lock.',
-          style: TextStyle(fontSize: 13, height: 1.6, color: VhsColors.brand),
+          style: TextStyle(fontSize: 13, height: 1.6, color: VhsColors.ink),
         ),
       ],
     ),
