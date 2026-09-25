@@ -115,13 +115,14 @@ class Tape {
 /// local design work and screenshots without an account.
 const vhsfinDemoMode = bool.fromEnvironment('VHSFIN_DEMO');
 
-const _gtv =
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
+/// Wikimedia Commons 480p transcodes of the Blender Foundation open movies
+/// (CC BY). VP9/WebM plays in every current browser and in media_kit.
+const _commons = 'https://upload.wikimedia.org/wikipedia/commons/transcoded';
 
 Tape _demo(
   String id,
   String title,
-  String file,
+  String path,
   int year,
   Duration duration,
   List<String> genres,
@@ -129,8 +130,8 @@ Tape _demo(
 ) => Tape(
   id: 'demo-$id',
   title: title,
-  subtitle: 'Open movie',
-  streamUrl: '$_gtv/$file',
+  subtitle: 'Blender open movie',
+  streamUrl: '$_commons/$path.480p.vp9.webm',
   duration: duration,
   productionYear: year,
   genres: genres,
@@ -139,12 +140,12 @@ Tape _demo(
   isDemo: true,
 );
 
-/// Public, openly licensed samples for [vhsfinDemoMode].
+/// Public, openly licensed films for [vhsfinDemoMode].
 final demoTapes = <Tape>[
   _demo(
     'bbb',
     'Big Buck Bunny',
-    'BigBuckBunny.mp4',
+    'c/c0/Big_Buck_Bunny_4K.webm/Big_Buck_Bunny_4K.webm',
     2008,
     const Duration(minutes: 9, seconds: 56),
     ['Animation', 'Comedy'],
@@ -153,16 +154,16 @@ final demoTapes = <Tape>[
   _demo(
     'elephants',
     'Elephants Dream',
-    'ElephantsDream.mp4',
+    'a/a2/Elephants_Dream_%282006%29.webm/Elephants_Dream_%282006%29.webm',
     2006,
-    const Duration(minutes: 10, seconds: 53),
+    const Duration(minutes: 10, seconds: 54),
     ['Animation', 'Sci-Fi'],
     'Two strangers wander an endless machine that answers to neither of them.',
   ),
   _demo(
     'sintel',
     'Sintel',
-    'Sintel.mp4',
+    'f/f1/Sintel_movie_4K.webm/Sintel_movie_4K.webm',
     2010,
     const Duration(minutes: 14, seconds: 48),
     ['Animation', 'Fantasy'],
@@ -171,29 +172,39 @@ final demoTapes = <Tape>[
   _demo(
     'tears',
     'Tears of Steel',
-    'TearsOfSteel.mp4',
+    'c/cb/Tears_of_Steel_1080p.webm/Tears_of_Steel_1080p.webm',
     2012,
     const Duration(minutes: 12, seconds: 14),
     ['Sci-Fi', 'Action'],
     'A band of scientists restage a breakup in Amsterdam to save the world.',
   ),
-  for (final (id, title, file) in const [
-    ('blazes', 'For Bigger Blazes', 'ForBiggerBlazes.mp4'),
-    ('escapes', 'For Bigger Escapes', 'ForBiggerEscapes.mp4'),
-    ('fun', 'For Bigger Fun', 'ForBiggerFun.mp4'),
-    ('joyrides', 'For Bigger Joyrides', 'ForBiggerJoyrides.mp4'),
-    ('meltdowns', 'For Bigger Meltdowns', 'ForBiggerMeltdowns.mp4'),
-  ])
-    _demo(id, title, file, 2013, const Duration(seconds: 15), [
-      'Short',
-    ], 'A fifteen-second sample reel.'),
   _demo(
-    'bullrun',
-    'We Are Going on Bullrun',
-    'WeAreGoingOnBullrun.mp4',
+    'cosmos',
+    'Cosmos Laundromat',
+    '3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm/'
+        'Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm',
+    2015,
+    const Duration(minutes: 12, seconds: 10),
+    ['Animation', 'Comedy'],
+    'A fed-up sheep meets a salesman who offers him a lifetime of lives.',
+  ),
+  _demo(
+    'caminandes',
+    'Caminandes: Llama Drama',
+    'd/d0/Caminandes-_Llama_Drama_-_Short_Movie.ogv/'
+        'Caminandes-_Llama_Drama_-_Short_Movie.ogv',
     2013,
-    const Duration(seconds: 47),
-    ['Documentary'],
-    'A road-rally sample reel.',
+    const Duration(minutes: 1, seconds: 30),
+    ['Animation', 'Short'],
+    'Koro the llama wants to get to the other side of a fenced road.',
+  ),
+  _demo(
+    'spring',
+    'Spring',
+    'a/a5/Spring_-_Blender_Open_Movie.webm/Spring_-_Blender_Open_Movie.webm',
+    2019,
+    const Duration(minutes: 7, seconds: 44),
+    ['Animation', 'Fantasy'],
+    'A shepherd girl and her dog face ancient spirits to keep the seasons turning.',
   ),
 ];

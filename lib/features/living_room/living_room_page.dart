@@ -196,6 +196,8 @@ class LivingRoomPage extends ConsumerWidget {
   }
 
   Future<void> _kickArtWarm(WidgetRef ref) async {
+    // Demo shelves are open movies with no retail sleeves to find.
+    if (vhsfinDemoMode && ref.read(sessionProvider).value == null) return;
     await ref.read(artOnboardingDoneProvider.notifier).ready;
     // Page may have been disposed while prefs loaded.
     try {
