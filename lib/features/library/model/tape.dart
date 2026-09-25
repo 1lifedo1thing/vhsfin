@@ -110,33 +110,90 @@ class Tape {
   }
 }
 
-/// Public samples used when Jellyfin isn't connected yet.
-const demoTapes = <Tape>[
-  Tape(
-    id: 'demo-bbb',
-    title: 'Big Buck Bunny',
-    subtitle: 'Demo reel',
-    streamUrl:
-        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    duration: Duration(minutes: 9, seconds: 56),
-    isDemo: true,
+/// Build-time switch: `--dart-define=VHSFIN_DEMO=true` fills the shelves with
+/// open-licensed sample films when no Jellyfin server is connected. Used for
+/// local design work and screenshots without an account.
+const vhsfinDemoMode = bool.fromEnvironment('VHSFIN_DEMO');
+
+const _gtv =
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
+
+Tape _demo(
+  String id,
+  String title,
+  String file,
+  int year,
+  Duration duration,
+  List<String> genres,
+  String overview,
+) => Tape(
+  id: 'demo-$id',
+  title: title,
+  subtitle: 'Open movie',
+  streamUrl: '$_gtv/$file',
+  duration: duration,
+  productionYear: year,
+  genres: genres,
+  overview: overview,
+  libraryName: 'Demo shelf',
+  isDemo: true,
+);
+
+/// Public, openly licensed samples for [vhsfinDemoMode].
+final demoTapes = <Tape>[
+  _demo(
+    'bbb',
+    'Big Buck Bunny',
+    'BigBuckBunny.mp4',
+    2008,
+    const Duration(minutes: 9, seconds: 56),
+    ['Animation', 'Comedy'],
+    'A gentle giant rabbit takes a stand against three bullying rodents.',
   ),
-  Tape(
-    id: 'demo-elephants',
-    title: 'Elephant Dream',
-    subtitle: 'Demo reel',
-    streamUrl:
-        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    duration: Duration(minutes: 10, seconds: 53),
-    isDemo: true,
+  _demo(
+    'elephants',
+    'Elephants Dream',
+    'ElephantsDream.mp4',
+    2006,
+    const Duration(minutes: 10, seconds: 53),
+    ['Animation', 'Sci-Fi'],
+    'Two strangers wander an endless machine that answers to neither of them.',
   ),
-  Tape(
-    id: 'demo-sintel',
-    title: 'Sintel',
-    subtitle: 'Demo reel',
-    streamUrl:
-        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    duration: Duration(minutes: 14, seconds: 48),
-    isDemo: true,
+  _demo(
+    'sintel',
+    'Sintel',
+    'Sintel.mp4',
+    2010,
+    const Duration(minutes: 14, seconds: 48),
+    ['Animation', 'Fantasy'],
+    'A lone warrior searches the frozen north for the baby dragon she raised.',
+  ),
+  _demo(
+    'tears',
+    'Tears of Steel',
+    'TearsOfSteel.mp4',
+    2012,
+    const Duration(minutes: 12, seconds: 14),
+    ['Sci-Fi', 'Action'],
+    'A band of scientists restage a breakup in Amsterdam to save the world.',
+  ),
+  for (final (id, title, file) in const [
+    ('blazes', 'For Bigger Blazes', 'ForBiggerBlazes.mp4'),
+    ('escapes', 'For Bigger Escapes', 'ForBiggerEscapes.mp4'),
+    ('fun', 'For Bigger Fun', 'ForBiggerFun.mp4'),
+    ('joyrides', 'For Bigger Joyrides', 'ForBiggerJoyrides.mp4'),
+    ('meltdowns', 'For Bigger Meltdowns', 'ForBiggerMeltdowns.mp4'),
+  ])
+    _demo(id, title, file, 2013, const Duration(seconds: 15), [
+      'Short',
+    ], 'A fifteen-second sample reel.'),
+  _demo(
+    'bullrun',
+    'We Are Going on Bullrun',
+    'WeAreGoingOnBullrun.mp4',
+    2013,
+    const Duration(seconds: 47),
+    ['Documentary'],
+    'A road-rally sample reel.',
   ),
 ];

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
+import 'package:vhsfin/features/library/model/tape.dart';
 
 final librariesProvider = FutureProvider<List<LibraryNode>>((ref) async {
   final session = await ref.watch(sessionProvider.future);
@@ -159,6 +160,9 @@ class ShelfSourcesNotifier extends Notifier<List<ShelfSource>> {
 final shelvesProvider = FutureProvider<List<Shelf>>((ref) async {
   final session = await ref.watch(sessionProvider.future);
   if (session == null) {
+    if (vhsfinDemoMode) {
+      return [Shelf(id: 'demo', title: 'OPEN MOVIES', items: demoTapes)];
+    }
     return [const Shelf(id: 'connect', title: 'Jellyfin', items: [])];
   }
 

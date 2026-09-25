@@ -18,8 +18,10 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
 ///
 /// User rejections ([vhsArtRejectsProvider]) skip a bad Box tag and block the
 /// matched URL; the resolver title key is forced to a long-lived miss.
-final vhsSpineArtProvider =
-    FutureProvider.family<VhsSpineArt?, Tape>((ref, tape) async {
+final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
+  ref,
+  tape,
+) async {
   final rejectsNotifier = ref.watch(vhsArtRejectsProvider.notifier);
   ref.watch(vhsArtRejectsProvider);
   await rejectsNotifier.ready;
@@ -29,8 +31,7 @@ final vhsSpineArtProvider =
     return null;
   }
 
-  final ignoreBox =
-      rejectsNotifier.shouldIgnoreBox(tape.id, tape.boxImageUrl);
+  final ignoreBox = rejectsNotifier.shouldIgnoreBox(tape.id, tape.boxImageUrl);
 
   if (tape.hasBoxImage && !ignoreBox) {
     return VhsSpineArt(
@@ -39,14 +40,19 @@ final vhsSpineArtProvider =
     );
   }
 
-  final art = await ref.watch(vhsCoverResolverProvider).spineArtFor(
+  // Open-movie samples never had a retail VHS release; skip remote lookups.
+  if (tape.isDemo) return null;
+
+  final art = await ref
+      .watch(vhsCoverResolverProvider)
+      .spineArtFor(
         title: tape.title,
         year: tape.productionYear,
         seriesTitle: tape.seriesTitle,
         seasonNumber: tape.seasonNumber,
         kind: tape.kind,
       );
-  if (art == null || tape.isDemo) return art;
+  if (art == null) return art;
 
   if (rejectsNotifier.isUrlBlocked(tape.id, art.imageUrl)) {
     return null;
@@ -80,11 +86,11 @@ final vhsSpineArtProvider =
     }
     debugPrint('vhs-spine saved Box to Jellyfin for "${tape.title}"');
     return VhsSpineArt(
-      imageUrl: '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
+      imageUrl:
+          '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
           '?maxHeight=900&quality=85&api_key=${session.accessToken}',
       centerWidthFraction: art.centerWidthFraction,
     );
   }
   return art;
 });
-

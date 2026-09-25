@@ -1,7 +1,7 @@
 PORT ?= 8080
 PYTHON ?= python3
 
-.PHONY: help build serve stop restart web demo-onboarding
+.PHONY: help build serve stop restart web demo demo-onboarding
 
 help:
 	@echo "VHSFin targets:"
@@ -10,6 +10,7 @@ help:
 	@echo "  make stop             stop serve_web.py"
 	@echo "  make restart          stop → build → serve (foreground)"
 	@echo "  make web              alias for restart"
+	@echo "  make demo             build + serve with open-movie demo shelves (no server)"
 	@echo "  make demo-onboarding  how to re-trigger the VHS art-grab popup"
 
 build:
@@ -25,6 +26,11 @@ stop:
 restart: stop build serve
 
 web: restart
+
+# Sample shelves from open-licensed films; no Jellyfin account required.
+demo: stop
+	flutter build web --release --dart-define=VHSFIN_DEMO=true
+	$(PYTHON) tool/serve_web.py --port $(PORT)
 
 demo-onboarding:
 	@echo ""
