@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
@@ -15,7 +17,7 @@ void main() {
       for (final rect in [
         layout.screen,
         layout.slot,
-        layout.keys,
+        for (final key in layout.keys) key.rect,
         layout.remote,
         layout.full,
       ]) {
@@ -24,6 +26,30 @@ void main() {
         expect(rect.right, inInclusiveRange(0, 1), reason: skin.name);
         expect(rect.bottom, inInclusiveRange(0, 1), reason: skin.name);
       }
+    }
+  });
+
+  test('keycaps sit in order without overlapping, one of each action', () {
+    for (final skin in CrtTvSkin.values) {
+      final keys = CrtSpriteLayout.of(skin).keys;
+      for (var i = 1; i < keys.length; i++) {
+        expect(
+          keys[i].rect.left,
+          greaterThan(keys[i - 1].rect.right),
+          reason: '${skin.name} key $i',
+        );
+      }
+      final actions = keys.map((k) => k.action).toList();
+      expect(actions.toSet(), hasLength(actions.length), reason: skin.name);
+      expect(actions, contains(DeckKeyAction.rewind), reason: skin.name);
+      expect(actions, contains(DeckKeyAction.fastForward), reason: skin.name);
+      expect(
+        actions.contains(DeckKeyAction.playPause) ||
+            actions.contains(DeckKeyAction.play) &&
+                actions.contains(DeckKeyAction.pause),
+        isTrue,
+        reason: '${skin.name} can play and pause',
+      );
     }
   });
 
@@ -45,7 +71,7 @@ void main() {
         reason: skin.name,
       );
       expect(
-        layout.keys.top,
+        layout.keys.map((k) => k.rect.top).reduce(math.min),
         greaterThanOrEqualTo(layout.slot.bottom - 0.01),
         reason: skin.name,
       );
