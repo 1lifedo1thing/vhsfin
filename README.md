@@ -22,9 +22,9 @@ The artwork above is project artwork; the screenshots below show the app. VHSFin
 
 | VHS-style interface | Useful details |
 | --- | --- |
-| VHS spines on wooden shelves | Choose libraries and folders for each shelf |
-| Cassette insert/eject animations and mechanical sounds | Movies, series, and an episode picker |
-| A photographic TV/VCR cabinet and four classic TV styles | Change cabinets in Settings → CRT look |
+| VHS spines on flat charcoal or walnut shelves | Choose libraries and folders for each shelf |
+| A 3D cassette that flies from the shelf into the deck, with mechanical sounds | Movies, series, and an episode picker |
+| Six photographic TV cabinets | Change the shelf and TV in Settings |
 | CRT glass and scanlines | A clean fullscreen player |
 | A remote with rewind and fast-forward | Optional saved positions when you eject a tape |
 | VHS sleeve art where available | Jellyfin artwork and procedural fallbacks |
@@ -73,7 +73,7 @@ flutter run -d <device-id>
 
 **Missing titles?** VHS-only is enabled by default. In **Settings**, turn it off to show titles that don’t have matching VHS sleeve art.
 
-The late-90s TV/VCR and walnut shelves are the default presentation for new installs. **Settings → CRT LOOK** also offers the original Zenith, WEGA, Tube, and Aqua styles. Existing saved choices are preserved.
+The late-90s TV/VCR on flat charcoal shelves is the default look. **Settings → SHELF** switches to walnut, and **Settings → TV** offers five more cabinets. Existing saved choices are preserved.
 
 ## Self-host the web app
 
@@ -84,6 +84,8 @@ make web                 # build and serve on port 8080
 # Or choose a different port:
 make web PORT=8090
 ```
+
+To try the app without a server, `make demo` stocks the shelf with Blender open movies streamed from Wikimedia Commons.
 
 Open `http://localhost:8080` on the host machine, or its LAN address on another device. The helper binds to all network interfaces for LAN use. Ctrl-C stops it. `make help` lists the available commands.
 
