@@ -1,13 +1,10 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
-import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
-/// Movie-info style popup: front poster + spine, then insert.
+/// Movie-info style popup: the tape's spine and details, then insert.
 Future<void> showTapeInspectSheet(
   BuildContext context, {
   required Tape tape,
@@ -19,11 +16,9 @@ Future<void> showTapeInspectSheet(
   // Warm memory with the same ResizeImage keys the shelf already used so the
   // popup spine doesn't re-decode (disk cache still helps across launches).
   final images = <String>{
-    if (tape.imageUrl != null && tape.imageUrl!.isNotEmpty) tape.imageUrl!,
     if (tape.boxImageUrl != null && tape.boxImageUrl!.isNotEmpty)
       tape.boxImageUrl!,
     if (art?.imageUrl != null) art!.imageUrl,
-    if (art?.frontImageUrl != null) art!.frontImageUrl!,
   };
   for (final url in images) {
     precacheImage(VhsSleeveCrop.providerFor(url), context);
@@ -98,10 +93,6 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
     final spineUrl = art?.imageUrl;
     if (spineUrl != null) {
       precacheImage(VhsSleeveCrop.providerFor(spineUrl), context);
-      final front = art?.frontImageUrl;
-      if (front != null) {
-        precacheImage(VhsSleeveCrop.providerFor(front), context);
-      }
     }
     final bottom = MediaQuery.paddingOf(context).bottom;
     final maxH = MediaQuery.sizeOf(context).height * 0.82;
@@ -116,7 +107,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
         heightFactor: widget.desktop ? null : 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: widget.desktop ? 780 : 520,
+            maxWidth: widget.desktop ? 640 : 520,
             maxHeight: maxH,
           ),
           child: Material(
@@ -294,56 +285,26 @@ class _InfoBody extends StatelessWidget {
   final Tape tape;
   final VhsSpineArt? art;
 
-  static const _shelfLip = 7.0;
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 600;
-        final sleeve = _SleeveArt(
-          tape: tape,
-          art: art,
-          height: wide ? 300 : 200,
-        );
-
-        if (wide) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              sleeve,
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _TapeTitleBlock(tape: tape),
-                    const SizedBox(height: 18),
-                    _TapeMetaBlock(tape: tape),
-                  ],
-                ),
-              ),
-            ],
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: sleeve),
-            // Full-width shelf — same content width as the title.
-            CustomPaint(
-              size: Size(constraints.maxWidth, 3),
-              painter: const _ShelfSitLinePainter(),
+            _StandingSpine(tape: tape, art: art, height: wide ? 300 : 210),
+            SizedBox(width: wide ? 28 : 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TapeTitleBlock(tape: tape),
+                  SizedBox(height: wide ? 18 : 14),
+                  _TapeMetaBlock(tape: tape),
+                ],
+              ),
             ),
-            CustomPaint(
-              size: Size(constraints.maxWidth, _shelfLip),
-              painter: ShelfLipPainter(),
-            ),
-            const SizedBox(height: 14),
-            _TapeTitleBlock(tape: tape),
-            const SizedBox(height: 14),
-            _TapeMetaBlock(tape: tape),
           ],
         );
       },
@@ -351,9 +312,10 @@ class _InfoBody extends StatelessWidget {
   }
 }
 
-/// Spine tilted against the Jellyfin cover — like a tape sitting on a shelf.
-class _SleeveArt extends StatelessWidget {
-  const _SleeveArt({
+/// The tape's spine standing upright — the one piece of sleeve art every
+/// tape has, whether its scan is a full wraparound or a lone spine.
+class _StandingSpine extends StatelessWidget {
+  const _StandingSpine({
     required this.tape,
     required this.art,
     required this.height,
@@ -363,311 +325,76 @@ class _SleeveArt extends StatelessWidget {
   final VhsSpineArt? art;
   final double height;
 
-  static const _spineLean = 0.1; // ~5.7° into the cover
-  static const _depthFace = 5.0;
-
-  /// Open-edge clamshell curve — right side only; spine edge stays square.
-  static const _vhsCorner = 14.0;
-
   @override
   Widget build(BuildContext context) {
-    final sleeveH = height;
-    final spineW = sleeveH * 0.17;
-    final frontW = sleeveH * 0.72;
-    // Room for the spine base to kick left when it leans into the poster.
-    final leanPad = sleeveH * math.sin(_spineLean) + 6;
-    // Same lean; less tuck so the spine sits further left of the cover.
-    const tuck = 3.0;
-    final totalW = leanPad + spineW + frontW - tuck + _depthFace;
-
-    return SizedBox(
-      width: totalW,
-      height: sleeveH + 8,
-      child: Stack(
-        clipBehavior: Clip.none,
+    final width = height * VhsSpine.nominalWidth / VhsSpine.nominalHeight;
+    return Semantics(
+      image: true,
+      label: '${tape.title} spine',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Soft contact shadow under the sleeve footprint.
-          Positioned(
-            left: leanPad * 0.2,
-            right: 2,
-            bottom: 1,
-            height: 16,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(40),
-                  color: Colors.black.withValues(alpha: 0.18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 14,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 4),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      spreadRadius: -1,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+          Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  blurRadius: 18,
+                  offset: const Offset(3, 10),
                 ),
-              ),
+              ],
             ),
-          ),
-          Positioned(
-            right: _depthFace,
-            bottom: 0,
-            child: _FrontSleeve(
-              width: frontW,
-              height: sleeveH,
-              depth: _depthFace,
-              cornerRadius: _vhsCorner,
-              child: _FrontArt(tape: tape),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            bottom: 0,
-            child: Transform.rotate(
-              angle: _spineLean,
-              alignment: Alignment.bottomCenter,
-              child: _ArtFrame(
-                width: spineW,
-                height: sleeveH,
-                elevated: true,
-                borderRadius: BorderRadius.circular(2),
-                child: art != null
-                    ? VhsSleeveCrop(
-                        url: art!.imageUrl,
-                        widthFraction: art!.centerWidthFraction,
-                      )
-                    : ProceduralVhsSpine(tape: tape),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Thin highlight/shadow seam under the tape base.
-class _ShelfSitLinePainter extends CustomPainter {
-  const _ShelfSitLinePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * 0.45;
-    final glow = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          Colors.black.withValues(alpha: 0.55),
-          Colors.black.withValues(alpha: 0.7),
-          Colors.black.withValues(alpha: 0.55),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.12, 0.5, 0.88, 1],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(2, y + 0.6), Offset(size.width - 2, y + 0.6), glow);
-
-    final highlight = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          const Color(0xFF8A6A48).withValues(alpha: 0.55),
-          const Color(0xFFC4A07A).withValues(alpha: 0.7),
-          const Color(0xFF8A6A48).withValues(alpha: 0.55),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.1, 0.5, 0.9, 1],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..strokeWidth = 1
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(4, y), Offset(size.width - 4, y), highlight);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Front cover with a cardboard thickness face so it matches the spine’s depth.
-class _FrontSleeve extends StatelessWidget {
-  const _FrontSleeve({
-    required this.width,
-    required this.height,
-    required this.depth,
-    required this.cornerRadius,
-    required this.child,
-  });
-
-  final double width;
-  final double height;
-  final double depth;
-  final double cornerRadius;
-  final Widget child;
-
-  /// Square on the spine edge; rounded only on the open right edge.
-  BorderRadius get _faceRadius => BorderRadius.only(
-    topRight: Radius.circular(cornerRadius),
-    bottomRight: Radius.circular(cornerRadius),
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width + depth,
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Right-edge thickness — short cardboard face of the clamshell.
-          Positioned(
-            right: 0,
-            top: cornerRadius * 0.45,
-            bottom: 1,
-            width: depth,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.horizontal(
-                  right: Radius.circular(cornerRadius * 0.35),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    const Color(0xFF3A281C),
-                    const Color(0xFF1E140E),
-                    Colors.black.withValues(alpha: 0.95),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 5,
-                    offset: const Offset(2, 1),
-                  ),
-                ],
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  width: 1,
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            top: 0,
-            child: _ArtFrame(
-              width: width,
-              height: height,
-              elevated: true,
-              borderRadius: _faceRadius,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  child,
-                  // Plastic sleeve sheen.
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(cornerRadius - 1),
-                          bottomRight: Radius.circular(cornerRadius - 1),
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.06),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.07),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.14),
-                          ],
-                          stops: const [0, 0.45, 1],
-                        ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (art != null)
+                  VhsSleeveCrop(
+                    url: art!.imageUrl,
+                    widthFraction: art!.centerWidthFraction,
+                  )
+                else
+                  ProceduralVhsSpine(tape: tape),
+                // Plastic sleeve: a lit left edge and a soft sheen.
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.16),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.22),
+                        ],
+                        stops: const [0, 0.35, 1],
                       ),
                     ),
                   ),
-                  // Edge bevels (no radius — parent already clips).
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                          right: BorderSide(
-                            color: Colors.black.withValues(alpha: 0.42),
-                          ),
-                          top: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                          bottom: BorderSide(
-                            color: Colors.black.withValues(alpha: 0.28),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                ),
+              ],
+            ),
+          ),
+          // Contact shadow on a sliver of shelf.
+          Container(
+            width: width + 24,
+            height: 6,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.14),
+                  Colors.white.withValues(alpha: 0.02),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ArtFrame extends StatelessWidget {
-  const _ArtFrame({
-    required this.width,
-    required this.height,
-    required this.child,
-    this.elevated = false,
-    this.borderRadius = const BorderRadius.all(Radius.circular(3)),
-  });
-
-  final double width;
-  final double height;
-  final Widget child;
-  final bool elevated;
-  final BorderRadius borderRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: borderRadius,
-        border: Border.all(color: const Color(0xFF4A3828)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: elevated ? 0.58 : 0.45),
-            blurRadius: elevated ? 16 : 10,
-            offset: Offset(elevated ? 4 : 2, elevated ? 8 : 4),
-          ),
-          if (elevated)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.22),
-              blurRadius: 3,
-              offset: const Offset(1, 2),
-            ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
     );
   }
 }
@@ -901,34 +628,6 @@ class _ActionBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FrontArt extends StatelessWidget {
-  const _FrontArt({required this.tape});
-
-  final Tape tape;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = tape.imageUrl;
-    if (url == null || url.isEmpty) {
-      return const ColoredBox(
-        color: Color(0xFF140E0A),
-        child: Center(
-          child: Text(
-            'No cover',
-            style: TextStyle(color: VhsColors.ink, fontSize: 12),
-          ),
-        ),
-      );
-    }
-    return VhsImageCache.image(
-      url: url,
-      fit: BoxFit.cover,
-      memCacheHeight: null,
-      errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF140E0A)),
     );
   }
 }
