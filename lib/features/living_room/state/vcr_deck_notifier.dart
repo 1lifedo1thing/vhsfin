@@ -8,6 +8,23 @@ import 'package:vhsfin/features/playback/state/deck_player.dart';
 
 enum VcrPower { off, inserting, playing, ejecting }
 
+/// Deck choreography, lined up with the mechanical sound clips.
+abstract final class DeckTiming {
+  /// Shelf → slot flight while [VcrPower.inserting].
+  static const insertFlight = Duration(milliseconds: 1300);
+
+  /// The insert clip's flap click is 0.30s in; starting it here lands the
+  /// click as the cassette meets the slot and the clunk as it seats.
+  static const insertSfxAt = Duration(milliseconds: 700);
+
+  /// Eject button click → mechanism. The tape starts sliding out after this so
+  /// it clears the slot on the clip's pop at ~0.95s.
+  static const ejectMechanism = Duration(milliseconds: 560);
+
+  /// Slot → shelf flight after [ejectMechanism].
+  static const ejectFlight = Duration(milliseconds: 1150);
+}
+
 enum PlaybackStyle { vhsCrt, cleanFullscreen }
 
 class VcrDeckState {
@@ -74,9 +91,6 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
       resumeAt = positions.positionFor(tape.id);
     }
 
-    // Wait until the clunk is actually playing, then fly.
-    await ref.read(deckSfxProvider).playInsert();
-    if (!ref.mounted || operation != _operation) return;
     state = state.copyWith(
       power: VcrPower.inserting,
       loadedTape: tape,
@@ -84,7 +98,13 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
       resumeAt: resumeAt,
       clearResume: resumeAt == null,
     );
-    await Future<void>.delayed(const Duration(milliseconds: 780));
+    final sfx = ref.read(deckSfxProvider);
+    await Future<void>.delayed(DeckTiming.insertSfxAt);
+    if (!ref.mounted || operation != _operation) return;
+    unawaited(sfx.playInsert());
+    await Future<void>.delayed(
+      DeckTiming.insertFlight - DeckTiming.insertSfxAt,
+    );
     if (!ref.mounted || operation != _operation) return;
     state = state.copyWith(power: VcrPower.playing);
   }
@@ -117,7 +137,9 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     // be mistaken for a stream failure.
     unawaited(sfx.playEject());
     state = state.copyWith(power: VcrPower.ejecting);
-    await Future<void>.delayed(const Duration(milliseconds: 780));
+    await Future<void>.delayed(
+      DeckTiming.ejectMechanism + DeckTiming.ejectFlight,
+    );
     if (!ref.mounted || operation != _operation) return;
     state = const VcrDeckState();
   }

@@ -149,7 +149,8 @@ class VcrBox extends StatelessWidget {
                   key: slotKey,
                   child:
                       deck.loadedTape != null &&
-                          deck.power == VcrPower.playing &&
+                          (deck.power == VcrPower.playing ||
+                              deck.power == VcrPower.ejecting) &&
                           flyingTapeId != deck.loadedTape!.id
                       ? Container(
                           alignment: Alignment.center,
