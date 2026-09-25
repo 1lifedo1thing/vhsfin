@@ -39,20 +39,20 @@ void main() {
     expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.knob);
   });
 
-  test('cabinet style defaults to flat, persists, and restores', () async {
+  test('cabinet style defaults to walnut, persists, and restores', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
     expect(
       container.read(experiencePrefsProvider).cabinetStyle,
-      CabinetStyle.flat,
+      CabinetStyle.walnut,
     );
     await container
         .read(experiencePrefsProvider.notifier)
-        .setCabinetStyle(CabinetStyle.walnut);
+        .setCabinetStyle(CabinetStyle.flat);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('vhsfin.cabinet_style.v1'), 'walnut');
+    expect(prefs.getString('vhsfin.cabinet_style.v1'), 'flat');
 
     final restored = ProviderContainer();
     addTearDown(restored.dispose);
@@ -60,7 +60,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(
       restored.read(experiencePrefsProvider).cabinetStyle,
-      CabinetStyle.walnut,
+      CabinetStyle.flat,
     );
   });
 

@@ -11,7 +11,7 @@ class ExperiencePrefs {
   const ExperiencePrefs({
     this.saveTimestampOnEject = false,
     this.crtSkin = CrtTvSkin.crt90s,
-    this.cabinetStyle = CabinetStyle.flat,
+    this.cabinetStyle = CabinetStyle.walnut,
   });
 
   /// Remember playback position on eject; seek there on next insert.

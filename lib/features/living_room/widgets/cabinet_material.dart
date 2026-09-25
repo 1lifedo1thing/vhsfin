@@ -9,7 +9,7 @@ class CabinetScope extends InheritedWidget {
 
   static CabinetStyle of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<CabinetScope>()?.style ??
-      CabinetStyle.flat;
+      CabinetStyle.walnut;
 
   @override
   bool updateShouldNotify(CabinetScope oldWidget) => style != oldWidget.style;

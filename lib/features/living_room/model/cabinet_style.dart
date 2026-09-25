@@ -1,10 +1,10 @@
 /// Furniture look for the TV stand and tape shelves.
 enum CabinetStyle {
+  /// Photographic walnut veneer with lit edges (default).
+  walnut,
+
   /// Matte charcoal panels — quiet, lets the tapes carry the colour.
   flat,
-
-  /// Photographic walnut veneer with lit edges.
-  walnut,
 }
 
 extension CabinetStyleLabels on CabinetStyle {
@@ -22,6 +22,6 @@ extension CabinetStyleLabels on CabinetStyle {
     for (final style in CabinetStyle.values) {
       if (style.name == raw) return style;
     }
-    return CabinetStyle.flat;
+    return CabinetStyle.walnut;
   }
 }

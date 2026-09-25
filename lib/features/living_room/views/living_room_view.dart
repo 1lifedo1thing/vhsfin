@@ -55,7 +55,7 @@ class LivingRoomView extends StatelessWidget {
     this.shelvesError,
     this.shelves,
     this.crtSkin = CrtTvSkin.crt90s,
-    this.cabinetStyle = CabinetStyle.flat,
+    this.cabinetStyle = CabinetStyle.walnut,
   });
 
   final VcrDeckState deck;

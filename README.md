@@ -73,7 +73,7 @@ flutter run -d <device-id>
 
 **Missing titles?** VHS-only is enabled by default. In **Settings**, turn it off to show titles that don’t have matching VHS sleeve art.
 
-The late-90s TV/VCR on flat charcoal shelves is the default look. **Settings → SHELF** switches to walnut, and **Settings → TV** offers five more cabinets. Existing saved choices are preserved.
+The late-90s TV/VCR on walnut shelves is the default look. **Settings → SHELF** switches to flat charcoal, and **Settings → TV** offers five more cabinets. Existing saved choices are preserved.
 
 ## Self-host the web app
 

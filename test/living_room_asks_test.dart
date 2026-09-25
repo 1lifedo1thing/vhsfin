@@ -94,7 +94,7 @@ void main() {
                 onOpenSort: () {},
                 onSaveTimestampChanged: (_) {},
                 onCrtSkinChanged: (skin) => selected = skin,
-                cabinetStyle: CabinetStyle.flat,
+                cabinetStyle: CabinetStyle.walnut,
                 onCabinetStyleChanged: (style) => cabinet = style,
               ),
               child: const Text('open'),
@@ -115,9 +115,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('SHELF'), findsOneWidget);
-    await tester.tap(find.text('WALNUT'));
+    await tester.tap(find.text('FLAT'));
     await tester.pump();
-    expect(cabinet, CabinetStyle.walnut);
+    expect(cabinet, CabinetStyle.flat);
     expect(find.text('TV'), findsOneWidget);
     expect(find.text('90S'), findsOneWidget);
     expect(find.text('GRAPHITE'), findsOneWidget);
