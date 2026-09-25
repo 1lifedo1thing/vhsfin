@@ -169,6 +169,7 @@ class _VcrCrtScreenState extends State<VcrCrtScreen> {
                 initialError: widget.player.lastError,
                 onRetry: _retryPlayback,
                 onRecovered: widget.player.clearLastError,
+                shuttling: widget.rewinding,
               ),
             // Curved glass highlight, drawn without filters over the video.
             IgnorePointer(

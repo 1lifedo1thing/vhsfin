@@ -36,15 +36,15 @@ void main() {
       ),
     );
 
-    expect(find.text('ADJUSTING TRACKING'), findsNothing);
+    expect(find.text('TRACKING'), findsNothing);
 
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+    expect(find.text('TRACKING'), findsOneWidget);
 
     buffering.add(false);
     position.add(const Duration(milliseconds: 500));
     await tester.pump();
-    expect(find.text('ADJUSTING TRACKING'), findsNothing);
+    expect(find.text('TRACKING'), findsNothing);
   });
 
   testWidgets('shows tape error and retries playback', (tester) async {
@@ -62,17 +62,17 @@ void main() {
     errors.add('HTTP 503');
     await tester.pump();
 
-    expect(find.text('TAPE READ ERROR'), findsNothing);
+    expect(find.text('TAPE ERROR'), findsNothing);
 
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('TAPE READ ERROR'), findsOneWidget);
+    expect(find.text('TAPE ERROR'), findsOneWidget);
     expect(find.textContaining('HTTP 503'), findsNothing);
 
-    await tester.tap(find.text('RE-TRACK'));
+    await tester.tap(find.text('\u25B6 RETRY'));
     await tester.pump();
 
     expect(retries, 1);
-    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+    expect(find.text('TAPE ERROR'), findsNothing, reason: 'back to noise');
   });
 
   testWidgets(
@@ -91,15 +91,15 @@ void main() {
       buffering.add(true);
       playing.add(false);
       await tester.pump(const Duration(seconds: 2));
-      expect(find.text('ADJUSTING TRACKING'), findsNothing);
+      expect(find.text('TRACKING'), findsNothing);
 
       playing.add(true);
       await tester.pump(const Duration(seconds: 2));
-      expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+      expect(find.text('TRACKING'), findsOneWidget);
       buffering.add(false);
       position.add(const Duration(seconds: 2));
       await tester.pump();
-      expect(find.text('ADJUSTING TRACKING'), findsNothing);
+      expect(find.text('TRACKING'), findsNothing);
     },
   );
 
@@ -118,17 +118,17 @@ void main() {
     );
 
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+    expect(find.text('TRACKING'), findsOneWidget);
 
     position.add(const Duration(minutes: 5));
     await tester.pump();
-    expect(find.text('ADJUSTING TRACKING'), findsOneWidget);
+    expect(find.text('TRACKING'), findsOneWidget);
 
     position.add(
       const Duration(minutes: 5) + const Duration(milliseconds: 500),
     );
     await tester.pump();
-    expect(find.text('ADJUSTING TRACKING'), findsNothing);
+    expect(find.text('TRACKING'), findsNothing);
   });
 
   testWidgets('small CRT error stays scrollable with large text', (
@@ -150,11 +150,48 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('RE-TRACK'));
-    await tester.tap(find.text('RE-TRACK'));
+    await tester.ensureVisible(find.text('\u25B6 RETRY'));
+    await tester.tap(find.text('\u25B6 RETRY'));
     await tester.pump();
     expect(retries, 1);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('holding REW never reads as a lost signal', (tester) async {
+    await tester.pumpWidget(
+      _StatusHarness(
+        playing: playing.stream,
+        buffering: buffering.stream,
+        position: position.stream,
+        errors: errors.stream,
+        initialBuffering: false,
+        initialPosition: const Duration(minutes: 3),
+        shuttling: true,
+      ),
+    );
+    for (var i = 1; i <= 10; i++) {
+      position.add(Duration(minutes: 3) - Duration(seconds: i));
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(find.text('TRACKING'), findsNothing);
+  });
+
+  testWidgets('flashes PLAY when the picture first locks', (tester) async {
+    await tester.pumpWidget(
+      _StatusHarness(
+        playing: playing.stream,
+        buffering: buffering.stream,
+        position: position.stream,
+        errors: errors.stream,
+        initialBuffering: false,
+      ),
+    );
+    expect(find.text('PLAY \u25B6'), findsNothing);
+    position.add(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(find.text('PLAY \u25B6'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('PLAY \u25B6'), findsNothing);
   });
 
   testWidgets('does not show a transient error when playback advances', (
@@ -177,7 +214,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('TAPE READ ERROR'), findsNothing);
+    expect(find.text('TAPE ERROR'), findsNothing);
     expect(recoveries, 1);
   });
 }
@@ -195,6 +232,7 @@ class _StatusHarness extends StatelessWidget {
     this.onRecovered,
     this.size = const Size(320, 240),
     this.textScale = 1,
+    this.shuttling = false,
   });
 
   final Stream<bool> playing;
@@ -208,6 +246,7 @@ class _StatusHarness extends StatelessWidget {
   final VoidCallback? onRecovered;
   final Size size;
   final double textScale;
+  final bool shuttling;
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +269,10 @@ class _StatusHarness extends StatelessWidget {
             initialBuffering: initialBuffering,
             initialPosition: initialPosition,
             initialError: initialError,
+            shuttling: shuttling,
+            startDelay: const Duration(seconds: 1),
             trackingDelay: const Duration(seconds: 1),
+            noiseDelay: const Duration(milliseconds: 300),
             onRetry: onRetry ?? () async {},
             onRecovered: onRecovered ?? () {},
           ),

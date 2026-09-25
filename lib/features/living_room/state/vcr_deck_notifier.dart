@@ -13,13 +13,14 @@ abstract final class DeckTiming {
   /// Shelf → slot flight while [VcrPower.inserting].
   static const insertFlight = Duration(milliseconds: 1300);
 
-  /// The insert clip's flap click is 0.30s in; starting it here lands the
-  /// click as the cassette meets the slot and the clunk as it seats.
-  static const insertSfxAt = Duration(milliseconds: 700);
+  /// The insert clip's flap click is 0.30s in (seat clunk 1.14s). Starting it
+  /// here lands the click as the cassette meets the slot mouth (84% of the
+  /// flight) and the clunk just after it disappears inside.
+  static const insertSfxAt = Duration(milliseconds: 790);
 
-  /// Eject button click → mechanism. The tape starts sliding out after this so
-  /// it clears the slot on the clip's pop at ~0.95s.
-  static const ejectMechanism = Duration(milliseconds: 560);
+  /// Eject button click (0.07s into the clip) → mechanism. The tape starts
+  /// sliding out here, so it clears the mouth on the clip's pop at 0.97s.
+  static const ejectMechanism = Duration(milliseconds: 900);
 
   /// Slot → shelf flight after [ejectMechanism].
   static const ejectFlight = Duration(milliseconds: 1150);
