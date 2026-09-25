@@ -14,6 +14,8 @@ Future<void> showDeckSettingsSheet(
   required bool vhsOnly,
   required String sortLabel,
   required bool saveTimestampOnEject,
+  required bool vhsCovers,
+  required ValueChanged<bool> onVhsCoversChanged,
   required CrtTvSkin crtSkin,
   required VoidCallback onCollection,
   required VoidCallback onConnect,
@@ -39,6 +41,8 @@ Future<void> showDeckSettingsSheet(
         vhsOnly: vhsOnly,
         sortLabel: sortLabel,
         saveTimestampOnEject: saveTimestampOnEject,
+        vhsCovers: vhsCovers,
+        onVhsCoversChanged: onVhsCoversChanged,
         crtSkin: crtSkin,
         onCollection: onCollection,
         onConnect: onConnect,
@@ -60,6 +64,8 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.vhsOnly,
     required this.sortLabel,
     required this.saveTimestampOnEject,
+    required this.vhsCovers,
+    required this.onVhsCoversChanged,
     required this.crtSkin,
     required this.onCollection,
     required this.onConnect,
@@ -78,6 +84,8 @@ class _DeckSettingsSheet extends StatefulWidget {
   final bool vhsOnly;
   final String sortLabel;
   final bool saveTimestampOnEject;
+  final bool vhsCovers;
+  final ValueChanged<bool> onVhsCoversChanged;
   final CrtTvSkin crtSkin;
   final VoidCallback onCollection;
   final VoidCallback onConnect;
@@ -96,6 +104,7 @@ class _DeckSettingsSheet extends StatefulWidget {
 class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   late bool _vhsOnly = widget.vhsOnly;
   late bool _saveOnEject = widget.saveTimestampOnEject;
+  late bool _vhsCovers = widget.vhsCovers;
   late CrtTvSkin _crtSkin = widget.crtSkin;
   late CabinetStyle _cabinet = widget.cabinetStyle;
 
@@ -193,6 +202,16 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                       onChanged: (value) {
                         setState(() => _saveOnEject = value);
                         widget.onSaveTimestampChanged(value);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _DeckToggle(
+                      label: 'VHS COVERS',
+                      subtitle: 'Show the scanned VHS front when the whole sleeve is available.',
+                      value: _vhsCovers,
+                      onChanged: (value) {
+                        setState(() => _vhsCovers = value);
+                        widget.onVhsCoversChanged(value);
                       },
                     ),
                     const SizedBox(height: 10),

@@ -12,6 +12,7 @@ class ExperiencePrefs {
     this.saveTimestampOnEject = false,
     this.crtSkin = CrtTvSkin.crt90s,
     this.cabinetStyle = CabinetStyle.walnut,
+    this.vhsCovers = false,
   });
 
   /// Remember playback position on eject; seek there on next insert.
@@ -23,15 +24,21 @@ class ExperiencePrefs {
   /// Shelf and TV-stand furniture look.
   final CabinetStyle cabinetStyle;
 
+  /// Show the scanned VHS front instead of the Jellyfin poster when the
+  /// whole sleeve is available.
+  final bool vhsCovers;
+
   ExperiencePrefs copyWith({
     bool? saveTimestampOnEject,
     CrtTvSkin? crtSkin,
     CabinetStyle? cabinetStyle,
+    bool? vhsCovers,
   }) {
     return ExperiencePrefs(
       saveTimestampOnEject: saveTimestampOnEject ?? this.saveTimestampOnEject,
       crtSkin: crtSkin ?? this.crtSkin,
       cabinetStyle: cabinetStyle ?? this.cabinetStyle,
+      vhsCovers: vhsCovers ?? this.vhsCovers,
     );
   }
 }
@@ -45,6 +52,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _saveTsKey = 'vhsfin.save_timestamp_on_eject';
   static const _crtSkinKey = 'vhsfin.crt_tv_skin.v1';
   static const _cabinetKey = 'vhsfin.cabinet_style.v1';
+  static const _vhsCoversKey = 'vhsfin.vhs_covers.v1';
 
   int _epoch = 0;
 
@@ -63,6 +71,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
       saveTimestampOnEject: prefs.getBool(_saveTsKey) ?? false,
       crtSkin: skin,
       cabinetStyle: CabinetStyleLabels.fromPrefs(prefs.getString(_cabinetKey)),
+      vhsCovers: prefs.getBool(_vhsCoversKey) ?? false,
     );
   }
 
@@ -79,6 +88,13 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     state = state.copyWith(crtSkin: skin);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_crtSkinKey, skin.name);
+  }
+
+  Future<void> setVhsCovers(bool value) async {
+    _epoch++;
+    state = state.copyWith(vhsCovers: value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_vhsCoversKey, value);
   }
 
   Future<void> setCabinetStyle(CabinetStyle style) async {

@@ -36,6 +36,9 @@ class LivingRoomPage extends ConsumerWidget {
       vhsOnly: displayPrefs.vhsOnly,
       sortLabel: displayPrefs.sort.buttonLabel,
       saveTimestampOnEject: experience.saveTimestampOnEject,
+      vhsCovers: experience.vhsCovers,
+      onVhsCoversChanged: (value) =>
+          ref.read(experiencePrefsProvider.notifier).setVhsCovers(value),
       crtSkin: experience.crtSkin,
       cabinetStyle: experience.cabinetStyle,
       onCollection: () => context.push('/libraries'),
@@ -283,9 +286,12 @@ class LivingRoomPage extends ConsumerWidget {
       );
       return;
     }
+    final experience = ref.read(experiencePrefsProvider);
     showTapeInspectSheet(
       context,
       tape: tape,
+      useVhsCover: experience.vhsCovers,
+      cabinetStyle: experience.cabinetStyle,
       art: ref.read(vhsSpineArtProvider(tape)).asData?.value,
       loadArt: () => ref.read(vhsSpineArtProvider(tape).future),
       onRejectSleeve: () => rejectTapeSleeveArt(ref.container, tape),

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
+import 'package:vhsfin/features/library/data/vhs_sleeve_shape.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
 /// Bookshelf VHS spine — real sleeve crop when IA has art, else procedural.
@@ -373,7 +374,10 @@ class _RealSpine extends StatelessWidget {
 }
 
 /// Shows a vertical strip of a VHS sleeve scan (spine) or a side panel (front).
-class VhsSleeveCrop extends StatelessWidget {
+///
+/// A scan that turns out to be spine-only (see [VhsSleeveShapes]) is shown
+/// whole even when [widthFraction] assumed a wraparound.
+class VhsSleeveCrop extends StatefulWidget {
   const VhsSleeveCrop({
     super.key,
     required this.url,
@@ -400,12 +404,44 @@ class VhsSleeveCrop extends StatelessWidget {
   }
 
   @override
+  State<VhsSleeveCrop> createState() => _VhsSleeveCropState();
+}
+
+class _VhsSleeveCropState extends State<VhsSleeveCrop> {
+  @override
+  void initState() {
+    super.initState();
+    _learnShape();
+  }
+
+  @override
+  void didUpdateWidget(VhsSleeveCrop oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) _learnShape();
+  }
+
+  void _learnShape() {
+    if (widget.widthFraction >= 0.99) return;
+    if (VhsSleeveShapes.of(widget.url) != null) return;
+    final url = widget.url;
+    VhsSleeveShapes.resolve(url).then((shape) {
+      if (mounted && url == widget.url && shape == SleeveShape.spine) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final url = widget.url;
+    final spineOnly = VhsSleeveShapes.of(url) == SleeveShape.spine;
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
-        final fraction = widthFraction.clamp(0.02, 1.0);
+        final fraction = spineOnly
+            ? 1.0
+            : widget.widthFraction.clamp(0.02, 1.0);
         if (fraction >= 0.99) {
           return VhsImageCache.image(
             url: url,
@@ -419,7 +455,7 @@ class VhsSleeveCrop extends StatelessWidget {
 
         return ClipRect(
           child: Align(
-            alignment: alignment,
+            alignment: widget.alignment,
             widthFactor: fraction,
             heightFactor: 1,
             child: SizedBox(

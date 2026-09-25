@@ -86,6 +86,8 @@ void main() {
                 vhsOnly: true,
                 sortLabel: 'A–Z',
                 saveTimestampOnEject: false,
+                vhsCovers: false,
+                onVhsCoversChanged: (_) {},
                 crtSkin: CrtTvSkin.crt90s,
                 onCollection: () {},
                 onConnect: () {},
