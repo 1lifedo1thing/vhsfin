@@ -275,7 +275,6 @@ class _DeckKeyState extends State<_DeckKey> {
 
   String get _label => switch (_action) {
     DeckKeyAction.playPause => widget.playing ? 'PAUSE' : 'PLAY',
-    DeckKeyAction.pause => widget.cap.printed ? 'STOP' : 'PAUSE',
     _ => _action.label,
   };
 

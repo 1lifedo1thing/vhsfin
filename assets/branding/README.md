@@ -7,7 +7,8 @@ Original raster concepts generated for VHSFin with the built-in OpenAI image-gen
 | `cassette-icon.png` | Selected source: tactile cassette, ivory reels, green play symbol |
 | `crt-icon.png` | Alternate concept: miniature television with phosphor glow |
 | `crt-90s.png` | Production late-90s TV/VCR with a transparent screen and integrated transport keys |
-| `walnut.jpg` | Walnut veneer, cropped and tiled at a fixed scale across the shelves |
+| `walnut.jpg` | Walnut veneer, made seamless (`tool/make_seamless_texture.py`) and tiled at a fixed scale |
+| `../knob.png`, `../knob2.png` | Wood TVs on charcoal and putty decks; printed keys read REW, PLAY, FF, EJECT |
 | `movie-night.png` | Original movie-night illustration |
 | `adaptive-background.png` | Phosphor glow cropped from the left half of `assets/icon.png` |
 | `adaptive-foreground.png` | Transparent CRT safe-zone layer for Android adaptive icons |
@@ -30,7 +31,9 @@ The web splash combines the generated cassette icon with responsive HTML text an
 
 `crt-90s.png` has real transparency outside the cabinet and across the entire screen opening. The live screen extends underneath the opaque bezel; the bitmap defines the visible contour. Its five physical transport keys have interactive symbol overlays. The source is 1254 × 1254 pixels; normalized positions in `VcrBox` keep the screen, slot, and keys aligned at every size.
 
-`walnut.jpg` is a flat, horizontal-grain veneer used for the shelf cavity, front lips, and console surround. `ExactAssetImage(scale: 2)` and `BoxFit.none` maintain the grain size without stretching it to fit tall cabinets or thin shelf edges.
+The knob decks were drawn with REW, PLAY, STOP, FF printed on their keys. The app has no stop, so the FF symbol was moved onto the third key and an EJECT symbol in the same cream ink was printed on the fourth. Key positions and actions for every cabinet are in `CrtSpriteLayout`.
+
+`walnut.jpg` is a flat, horizontal-grain veneer, cross-faded so its edges tile without seams, used by the Walnut shelf look. `ExactAssetImage(scale: 2)` and `BoxFit.none` maintain the grain size without stretching it to fit tall cabinets or thin shelf edges.
 
 ### Late-90s production cabinet
 

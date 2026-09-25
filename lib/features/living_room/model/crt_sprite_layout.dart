@@ -200,17 +200,17 @@ class CrtSpriteLayout {
         ),
         DeckKeycap(
           Rect.fromLTRB(0.370, 0.899, 0.459, 0.958),
-          DeckKeyAction.play,
+          DeckKeyAction.playPause,
           printed: true,
         ),
         DeckKeycap(
           Rect.fromLTRB(0.484, 0.899, 0.576, 0.958),
-          DeckKeyAction.pause,
+          DeckKeyAction.fastForward,
           printed: true,
         ),
         DeckKeycap(
           Rect.fromLTRB(0.598, 0.899, 0.690, 0.958),
-          DeckKeyAction.fastForward,
+          DeckKeyAction.eject,
           printed: true,
         ),
       ],
@@ -231,17 +231,17 @@ class CrtSpriteLayout {
         ),
         DeckKeycap(
           Rect.fromLTRB(0.370, 0.874, 0.459, 0.928),
-          DeckKeyAction.play,
+          DeckKeyAction.playPause,
           printed: true,
         ),
         DeckKeycap(
           Rect.fromLTRB(0.481, 0.874, 0.573, 0.928),
-          DeckKeyAction.pause,
+          DeckKeyAction.fastForward,
           printed: true,
         ),
         DeckKeycap(
           Rect.fromLTRB(0.594, 0.874, 0.687, 0.928),
-          DeckKeyAction.fastForward,
+          DeckKeyAction.eject,
           printed: true,
         ),
       ],
