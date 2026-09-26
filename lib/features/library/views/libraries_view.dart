@@ -280,9 +280,9 @@ class _ChildrenPane extends StatelessWidget {
           ),
           subtitle: Text(
             [
-              if (node.collectionType != null) node.collectionType!,
-              if (node.type != null) node.type!,
-              if (node.childCount != null) '${node.childCount} items',
+              ?_kindLabel(node),
+              if (node.childCount != null)
+                node.childCount == 1 ? '1 item' : '${node.childCount} items',
             ].join(' · '),
             style: TextStyle(color: VhsColors.ink.withValues(alpha: 0.55)),
           ),
@@ -304,6 +304,23 @@ class _ChildrenPane extends StatelessWidget {
     );
   }
 }
+
+/// Jellyfin's collection/item types in words people use.
+String? _kindLabel(LibraryNode node) =>
+    switch (node.collectionType?.toLowerCase()) {
+      'movies' => 'Movies',
+      'tvshows' => 'TV shows',
+      'homevideos' => 'Home videos',
+      'boxsets' => 'Collections',
+      'musicvideos' => 'Music videos',
+      'mixed' => 'Movies and shows',
+      _ => switch (node.type) {
+        'Folder' || 'CollectionFolder' => 'Folder',
+        'BoxSet' => 'Collection',
+        'Series' => 'TV show',
+        _ => null,
+      },
+    };
 
 class _Crumb extends StatelessWidget {
   const _Crumb({required this.label, required this.onTap});

@@ -55,12 +55,12 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   _finished
-                      ? 'Found VHS posters for ${progress.foundCount} of '
-                            '${progress.total} titles. Spines will use sleeve '
-                            'art when available.'
-                      : 'Looking up VHS tapes and posters for your shelves. '
-                            'Titles already in the cache skip the network — '
-                            'only new ones take longer.',
+                      ? 'Found original VHS sleeves for '
+                            '${progress.foundCount} of ${progress.total} titles. '
+                            'The rest get a printed spine.'
+                      : 'Looking for the original VHS sleeve of each title. '
+                            'This happens once; you can keep browsing while '
+                            'it finishes.',
                   style: TextStyle(
                     color: VhsColors.ink.withValues(alpha: 0.75),
                     height: 1.35,
@@ -79,11 +79,11 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   _finished
-                      ? '${progress.foundCount} posters ready'
+                      ? '${progress.foundCount} sleeves found'
                       : progress.total == 0
                       ? 'Starting…'
                       : '${progress.completed} / ${progress.total}'
-                            '${progress.foundCount > 0 ? ' · ${progress.foundCount} hits' : ''}',
+                            '${progress.foundCount > 0 ? ' · ${progress.foundCount} found' : ''}',
                   style: TextStyle(
                     color: VhsColors.ink.withValues(alpha: 0.55),
                     fontSize: 12,

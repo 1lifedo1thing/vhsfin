@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Your Jellyfin library, rewound. A cozy shelf of VHS tapes, a glowing CRT, and your favorite movies. Just press play.">
-  <meta name="theme-color" content="#1A100C">
+  <meta name="theme-color" content="#07090B">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="VHSFin">
@@ -16,24 +16,24 @@
   <link rel="preload" href="icons/Icon-512.png" as="image">
   <title>VHSFin · Movie night, rewound.</title>
   <style>
-    html, body { height: 100%; margin: 0; background: #1a100c; }
+    html, body { height: 100%; margin: 0; background: #07090b; }
     #vhs-splash {
       position: fixed; inset: 0; z-index: 9999;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px; box-sizing: border-box; text-align: center; color: #f2e6d0;
-      background: radial-gradient(ellipse at 50% 40%, #443024 0%, #1a100c 55%, #100d0b 100%);
+      padding: 24px; box-sizing: border-box; text-align: center; color: #e6ecee;
+      background: radial-gradient(ellipse at 50% 40%, #14191d 0%, #07090b 55%, #030404 100%);
       font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
       transition: opacity 280ms ease;
     }
     #vhs-splash.fade-out { opacity: 0; pointer-events: none; }
     .brand-icon { width: clamp(120px, 26vw, 188px); height: auto; border-radius: 23%; box-shadow: 0 24px 60px #0009; }
     .wordmark { margin: 30px 0 8px; font-size: clamp(30px, 7vw, 44px); font-weight: 900; letter-spacing: .08em; }
-    .tagline { margin: 0; font-size: 15px; color: #c9b7a2; letter-spacing: .02em; }
-    .status { margin-top: 36px; display: flex; gap: 10px; align-items: center; font: 11px ui-monospace, monospace; letter-spacing: .18em; color: #8fe8a8; }
-    .led { width: 6px; height: 6px; border-radius: 50%; background: #8fe8a8; box-shadow: 0 0 12px #8fe8a8; animation: breathe 1.8s ease-in-out infinite; }
+    .tagline { margin: 0; font-size: 15px; color: #98a4ab; letter-spacing: .02em; }
+    .status { margin-top: 36px; display: flex; gap: 10px; align-items: center; font: 11px ui-monospace, monospace; letter-spacing: .18em; color: #6fe0e6; }
+    .led { width: 6px; height: 6px; border-radius: 50%; background: #6fe0e6; box-shadow: 0 0 12px #6fe0e6; animation: breathe 1.8s ease-in-out infinite; }
     @keyframes breathe { 50% { opacity: .35; } }
-    #load-help { max-width: 340px; margin-top: 20px; color: #c9b7a2; font-size: 13px; line-height: 1.6; }
-    #load-help button { margin-top: 8px; padding: 10px 20px; border: 1px solid #8fe8a866; border-radius: 10px; background: #8fe8a815; color: #8fe8a8; font: inherit; cursor: pointer; }
+    #load-help { max-width: 340px; margin-top: 20px; color: #98a4ab; font-size: 13px; line-height: 1.6; }
+    #load-help button { margin-top: 8px; padding: 10px 20px; border: 1px solid #6fe0e666; border-radius: 10px; background: #6fe0e615; color: #6fe0e6; font: inherit; cursor: pointer; }
     @media (prefers-reduced-motion: reduce) { .led { animation: none; } #vhs-splash { transition: none; } }
   </style>
 </head>

@@ -25,7 +25,7 @@ void main() {
       ),
     );
 
-    expect(find.text('136 / 255 · 66 hits'), findsOneWidget);
+    expect(find.text('136 / 255 · 66 found'), findsOneWidget);
     await tester.tap(find.text('CONTINUE IN BACKGROUND'));
     expect(dismissed, isTrue);
   });
