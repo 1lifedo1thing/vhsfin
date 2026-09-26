@@ -287,7 +287,8 @@ class LivingRoomPage extends ConsumerWidget {
     Tape tape,
     String instanceKey,
   ) {
-    DeckFeedback.tap();
+    // Pulling a tape off the shelf is felt, not clicked; its sheet whooshes.
+    DeckFeedback.pick();
     ref.read(flightSourceKeyProvider.notifier).select(instanceKey);
     if (tape.kind == TapeKind.series) {
       showEpisodePicker(

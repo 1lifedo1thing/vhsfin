@@ -295,16 +295,17 @@ class _ConnectionHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Theme(
     data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-    child: const ExpansionTile(
-      tilePadding: EdgeInsets.symmetric(horizontal: 8),
-      title: Text(
+    child: ExpansionTile(
+      onExpansionChanged: (_) => DeckFeedback.tap(),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+      title: const Text(
         'First time here?',
         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
       ),
-      leading: Icon(Icons.help_outline_rounded, size: 20),
-      childrenPadding: EdgeInsets.fromLTRB(8, 0, 8, 12),
+      leading: const Icon(Icons.help_outline_rounded, size: 20),
+      childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
       children: [
-        Text(
+        const Text(
           'VHSFin plays the movies and shows on your own Jellyfin server. '
           'It does not include movies or create Jellyfin accounts. Ask the person who manages your server for its address and your login.\n\n'
           'At home, join the same Wi-Fi as your server. Use the server’s base address, not a /web page. '

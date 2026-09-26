@@ -79,19 +79,21 @@ class VhsRemoteSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
+    // Rises from the bottom edge like the other sheets: no gap below.
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottom),
+      padding: EdgeInsets.zero,
       child: Align(
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 340),
+          constraints: const BoxConstraints(maxWidth: 420),
           child: Material(
             type: MaterialType.transparency,
             child: DeckPanel(
               radius: 30,
               screws: false,
-              padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
+              attachedToBottom: true,
+              padding: EdgeInsets.fromLTRB(22, 14, 22, 22 + bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -254,6 +256,7 @@ class _RubberKey extends StatelessWidget {
         onPressStart: enabled ? onPressStart : null,
         onPressEnd: enabled ? onPressEnd : null,
         haptic: DeckFeedback.key,
+        feedbackOnPress: true,
         builder: (context, down) {
           final side = down ? 1.0 : _travel;
           return Column(

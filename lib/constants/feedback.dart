@@ -2,8 +2,11 @@ import 'package:flutter/services.dart';
 
 /// Short sounds that ride along with presses (see [DeckFeedback]).
 enum DeckUiSound {
-  /// A light plastic tick — the VCR's slot flap. For choosing things.
+  /// A short, dry tick — icons, close, menus, checkboxes, list rows.
   tick,
+
+  /// The slot flap's springy tick — choosing a shelf, a TV, a sort order.
+  select,
 
   /// A key going down — the VCR's eject button.
   key,
@@ -18,34 +21,53 @@ enum DeckUiSound {
   sheetDown,
 }
 
-/// The deck's feel under your finger: one place decides the haptic and the
-/// sound for each kind of interaction, so presses stay consistent.
+/// The deck's feel under your finger. Each kind of control has one haptic and
+/// one sound, chosen for what the control is physically:
 ///
-/// Haptics map to `navigator.vibrate` on web where supported. Sounds play
-/// through [player], which the app attaches (and which respects the SOUND
-/// EFFECTS setting); widgets and tests without one stay silent.
+/// | control                               | sound   | haptic |
+/// | ------------------------------------- | ------- | ------ |
+/// | hardware keys (on the way down)       | key     | medium |
+/// | slide switches                        | chonk   | heavy  |
+/// | shelf / TV / sort choices             | select  | light  |
+/// | icons, close, menus, checkboxes, rows | tick    | light  |
+/// | pulling a tape off the shelf          | —       | light  |
+/// | sheets opening / closing              | whoosh  | —      |
+///
+/// Android's `selectionClick` is a "clock tick" many phones skip, so light
+/// touches use `lightImpact`, which every device plays.
+///
+/// Sounds play through [player], which the app attaches (and which respects
+/// the SOUND EFFECTS setting); widgets and tests without one stay silent.
 abstract final class DeckFeedback {
   static void Function(DeckUiSound sound)? player;
 
-  /// Choosing something: a shelf, a TV, a tape, a row, an icon, closing a
-  /// sheet — a selection tick you feel and a soft flap tick you hear.
+  /// Icons, close, menus, list rows, links: a dry tick.
   static void tap() {
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
     player?.call(DeckUiSound.tick);
   }
 
-  /// Checking or unchecking a box: the same light tick, not a switch's chonk.
+  /// Checking or unchecking a box: the same dry tick.
   static void check() => tap();
+
+  /// Choosing one of a set — a shelf look, a TV, a sort order.
+  static void select() {
+    HapticFeedback.lightImpact();
+    player?.call(DeckUiSound.select);
+  }
+
+  /// Taking a tape off the shelf: felt, not heard (the sheet whooshes).
+  static void pick() => HapticFeedback.lightImpact();
 
   /// A hardware key going down.
   static void key() {
-    HapticFeedback.lightImpact();
+    HapticFeedback.mediumImpact();
     player?.call(DeckUiSound.key);
   }
 
   /// A switch snapping to its other position.
   static void toggle() {
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
     player?.call(DeckUiSound.toggle);
   }
 

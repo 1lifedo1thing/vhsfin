@@ -229,6 +229,7 @@ class _PopupHeader extends StatelessWidget {
                 side: const BorderSide(),
               ),
               onSelected: (action) {
+                DeckFeedback.tap();
                 if (action == _TapeMenuAction.wrongSleeve) onWrongSleeve!();
               },
               itemBuilder: (context) => const [

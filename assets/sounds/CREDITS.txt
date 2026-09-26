@@ -15,8 +15,11 @@
 #
 # Press sounds, cut from the clips above (also CC0):
 # ui_key_*.wav    — the eject button click, 90ms from vhs_eject at 0.07s
-# ui_tick_*.wav   — the slot flap click, 70ms from vhs_insert at 0.31s
-#                   (checkboxes)
+# ui_select_*.wav — the slot flap click, 70ms from vhs_insert at 0.31s, with
+#                   its springy ring (choosing a shelf, TV, sort order)
+# ui_tick_*.wav   — the first 30ms of the eject button click, high-passed
+#                   at 1.8 kHz with a 4.5ms decay: a dry tick without the
+#                   ring (icons, close, menus, checkboxes, rows)
 # ui_switch_*.wav — the cassette pop from vhs_eject at 0.97s, low-passed at
 #                   ~2.2 kHz and pitched down ~12% for a heavier switch chonk
 # Each comes in three variants (_1 lower/darker, _2 as cut, _3 higher) that

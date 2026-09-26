@@ -226,6 +226,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                                       arts: _arts,
                                       loadedId: widget.loadedId,
                                       onTap: (episode) {
+                                        DeckFeedback.pick();
                                         showTapeInspectSheet(
                                           context,
                                           tape: episode,

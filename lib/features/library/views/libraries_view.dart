@@ -158,8 +158,10 @@ class LibrariesView extends StatelessWidget {
                                         fontSize: 12,
                                       ),
                                       deleteIconColor: VhsColors.accent,
-                                      onDeleted: () =>
-                                          onRemoveSource(source.id),
+                                      onDeleted: () {
+                                        DeckFeedback.tap();
+                                        onRemoveSource(source.id);
+                                      },
                                     ),
                                 ],
                               ),

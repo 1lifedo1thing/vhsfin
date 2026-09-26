@@ -44,7 +44,7 @@ void main() {
     await gesture.up();
     await tester.pump(const Duration(milliseconds: 100));
     expect(taps, 1);
-    expect(haptics, ['HapticFeedbackType.selectionClick']);
+    expect(haptics, ['HapticFeedbackType.lightImpact']);
   });
 
   testWidgets('a scroll that starts on a control is silent and inert', (

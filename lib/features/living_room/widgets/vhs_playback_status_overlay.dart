@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 
 /// What a VCR shows when the tape isn't giving a clean picture: a PLAY
 /// readout as playback starts, rolling tracking noise while the signal
@@ -331,7 +332,10 @@ class _OsdButton extends StatelessWidget {
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onTap,
+        onTap: () {
+          DeckFeedback.tap();
+          onTap();
+        },
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: unit * 0.6,

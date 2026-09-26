@@ -92,9 +92,20 @@ class VcrBox extends StatelessWidget {
                       : null,
                   button: deck.isPowered,
                   onTap: deck.isPowered ? onPlay : null,
+                  // Touching the glass is felt, never clicked.
                   child: GestureDetector(
-                    onTap: deck.isPowered ? onPlay : null,
-                    onDoubleTap: deck.isPowered ? onFull : null,
+                    onTap: deck.isPowered
+                        ? () {
+                            DeckFeedback.pick();
+                            onPlay();
+                          }
+                        : null,
+                    onDoubleTap: deck.isPowered
+                        ? () {
+                            DeckFeedback.pick();
+                            onFull();
+                          }
+                        : null,
                     // Fill the glass hole; [layout.screen] is centered on the
                     // transparent aperture so playback stays behind the bezel.
                     child: SizedBox.expand(
@@ -130,8 +141,10 @@ class VcrBox extends StatelessWidget {
                   child: Tooltip(
                     message: 'Open remote controls',
                     excludeFromSemantics: true,
+                    // Drawn as the set's power button / knobs: a key.
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) => DeckFeedback.key(),
                       onTap: onRemote,
                       child: const SizedBox.expand(),
                     ),
@@ -149,7 +162,12 @@ class VcrBox extends StatelessWidget {
                     excludeFromSemantics: true,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: deck.isPowered ? onFull : null,
+                      onTap: deck.isPowered
+                          ? () {
+                              DeckFeedback.tap();
+                              onFull();
+                            }
+                          : null,
                       child: const SizedBox.expand(),
                     ),
                   ),
@@ -327,9 +345,6 @@ class _DeckKeyState extends State<_DeckKey> {
   Offset? _downAt;
   var _holding = false;
 
-  bool get _isHoldKey =>
-      _action == DeckKeyAction.rewind || _action == DeckKeyAction.fastForward;
-
   void _release((VoidCallback, VoidCallback)? hold) {
     if (_holding) {
       _holding = false;
@@ -370,12 +385,11 @@ class _DeckKeyState extends State<_DeckKey> {
             onPointerDown: (event) {
               _downAt = event.position;
               setState(() => _pressed = true);
-              if (_isHoldKey) {
-                DeckFeedback.key();
-                if (hold != null) {
-                  hold.$1();
-                  _holding = true;
-                }
+              // A key clicks on the way down, tape or not.
+              DeckFeedback.key();
+              if (hold != null) {
+                hold.$1();
+                _holding = true;
               }
             },
             onPointerMove: (event) {
@@ -391,7 +405,6 @@ class _DeckKeyState extends State<_DeckKey> {
               behavior: HitTestBehavior.opaque,
               excludeFromSemantics: true,
               onTap: () {
-                if (!_isHoldKey) DeckFeedback.key();
                 if (widget.enabled) _onTap?.call();
               },
               child: Center(

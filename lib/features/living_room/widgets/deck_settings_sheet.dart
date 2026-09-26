@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
@@ -384,6 +385,7 @@ class _SortOption extends StatelessWidget {
       excludeSemantics: true,
       child: DeckPressable(
         onTap: onTap,
+        haptic: DeckFeedback.select,
         builder: (context, pressed) => Container(
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 14),

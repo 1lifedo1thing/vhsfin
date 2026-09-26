@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Fullscreen player chrome — no Riverpod.
@@ -36,7 +37,10 @@ class CleanPlayerView extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: onBack,
+                      onPressed: () {
+                        DeckFeedback.tap();
+                        onBack();
+                      },
                       icon: const Icon(Icons.close, color: Colors.white),
                     ),
                     const SizedBox(width: 8),
@@ -52,7 +56,10 @@ class CleanPlayerView extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: onBack,
+                      onPressed: () {
+                        DeckFeedback.tap();
+                        onBack();
+                      },
                       child: const Text(
                         'BACK TO VCR',
                         style: TextStyle(

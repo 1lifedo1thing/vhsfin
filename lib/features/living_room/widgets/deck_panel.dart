@@ -442,7 +442,12 @@ class DeckPressable extends StatefulWidget {
     this.minimum = const Duration(milliseconds: 90),
     this.onPressStart,
     this.onPressEnd,
+    this.feedbackOnPress = false,
   });
+
+  /// Keys click and buzz on the way down, like the physical key they draw.
+  /// Choices and rows wait for a completed tap, so scrolling past is silent.
+  final bool feedbackOnPress;
 
   /// Called the instant the pointer lands / lifts — for keys that act while
   /// held (REW, FF). [onPressEnd] also runs if the press is cancelled.
@@ -470,13 +475,15 @@ class _DeckPressableState extends State<DeckPressable> {
   /// Held keys (REW/FF) act — and are felt — the instant they go down.
   bool get _isHoldKey => widget.onPressStart != null;
 
+  bool get _feelOnDown => widget.feedbackOnPress || _isHoldKey;
+
   void _down(PointerDownEvent event) {
     if (widget.onTap == null) return;
     _release?.cancel();
     _downAt = event.position;
     _downTime = DateTime.now();
+    if (_feelOnDown) widget.haptic?.call();
     if (_isHoldKey) {
-      widget.haptic?.call();
       widget.onPressStart!.call();
       _holding = true;
     }
@@ -516,7 +523,7 @@ class _DeckPressableState extends State<DeckPressable> {
 
   void _tap() {
     // Only a real tap is heard and felt, so scrolling past stays silent.
-    if (!_isHoldKey) widget.haptic?.call();
+    if (!_feelOnDown) widget.haptic?.call();
     widget.onTap?.call();
   }
 
@@ -638,6 +645,7 @@ class DeckBay extends StatelessWidget {
       excludeSemantics: true,
       child: DeckPressable(
         onTap: onTap,
+        haptic: DeckFeedback.select,
         builder: (context, pressed) => Container(
           padding: const EdgeInsets.fromLTRB(8, 5, 8, 7),
           decoration: BoxDecoration(
@@ -893,6 +901,7 @@ class DeckHardKey extends StatelessWidget {
       child: DeckPressable(
         onTap: onPressed,
         haptic: DeckFeedback.key,
+        feedbackOnPress: true,
         builder: (context, down) {
           final side = down ? 1.0 : _travel;
           final key = Container(
