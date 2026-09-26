@@ -154,8 +154,17 @@ class LivingRoomPage extends ConsumerWidget {
       flightSourceKey: flightSourceKey,
       crtSkin: experience.crtSkin,
       cabinetStyle: experience.cabinetStyle,
-      shelvesLoading: shelvesAsync.isLoading && !shelvesAsync.hasValue,
-      shelvesError: shelvesAsync.hasError
+      // Riverpod retries a failed load on its own; only show the failure
+      // once it has stopped retrying, and keep any shelves already shown.
+      shelvesLoading:
+          !shelvesAsync.hasValue &&
+          (shelvesAsync.isLoading || shelvesAsync.retrying),
+      shelvesRetrying: !shelvesAsync.hasValue && shelvesAsync.hasError,
+      shelvesError:
+          shelvesAsync.hasError &&
+              !shelvesAsync.hasValue &&
+              !shelvesAsync.retrying &&
+              !shelvesAsync.isLoading
           ? userFacingError(shelvesAsync.error)
           : null,
       shelves: filteredShelves,
@@ -192,6 +201,7 @@ class LivingRoomPage extends ConsumerWidget {
       onConnectPrompt: () => context.push(
         ref.read(sessionProvider).value == null ? '/connect' : '/libraries',
       ),
+      onRetryShelves: () => ref.invalidate(shelvesProvider),
       onArtOnboardingDone: () {
         ref.read(artOnboardingDoneProvider.notifier).markDone();
         ref.read(artOnboardingUiProvider.notifier).dismiss();

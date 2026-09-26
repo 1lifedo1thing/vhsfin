@@ -9,6 +9,7 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
 /// Jellyfin Box sleeves already on the [Tape] — no network lookup required.
@@ -223,6 +224,106 @@ class _ShelfBlock extends StatelessWidget {
             height: _lipHeight,
             child: CabinetLedge(height: _lipHeight, grain: grain(3)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A message shown in a shelf bay of its own — for when there are no tapes to
+/// show yet (a server that can't be reached, for one).
+class ShelfNotice extends StatelessWidget {
+  const ShelfNotice({
+    super.key,
+    required this.title,
+    this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String title;
+  final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Column(
+        children: [
+          CabinetPanel(
+            recessed: true,
+            grain: const Alignment(0.1, -0.4),
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+            child: SizedBox(
+              height: 190,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 148,
+                    child: _GhostSpineRow(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.62),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: VhsColors.ink.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: vhsBrandStyle(size: 15)
+                                    .copyWith(letterSpacing: 1.4),
+                              ),
+                              if (message != null) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  message!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: VhsColors.inkMuted,
+                                    fontSize: 13,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                              if (actionLabel != null && onAction != null) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: 180,
+                                  child: DeckHardKey(
+                                    label: actionLabel!,
+                                    onPressed: onAction,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const CabinetLedge(height: 16),
         ],
       ),
     );

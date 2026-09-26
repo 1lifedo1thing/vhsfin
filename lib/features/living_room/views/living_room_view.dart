@@ -50,9 +50,11 @@ class LivingRoomView extends StatelessWidget {
     required this.onShowRemote,
     required this.onShowSettings,
     required this.onConnectPrompt,
+    required this.onRetryShelves,
     required this.onArtOnboardingDone,
     this.showArtOnboarding = false,
     this.artWarmProgress = const ArtWarmProgress(),
+    this.shelvesRetrying = false,
     this.shelvesError,
     this.shelves,
     this.crtSkin = CrtTvSkin.crtIcon,
@@ -69,6 +71,7 @@ class LivingRoomView extends StatelessWidget {
   final CrtTvSkin crtSkin;
   final CabinetStyle cabinetStyle;
   final bool shelvesLoading;
+  final bool shelvesRetrying;
   final String? shelvesError;
   final List<Shelf>? shelves;
   final bool vhsOnly;
@@ -89,6 +92,7 @@ class LivingRoomView extends StatelessWidget {
   final VoidCallback onShowRemote;
   final VoidCallback onShowSettings;
   final VoidCallback onConnectPrompt;
+  final VoidCallback onRetryShelves;
   final VoidCallback onArtOnboardingDone;
 
   @override
@@ -217,6 +221,8 @@ class LivingRoomView extends StatelessWidget {
                                   resolveSpineArt: resolveSpineArt,
                                   onTapeTap: onTapeTap,
                                   onConnectPrompt: onConnectPrompt,
+                                  onRetryShelves: onRetryShelves,
+                                  shelvesRetrying: shelvesRetrying,
                                 ),
                               ),
                             ),
@@ -267,11 +273,15 @@ class _BookshelfBody extends StatelessWidget {
     required this.resolveSpineArt,
     required this.onTapeTap,
     required this.onConnectPrompt,
+    required this.onRetryShelves,
+    this.shelvesRetrying = false,
     this.shelvesError,
     this.shelves,
   });
 
   final bool shelvesLoading;
+  final bool shelvesRetrying;
+  final VoidCallback onRetryShelves;
   final String? shelvesError;
   final List<Shelf>? shelves;
   final VcrDeckState deck;
@@ -286,17 +296,23 @@ class _BookshelfBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (shelvesLoading || shelves == null && shelvesError == null) {
-      return const SizedBox(
+      return SizedBox(
         height: 180,
         child: CrtLoadingIndicator(
           compact: true,
           style: CrtLoadStyle.tape,
-          message: 'STAND BY',
+          // A first try failed and another is on its way.
+          message: shelvesRetrying ? 'TRYING YOUR SERVER' : 'STAND BY',
         ),
       );
     }
     if (shelvesError != null) {
-      return Text('Could not load shelves: $shelvesError');
+      return ShelfNotice(
+        title: 'The shelves are dark',
+        message: shelvesError,
+        actionLabel: 'TRY AGAIN',
+        onAction: onRetryShelves,
+      );
     }
     final loadedIntoDeck =
         deck.power == VcrPower.playing || deck.power == VcrPower.ejecting
