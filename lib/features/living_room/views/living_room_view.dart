@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
@@ -155,7 +156,10 @@ class LivingRoomView extends StatelessWidget {
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: onShowRemote,
+                                    onPressed: () {
+                                      DeckHaptics.tap();
+                                      onShowRemote();
+                                    },
                                     tooltip: 'Remote',
                                     color: VhsColors.inkMuted,
                                     icon: const Icon(
@@ -164,7 +168,10 @@ class LivingRoomView extends StatelessWidget {
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: onShowSettings,
+                                    onPressed: () {
+                                      DeckHaptics.tap();
+                                      onShowSettings();
+                                    },
                                     tooltip: 'Settings',
                                     color: VhsColors.inkMuted,
                                     icon: const Icon(

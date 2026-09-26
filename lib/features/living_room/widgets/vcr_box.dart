@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
@@ -314,6 +315,12 @@ class _DeckKeyState extends State<_DeckKey> {
     _ => null,
   };
 
+  void _release((VoidCallback, VoidCallback)? hold) {
+    if (!_pressed) return;
+    setState(() => _pressed = false);
+    hold?.$2();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cap = widget.capRect;
@@ -338,54 +345,53 @@ class _DeckKeyState extends State<_DeckKey> {
         child: Tooltip(
           message: _label,
           excludeFromSemantics: true,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTap: widget.enabled ? _onTap : null,
-            onTapDown: widget.enabled
+          // Press, feel, and shuttle start on pointer-down: the tap recognizer
+          // waits up to 100ms inside the scrolling room.
+          child: Listener(
+            onPointerDown: widget.enabled
                 ? (_) {
+                    DeckHaptics.key();
                     setState(() => _pressed = true);
                     hold?.$1();
                   }
                 : null,
-            onTapUp: widget.enabled
-                ? (_) {
-                    setState(() => _pressed = false);
-                    hold?.$2();
-                  }
-                : null,
-            onTapCancel: widget.enabled
-                ? () {
-                    setState(() => _pressed = false);
-                    hold?.$2();
-                  }
-                : null,
-            child: Center(
-              child: SizedBox.fromSize(
-                size: cap.size,
-                child: AnimatedContainer(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 70),
-                  transform: Matrix4.translationValues(0, _pressed ? 1 : 0, 0),
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    color: _pressed
-                        ? Colors.black.withValues(alpha: 0.28)
-                        : Colors.transparent,
+            onPointerUp: (_) => _release(hold),
+            onPointerCancel: (_) => _release(hold),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              excludeFromSemantics: true,
+              onTap: widget.enabled ? _onTap : null,
+              child: Center(
+                child: SizedBox.fromSize(
+                  size: cap.size,
+                  child: AnimatedContainer(
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 70),
+                    transform: Matrix4.translationValues(
+                      0,
+                      _pressed ? 1 : 0,
+                      0,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: radius,
+                      color: _pressed
+                          ? Colors.black.withValues(alpha: 0.28)
+                          : Colors.transparent,
+                    ),
+                    alignment: Alignment.center,
+                    child: widget.cap.printed
+                        ? null
+                        : Icon(
+                            _icon,
+                            size: cap.height * 0.62,
+                            color: _lit && widget.enabled
+                                ? const Color(0xFF0F3A3D)
+                                : const Color(0xFF171A1C).withValues(
+                                    alpha: widget.enabled ? 0.9 : 0.45,
+                                  ),
+                          ),
                   ),
-                  alignment: Alignment.center,
-                  child: widget.cap.printed
-                      ? null
-                      : Icon(
-                          _icon,
-                          size: cap.height * 0.62,
-                          color: _lit && widget.enabled
-                              ? const Color(0xFF0F3A3D)
-                              : const Color(0xFF171A1C).withValues(
-                                  alpha: widget.enabled ? 0.9 : 0.45,
-                                ),
-                        ),
                 ),
               ),
             ),

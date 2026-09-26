@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -271,6 +272,7 @@ class LivingRoomPage extends ConsumerWidget {
     Tape tape,
     String instanceKey,
   ) {
+    DeckHaptics.tap();
     ref.read(flightSourceKeyProvider.notifier).select(instanceKey);
     if (tape.kind == TapeKind.series) {
       showEpisodePicker(

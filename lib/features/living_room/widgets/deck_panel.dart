@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Parts of a VCR front panel, used to build sheets and dialogs that feel like
@@ -356,7 +356,10 @@ class DeckCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: onPressed,
+      onPressed: () {
+        DeckHaptics.tap();
+        onPressed();
+      },
       tooltip: 'Close',
       visualDensity: VisualDensity.compact,
       iconSize: 20,
@@ -374,13 +377,15 @@ class DeckPressable extends StatefulWidget {
     super.key,
     required this.onTap,
     required this.builder,
-    this.haptic = true,
+    this.haptic = DeckHaptics.tap,
     this.minimum = const Duration(milliseconds: 90),
   });
 
   final VoidCallback? onTap;
   final Widget Function(BuildContext context, bool pressed) builder;
-  final bool haptic;
+
+  /// Felt the moment the pointer lands (see [DeckHaptics]); null for none.
+  final VoidCallback? haptic;
   final Duration minimum;
 
   @override
@@ -396,7 +401,7 @@ class _DeckPressableState extends State<DeckPressable> {
     if (widget.onTap == null) return;
     _release?.cancel();
     _downAt = DateTime.now();
-    if (widget.haptic) HapticFeedback.selectionClick();
+    widget.haptic?.call();
     setState(() => _pressed = true);
   }
 
@@ -587,10 +592,14 @@ class DeckSlideSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      // The option row around it already gives the toggle its feel.
       onTap: () => onChanged(!value),
       onHorizontalDragEnd: (details) {
         final v = details.primaryVelocity ?? 0;
-        if (v.abs() > 50) onChanged(v > 0);
+        if (v.abs() > 50 && (v > 0) != value) {
+          DeckHaptics.toggle();
+          onChanged(v > 0);
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -691,6 +700,7 @@ class DeckOptionRow extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: DeckPressable(
         onTap: () => onChanged(!value),
+        haptic: DeckHaptics.toggle,
         builder: (context, pressed) => Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           decoration: BoxDecoration(
@@ -768,6 +778,7 @@ class DeckHardKey extends StatelessWidget {
       excludeSemantics: true,
       child: DeckPressable(
         onTap: onPressed,
+        haptic: DeckHaptics.key,
         builder: (context, down) {
           final side = down ? 1.0 : _travel;
           final key = Container(

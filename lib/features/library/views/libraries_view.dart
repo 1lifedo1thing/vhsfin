@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
@@ -282,12 +283,18 @@ class _ChildrenPane extends StatelessWidget {
                 value: isSelected,
                 activeColor: VhsColors.accent,
                 checkColor: VhsColors.room,
-                onChanged: (_) => onToggleNode(node),
+                onChanged: (_) {
+                  DeckHaptics.toggle();
+                  onToggleNode(node);
+                },
               ),
               const Icon(Icons.chevron_right),
             ],
           ),
-          onTap: () => onOpenNode(node),
+          onTap: () {
+            DeckHaptics.tap();
+            onOpenNode(node);
+          },
         );
       },
     );

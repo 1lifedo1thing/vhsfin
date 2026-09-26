@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Chunky 90s IR remote — fullscreen, wind, play/pause, eject. No skips.
@@ -222,8 +223,13 @@ class _RemoteKey extends StatelessWidget {
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
+            onTapDown: enabled
+                ? (details) {
+                    DeckHaptics.key();
+                    onTapDown?.call(details);
+                  }
+                : null,
             onTap: enabled ? onTap : null,
-            onTapDown: enabled ? onTapDown : null,
             onTapUp: enabled ? onTapUp : null,
             onTapCancel: enabled ? onTapCancel : null,
             child: SizedBox(
