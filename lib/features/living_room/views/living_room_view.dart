@@ -129,23 +129,36 @@ class LivingRoomView extends StatelessWidget {
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
+                  const maxConsole = 800.0;
                   final wide = constraints.maxWidth > 820;
                   final pad = wide ? 32.0 : 12.0;
-                  final maxTv = math.min(
-                    constraints.maxWidth - pad * 2 - 24,
+                  // The TV's body spans the shelf below it (the shelf panel is
+                  // inset 8 each side), capped so tall screens keep room for
+                  // tapes. Its transparent edge may run into the page margin.
+                  final shelfWidth =
+                      math.min(constraints.maxWidth - pad * 2, maxConsole) - 16;
+                  final maxTv = [
+                    shelfWidth / crtSkin.bodyWidthFraction,
+                    constraints.maxWidth,
                     (constraints.maxHeight * 0.53).clamp(300.0, 530.0),
-                  );
-                  const maxConsole = 800.0;
+                  ].reduce(math.min);
 
                   return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(pad, wide ? 28 : 16, pad, 40),
+                    padding: EdgeInsets.only(top: wide ? 28 : 16, bottom: 40),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: maxConsole),
+                        constraints: BoxConstraints(
+                          maxWidth: maxConsole + pad * 2,
+                        ),
                         child: Column(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 0, 4, 14),
+                              padding: EdgeInsets.fromLTRB(
+                                pad + 8,
+                                0,
+                                pad + 4,
+                                14,
+                              ),
                               child: Row(
                                 children: [
                                   const Expanded(
@@ -190,6 +203,7 @@ class LivingRoomView extends StatelessWidget {
                               style: cabinetStyle,
                               child: _EntertainmentCenter(
                                 maxTvWidth: maxTv,
+                                sidePadding: pad,
                                 vcr: VcrBox(
                                   deck: deck,
                                   player: player,
@@ -339,11 +353,15 @@ class _EntertainmentCenter extends StatelessWidget {
     required this.vcr,
     required this.bookshelf,
     required this.maxTvWidth,
+    required this.sidePadding,
   });
 
   final Widget vcr;
   final Widget bookshelf;
   final double maxTvWidth;
+
+  /// Page margin around the cabinet; the TV is centred without it.
+  final double sidePadding;
 
   @override
   Widget build(BuildContext context) {
@@ -357,18 +375,21 @@ class _EntertainmentCenter extends StatelessWidget {
           ),
         ),
         // The artwork feet terminate at this ledge; no controls or gap intervene.
-        const CabinetLedge(height: 22, grain: Alignment(-0.6, 0.4)),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: EdgeInsets.symmetric(horizontal: sidePadding),
+          child: const CabinetLedge(height: 22, grain: Alignment(-0.6, 0.4)),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: sidePadding + 8),
           child: CabinetPanel(
             grain: const Alignment(0.2, -0.7),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
             child: bookshelf,
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
-          child: CabinetLedge(height: 16, grain: Alignment(0.8, 0.9)),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: sidePadding + 4),
+          child: const CabinetLedge(height: 16, grain: Alignment(0.8, 0.9)),
         ),
         const SizedBox(height: 12),
         Text(
