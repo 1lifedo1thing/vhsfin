@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
 /// Chunky 90s IR remote — fullscreen, wind, play/pause, eject. No skips.
 Future<void> showVhsRemote(
@@ -65,115 +66,111 @@ class VhsRemoteSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottom),
       child: Align(
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 340),
           child: Material(
-            color: const Color(0xFF2A2A28),
-            borderRadius: BorderRadius.circular(28),
-            elevation: 16,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF353532), Color(0xFF1C1C1A)],
-                ),
-              ),
+            type: MaterialType.transparency,
+            child: DeckPanel(
+              radius: 30,
+              screws: false,
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(2),
+                  // IR window.
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF3A0D0D), Color(0xFF140404)],
+                        ),
+                        border: Border.all(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    'REMOTE',
-                    style: vhsBrandStyle(size: 18).copyWith(letterSpacing: 4),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    live ? (title ?? 'PLAYING') : 'NO TAPE',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: VhsColors.ink.withValues(alpha: 0.55),
-                      fontSize: 12,
-                    ),
+                  DeckDisplay(
+                    text: live ? (title ?? 'PLAYING').toUpperCase() : 'NO TAPE',
+                    detail: live ? 'PLAY' : null,
                   ),
                   const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _RemoteKey(
+                      _RubberKey(
                         label: 'REW',
                         icon: Icons.fast_rewind_rounded,
                         enabled: live,
-                        onTapDown: (_) => onRewStart(),
-                        onTapUp: (_) => onRewEnd(),
-                        onTapCancel: onRewEnd,
+                        onPressStart: onRewStart,
+                        onPressEnd: onRewEnd,
                       ),
-                      _RemoteKey(
+                      _RubberKey(
                         label: 'PLAY',
                         icon: Icons.play_arrow_rounded,
                         enabled: live,
                         large: true,
                         onTap: onPlay,
                       ),
-                      _RemoteKey(
+                      _RubberKey(
                         label: 'FF',
                         icon: Icons.fast_forward_rounded,
                         enabled: live,
-                        onTapDown: (_) => onFfStart(),
-                        onTapUp: (_) => onFfEnd(),
-                        onTapCancel: onFfEnd,
+                        onPressStart: onFfStart,
+                        onPressEnd: onFfEnd,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   Row(
                     children: [
                       Expanded(
-                        child: _RemoteWideButton(
+                        child: DeckHardKey(
                           label: 'FULL SCREEN',
-                          enabled: live,
-                          onTap: () {
-                            Navigator.pop(context);
-                            onFullScreen();
-                          },
+                          onPressed: live
+                              ? () {
+                                  Navigator.pop(context);
+                                  onFullScreen();
+                                }
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _RemoteWideButton(
+                        child: DeckHardKey(
                           label: 'EJECT',
-                          enabled: powered,
-                          onTap: () {
-                            onEject();
-                            Navigator.pop(context);
-                          },
+                          tone: DeckKeyTone.record,
+                          onPressed: powered
+                              ? () {
+                                  onEject();
+                                  Navigator.pop(context);
+                                }
+                              : null,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Hold REW / FF to wind the tape',
+                  const SizedBox(height: 12),
+                  const Text(
+                    'HOLD REW / FF TO WIND',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: VhsColors.ink.withValues(alpha: 0.35),
-                      fontSize: 11,
+                      color: VhsColors.inkFaint,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
                     ),
                   ),
                 ],
@@ -186,16 +183,17 @@ class VhsRemoteSheet extends StatelessWidget {
   }
 }
 
-class _RemoteKey extends StatelessWidget {
-  const _RemoteKey({
+/// A round rubber key: it sits in a socket with its side showing and sinks
+/// when pressed. Wind keys act for as long as they're held.
+class _RubberKey extends StatelessWidget {
+  const _RubberKey({
     required this.label,
     required this.icon,
     required this.enabled,
     this.large = false,
     this.onTap,
-    this.onTapDown,
-    this.onTapUp,
-    this.onTapCancel,
+    this.onPressStart,
+    this.onPressEnd,
   });
 
   final String label;
@@ -203,89 +201,89 @@ class _RemoteKey extends StatelessWidget {
   final bool enabled;
   final bool large;
   final VoidCallback? onTap;
-  final GestureTapDownCallback? onTapDown;
-  final GestureTapUpCallback? onTapUp;
-  final VoidCallback? onTapCancel;
+  final VoidCallback? onPressStart;
+  final VoidCallback? onPressEnd;
+
+  static const _travel = 4.0;
 
   @override
   Widget build(BuildContext context) {
-    final size = large ? 72.0 : 58.0;
-    final color = enabled
-        ? VhsColors.ink
-        : VhsColors.ink.withValues(alpha: 0.25);
-
-    return Column(
-      children: [
-        Material(
-          color: const Color(0xFF121210),
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTapDown: enabled
-                ? (details) {
-                    DeckHaptics.key();
-                    onTapDown?.call(details);
-                  }
-                : null,
-            onTap: enabled ? onTap : null,
-            onTapUp: enabled ? onTapUp : null,
-            onTapCancel: enabled ? onTapCancel : null,
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: Icon(icon, color: color, size: large ? 36 : 28),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RemoteWideButton extends StatelessWidget {
-  const _RemoteWideButton({
-    required this.label,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: enabled ? const Color(0xFF121210) : const Color(0xFF1A1A18),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: enabled
-                  ? VhsColors.accent
-                  : VhsColors.ink.withValues(alpha: 0.25),
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              fontSize: 12,
-            ),
-          ),
-        ),
+    final size = large ? 68.0 : 54.0;
+    final ink = enabled
+        ? (large ? VhsColors.accent : VhsColors.ink)
+        : VhsColors.inkFaint;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: DeckPressable(
+        onTap: enabled ? (onTap ?? () {}) : null,
+        onPressStart: enabled ? onPressStart : null,
+        onPressEnd: enabled ? onPressEnd : null,
+        haptic: DeckHaptics.key,
+        builder: (context, down) {
+          final side = down ? 1.0 : _travel;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                // Socket.
+                width: size + 6,
+                height: size + 6 + _travel,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(size),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF020303), Color(0xFF0B0C0D)],
+                  ),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x1AFFFFFF), offset: Offset(0, 1)),
+                  ],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(top: _travel - side),
+                  child: Container(
+                    // The key's side, showing below its face.
+                    height: size + side,
+                    alignment: Alignment.topCenter,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0E0F11),
+                      borderRadius: BorderRadius.circular(size),
+                    ),
+                    child: Container(
+                      width: size,
+                      height: size,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          center: const Alignment(-0.3, -0.45),
+                          colors: down
+                              ? const [Color(0xFF34373B), Color(0xFF1C1D20)]
+                              : const [Color(0xFF4A4D52), Color(0xFF232529)],
+                        ),
+                      ),
+                      child: Icon(icon, color: ink, size: large ? 34 : 26),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: enabled ? const Color(0xFFC9D1D4) : VhsColors.inkFaint,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.8,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

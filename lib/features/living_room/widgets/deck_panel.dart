@@ -65,11 +65,15 @@ class DeckPanel extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.fromLTRB(18, 20, 18, 18),
     this.radius = 14,
+    this.screws = true,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
+
+  /// Corner screws; off for moulded shapes like the remote.
+  final bool screws;
 
   @override
   Widget build(BuildContext context) {
@@ -93,23 +97,24 @@ class DeckPanel extends StatelessWidget {
           child: Stack(
             children: [
               Padding(padding: padding, child: child),
-              for (final corner in const [
-                Alignment.topLeft,
-                Alignment.topRight,
-                Alignment.bottomLeft,
-                Alignment.bottomRight,
-              ])
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Align(
-                      alignment: corner,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: _Screw(),
+              if (screws)
+                for (final corner in const [
+                  Alignment.topLeft,
+                  Alignment.topRight,
+                  Alignment.bottomLeft,
+                  Alignment.bottomRight,
+                ])
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Align(
+                        alignment: corner,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: _Screw(),
+                        ),
                       ),
                     ),
                   ),
-                ),
             ],
           ),
         ),
@@ -377,7 +382,14 @@ class DeckPressable extends StatefulWidget {
     required this.builder,
     this.haptic = DeckHaptics.tap,
     this.minimum = const Duration(milliseconds: 90),
+    this.onPressStart,
+    this.onPressEnd,
   });
+
+  /// Called the instant the pointer lands / lifts — for keys that act while
+  /// held (REW, FF). [onPressEnd] also runs if the press is cancelled.
+  final VoidCallback? onPressStart;
+  final VoidCallback? onPressEnd;
 
   final VoidCallback? onTap;
   final Widget Function(BuildContext context, bool pressed) builder;
@@ -400,11 +412,13 @@ class _DeckPressableState extends State<DeckPressable> {
     _release?.cancel();
     _downAt = DateTime.now();
     widget.haptic?.call();
+    widget.onPressStart?.call();
     setState(() => _pressed = true);
   }
 
   void _up(PointerEvent _) {
     if (!_pressed) return;
+    widget.onPressEnd?.call();
     final held = DateTime.now().difference(_downAt ?? DateTime.now());
     final wait = widget.minimum - held;
     _release?.cancel();
