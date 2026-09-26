@@ -339,7 +339,7 @@ class _InfoBody extends StatelessWidget {
 }
 
 /// Spine tilted against the Jellyfin cover — like a tape sitting on a shelf.
-class _SleeveArt extends StatelessWidget {
+class _SleeveArt extends StatefulWidget {
   const _SleeveArt({
     required this.tape,
     required this.art,
@@ -352,17 +352,65 @@ class _SleeveArt extends StatelessWidget {
   final bool useVhsCover;
   final double height;
 
+  @override
+  State<_SleeveArt> createState() => _SleeveArtState();
+}
+
+class _SleeveArtState extends State<_SleeveArt> {
   static const _spineLean = 0.1; // ~5.7° into the cover
   static const _depthFace = 5.0;
 
   /// Open-edge clamshell curve — right side only; spine edge stays square.
   static const _vhsCorner = 14.0;
 
+  /// Jellyfin posters are 2:3; the box front is drawn a touch wider.
+  static const _posterAspect = 0.72;
+
+  var _measuring = false;
+
+  Tape get tape => widget.tape;
+  VhsSpineArt? get art => widget.art;
+
+  @override
+  void initState() {
+    super.initState();
+    _measure();
+  }
+
+  @override
+  void didUpdateWidget(_SleeveArt oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.art?.imageUrl != widget.art?.imageUrl ||
+        oldWidget.useVhsCover != widget.useVhsCover) {
+      _measure();
+    }
+  }
+
+  /// With VHS covers on, learn whether the scan has a front before choosing
+  /// between it and the poster.
+  void _measure() {
+    final art = widget.art;
+    if (!widget.useVhsCover || art == null) return;
+    final urls = [
+      art.imageUrl,
+      if (art.frontImageUrl?.isNotEmpty ?? false) art.frontImageUrl!,
+    ].where((u) => VhsSleeveShapes.aspectOf(u) == null).toList();
+    if (urls.isEmpty) return;
+    _measuring = true;
+    Future.wait(urls.map(VhsSleeveShapes.resolve)).whenComplete(() {
+      if (mounted) setState(() => _measuring = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final sleeveH = height;
+    final cover = widget.useVhsCover && art != null
+        ? vhsFrontCoverOf(art!)
+        : null;
+    final sleeveH = widget.height;
     final spineW = sleeveH * 0.17;
-    final frontW = sleeveH * 0.72;
+    // The VHS front keeps its own proportions, so nothing is cropped off it.
+    final frontW = sleeveH * (cover?.aspect.clamp(0.4, 0.9) ?? _posterAspect);
     // Room for the spine base to kick left when it leans into the poster.
     final leanPad = sleeveH * math.sin(_spineLean) + 6;
     // Same lean; less tuck so the spine sits further left of the cover.
@@ -412,7 +460,7 @@ class _SleeveArt extends StatelessWidget {
               height: sleeveH,
               depth: _depthFace,
               cornerRadius: _vhsCorner,
-              child: _FrontArt(tape: tape, art: useVhsCover ? art : null),
+              child: _FrontArt(tape: tape, cover: cover, measuring: _measuring),
             ),
           ),
           Positioned(
@@ -852,69 +900,34 @@ class _ActionBar extends StatelessWidget {
   }
 }
 
-/// Jellyfin's poster, or — with VHS covers on — the sleeve's own front when
-/// the scan includes one. Spine-only scans keep the poster.
-class _FrontArt extends StatefulWidget {
-  const _FrontArt({required this.tape, this.art});
+/// Jellyfin's poster, or the sleeve's own front when [cover] is set.
+class _FrontArt extends StatelessWidget {
+  const _FrontArt({
+    required this.tape,
+    required this.cover,
+    required this.measuring,
+  });
 
   final Tape tape;
-  final VhsSpineArt? art;
+  final VhsFrontCover? cover;
 
-  @override
-  State<_FrontArt> createState() => _FrontArtState();
-}
-
-class _FrontArtState extends State<_FrontArt> {
-  bool _checking = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _learnShape();
-  }
-
-  @override
-  void didUpdateWidget(_FrontArt oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.art?.imageUrl != widget.art?.imageUrl) _learnShape();
-  }
-
-  void _learnShape() {
-    final art = widget.art;
-    if (art == null || art.frontImageUrl != null) return;
-    if (VhsSleeveShapes.of(art.imageUrl) != null) return;
-    _checking = true;
-    VhsSleeveShapes.resolve(art.imageUrl).then((_) {
-      if (mounted) setState(() => _checking = false);
-    });
-  }
+  /// Still learning whether the scan has a front — hold a blank face rather
+  /// than flash the poster and swap it.
+  final bool measuring;
 
   @override
   Widget build(BuildContext context) {
-    final art = widget.art;
-    final cover = art == null ? null : vhsFrontCoverOf(art);
-    if (cover != null) {
-      return cover.widthFraction >= 0.99
-          ? VhsImageCache.image(
-              url: cover.url,
-              fit: BoxFit.cover,
-              memCacheHeight: null,
-              errorBuilder: (_, _, _) => _poster(),
-            )
-          : VhsSleeveCrop(
-              url: cover.url,
-              widthFraction: cover.widthFraction,
-              alignment: cover.align,
-            );
+    final front = cover;
+    if (front != null) {
+      return SleeveRegion(
+        url: front.url,
+        imageAspect: VhsSleeveShapes.aspectOf(front.url)!,
+        left: front.left,
+        right: front.right,
+      );
     }
-    // Hold a blank face for the moment it takes to measure the scan, rather
-    // than flashing the poster and swapping it.
-    if (_checking) return const ColoredBox(color: VhsColors.surfaceSunken);
-    return _poster();
-  }
-
-  Widget _poster() {
-    final url = widget.tape.imageUrl;
+    if (measuring) return const ColoredBox(color: VhsColors.surfaceSunken);
+    final url = tape.imageUrl;
     if (url == null || url.isEmpty) {
       return const ColoredBox(
         color: VhsColors.surfaceSunken,

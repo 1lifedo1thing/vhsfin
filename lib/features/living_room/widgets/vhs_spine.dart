@@ -424,8 +424,10 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
     if (widget.widthFraction >= 0.99) return;
     if (VhsSleeveShapes.of(widget.url) != null) return;
     final url = widget.url;
-    VhsSleeveShapes.resolve(url).then((shape) {
-      if (mounted && url == widget.url && shape == SleeveShape.spine) {
+    VhsSleeveShapes.resolve(url).then((_) {
+      if (mounted &&
+          url == widget.url &&
+          VhsSleeveShapes.of(url) == SleeveShape.spine) {
         setState(() {});
       }
     });
@@ -468,6 +470,60 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
                 filterQuality: FilterQuality.medium,
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Exactly the strip [left]..[right] (fractions of the image width) of a
+/// sleeve image whose proportions are [imageAspect], scaled to cover its box.
+/// Size the box to the strip's own aspect and nothing is cropped.
+class SleeveRegion extends StatelessWidget {
+  const SleeveRegion({
+    super.key,
+    required this.url,
+    required this.imageAspect,
+    required this.left,
+    required this.right,
+  });
+
+  final String url;
+  final double imageAspect;
+  final double left;
+  final double right;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+        final regionAspect = (right - left) * imageAspect;
+        // Cover: the strip fills the box on its tighter axis.
+        final regionH = regionAspect > w / h ? h : w / regionAspect;
+        final regionW = regionH * regionAspect;
+        final imageH = regionH;
+        final imageW = imageH * imageAspect;
+        return ClipRect(
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned(
+                left: -left * imageW + (w - regionW) / 2,
+                top: (h - regionH) / 2,
+                width: imageW,
+                height: imageH,
+                child: VhsImageCache.image(
+                  url: url,
+                  width: imageW,
+                  height: imageH,
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+            ],
           ),
         );
       },
