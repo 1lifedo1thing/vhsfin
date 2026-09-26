@@ -239,16 +239,6 @@ class _InsertingTapeLabel extends StatelessWidget {
                 size: 24,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'READING TAPE',
-                style: TextStyle(
-                  color: VhsColors.accent,
-                  fontFamily: 'monospace',
-                  fontSize: 11,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 6),
               Text(
                 title.toUpperCase(),
                 maxLines: 2,

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/feedback.dart';
-import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
@@ -189,29 +188,13 @@ class VcrBox extends StatelessWidget {
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: onEject,
-                            child: Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                              ),
+                            // The tape sitting in the slot, unlabelled.
+                            child: DecoratedBox(
                               decoration: BoxDecoration(
                                 color: const Color(0xFF151511),
                                 borderRadius: BorderRadius.circular(2),
                                 border: Border.all(
                                   color: const Color(0xFF3F3C30),
-                                ),
-                              ),
-                              child: Text(
-                                deck.loadedTape!.title.toUpperCase(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: VhsColors.accent.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                  fontSize: (width * 0.018).clamp(7.0, 11.0),
-                                  letterSpacing: 1,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
