@@ -36,7 +36,7 @@ void main() {
     expect(VhsSleeveShapes.spineFraction(art), 1, reason: 'show it whole');
   });
 
-  test('a wraparound front starts at the spine and is one box-front wide', () {
+  test('a wraparound front is everything right of the spine', () {
     const spine = VhsCoverResolver.wraparoundSpineFraction;
     const art = VhsSpineArt(imageUrl: 'wrap.jpg', centerWidthFraction: spine);
     const sleeveAspect = 1.25;
@@ -48,8 +48,7 @@ void main() {
       closeTo(0.5 + spine / 2, 1e-9),
       reason: 'right of spine',
     );
-    expect(cover.right, lessThanOrEqualTo(1));
-    expect(cover.aspect, closeTo(vhsFrontAspect, 1e-9));
+    expect(cover.right, 1, reason: 'to the scan edge');
     expect(
       (cover.right - cover.left) * sleeveAspect,
       closeTo(cover.aspect, 1e-9),

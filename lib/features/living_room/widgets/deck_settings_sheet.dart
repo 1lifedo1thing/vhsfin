@@ -184,46 +184,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    _DeckToggle(
-                      label: 'VHS ONLY',
-                      subtitle: 'Only titles with scanned VHS artwork.',
-                      value: _vhsOnly,
-                      onChanged: (value) {
-                        setState(() => _vhsOnly = value);
-                        widget.onVhsOnlyChanged(value);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _DeckToggle(
-                      label: 'SAVE ON EJECT',
-                      subtitle: 'Keeps your place. Rewinding is still on you.',
-                      value: _saveOnEject,
-                      onChanged: (value) {
-                        setState(() => _saveOnEject = value);
-                        widget.onSaveTimestampChanged(value);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _DeckToggle(
-                      label: 'VHS COVERS',
-                      subtitle: 'Show the scanned VHS front when the whole sleeve is available.',
-                      value: _vhsCovers,
-                      onChanged: (value) {
-                        setState(() => _vhsCovers = value);
-                        widget.onVhsCoversChanged(value);
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _DeckKey(
-                      label: 'SORT',
-                      sublabel: widget.sortLabel,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        widget.onOpenSort();
-                      },
-                    ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 6),
                     const _SectionLabel('SHELF'),
                     const SizedBox(height: 8),
                     Row(
@@ -265,6 +226,47 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                             },
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    const _SectionLabel('OPTIONS'),
+                    const SizedBox(height: 8),
+                    _DeckToggle(
+                      label: 'VHS ONLY',
+                      subtitle: 'Only titles with scanned VHS artwork.',
+                      value: _vhsOnly,
+                      onChanged: (value) {
+                        setState(() => _vhsOnly = value);
+                        widget.onVhsOnlyChanged(value);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _DeckToggle(
+                      label: 'SAVE ON EJECT',
+                      subtitle: 'Keeps your place. Rewinding is still on you.',
+                      value: _saveOnEject,
+                      onChanged: (value) {
+                        setState(() => _saveOnEject = value);
+                        widget.onSaveTimestampChanged(value);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _DeckToggle(
+                      label: 'VHS COVERS',
+                      subtitle: 'Show the scanned VHS front when the whole sleeve is available.',
+                      value: _vhsCovers,
+                      onChanged: (value) {
+                        setState(() => _vhsCovers = value);
+                        widget.onVhsCoversChanged(value);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _DeckKey(
+                      label: 'SORT',
+                      sublabel: widget.sortLabel,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        widget.onOpenSort();
+                      },
                     ),
                     const SizedBox(height: 14),
                     Row(

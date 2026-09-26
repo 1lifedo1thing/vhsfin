@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -85,9 +84,6 @@ abstract final class VhsSleeveShapes {
   }
 }
 
-/// A VHS box front is about 104 × 188 mm.
-const vhsFrontAspect = 104 / 188;
-
 /// A horizontal strip of a sleeve image, as fractions of its width, with the
 /// strip's own proportions so it can be shown without distortion.
 typedef VhsFrontCover = ({
@@ -115,14 +111,12 @@ VhsFrontCover? vhsFrontCoverOf(VhsSpineArt art) {
   final spine = art.isWraparound
       ? art.centerWidthFraction
       : VhsCoverResolver.wraparoundSpineFraction;
-  // The spine is the middle strip; the front begins right after it and is
-  // one box-front wide (never past the scan's edge).
+  // The spine is the middle strip; the front is everything right of it.
   final left = 0.5 + spine / 2;
-  final right = math.min(1.0, left + vhsFrontAspect / sleeve);
   return (
     url: art.imageUrl,
     left: left,
-    right: right,
-    aspect: (right - left) * sleeve,
+    right: 1.0,
+    aspect: (1 - left) * sleeve,
   );
 }

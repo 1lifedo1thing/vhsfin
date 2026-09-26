@@ -410,7 +410,7 @@ class _SleeveArtState extends State<_SleeveArt> {
     final sleeveH = widget.height;
     final spineW = sleeveH * 0.17;
     // The VHS front keeps its own proportions, so nothing is cropped off it.
-    final frontW = sleeveH * (cover?.aspect.clamp(0.4, 0.9) ?? _posterAspect);
+    final frontW = sleeveH * (cover?.aspect.clamp(0.4, 1.2) ?? _posterAspect);
     // Room for the spine base to kick left when it leans into the poster.
     final leanPad = sleeveH * math.sin(_spineLean) + 6;
     // Same lean; less tuck so the spine sits further left of the cover.
