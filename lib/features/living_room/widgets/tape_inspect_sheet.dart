@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
@@ -19,7 +20,7 @@ Future<void> showTapeInspectSheet(
   required Future<void> Function() onRejectSleeve,
   VhsSpineArt? art,
   Future<VhsSpineArt?> Function()? loadArt,
-  bool useVhsCover = false,
+  bool useVhsCover = true,
   CabinetStyle cabinetStyle = CabinetStyle.walnut,
 }) {
   // Warm memory with the same ResizeImage keys the shelf already used so the
@@ -47,18 +48,22 @@ Future<void> showTapeInspectSheet(
     cabinetStyle: cabinetStyle,
   );
   if (desktop) {
-    return showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.72),
-      builder: (_) => content,
+    return DeckFeedback.sheet(
+      () => showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.72),
+        builder: (_) => content,
+      ),
     );
   }
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.72),
-    builder: (_) => content,
+  return DeckFeedback.sheet(
+    () => showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (_) => content,
+    ),
   );
 }
 

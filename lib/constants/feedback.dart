@@ -2,14 +2,17 @@ import 'package:flutter/services.dart';
 
 /// Short sounds that ride along with presses (see [DeckFeedback]).
 enum DeckUiSound {
-  /// A light plastic tick — the VCR's slot flap.
-  tick,
-
   /// A key going down — the VCR's eject button.
   key,
 
   /// A switch snapping over — a low, weighty chonk.
   toggle,
+
+  /// A sheet rising: a soft, thumpy whoosh up.
+  sheetUp,
+
+  /// A sheet going away: the whoosh back down.
+  sheetDown,
 }
 
 /// The deck's feel under your finger: one place decides the haptic and the
@@ -22,10 +25,9 @@ abstract final class DeckFeedback {
   static void Function(DeckUiSound sound)? player;
 
   /// Choosing something: a shelf, a TV, a tape, a row, closing a sheet.
-  static void tap() {
-    HapticFeedback.selectionClick();
-    player?.call(DeckUiSound.tick);
-  }
+  /// Felt only — these are the most frequent touches, and a sound on each
+  /// becomes noise. Sheets they open carry their own whoosh.
+  static void tap() => HapticFeedback.selectionClick();
 
   /// A hardware key going down.
   static void key() {
@@ -45,4 +47,11 @@ abstract final class DeckFeedback {
 
   /// The cassette seating in, or popping out of, the deck (felt only).
   static void clunk() => HapticFeedback.heavyImpact();
+
+  /// Wraps a sheet or dialog: whoosh up as it opens, down once it's gone —
+  /// however it was dismissed.
+  static Future<T?> sheet<T>(Future<T?> Function() open) {
+    player?.call(DeckUiSound.sheetUp);
+    return open().whenComplete(() => player?.call(DeckUiSound.sheetDown));
+  }
 }

@@ -17,44 +17,46 @@ Future<T?> showDeckPanelSheet<T>(
   double maxWidth = 460,
   bool scrollable = true,
 }) {
-  return showModalBottomSheet<T>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (context) {
-      final bottom = MediaQuery.paddingOf(context).bottom;
-      final body = builder(context);
-      return DismissOnEscape(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxWidth,
-                maxHeight: MediaQuery.sizeOf(context).height * 0.9,
-              ),
-              child: Material(
-                type: MaterialType.transparency,
-                child: DeckPanel(
-                  padding: EdgeInsets.zero,
-                  child: scrollable
-                      ? SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
-                          child: body,
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
-                          child: body,
-                        ),
+  return DeckFeedback.sheet(
+    () => showModalBottomSheet<T>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final bottom = MediaQuery.paddingOf(context).bottom;
+        final body = builder(context);
+        return DismissOnEscape(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: DeckPanel(
+                    padding: EdgeInsets.zero,
+                    child: scrollable
+                        ? SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
+                            child: body,
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+                            child: body,
+                          ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 }
 

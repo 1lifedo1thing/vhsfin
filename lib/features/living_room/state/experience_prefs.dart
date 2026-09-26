@@ -12,7 +12,7 @@ class ExperiencePrefs {
     this.saveTimestampOnEject = false,
     this.crtSkin = CrtTvSkin.crtIcon,
     this.cabinetStyle = CabinetStyle.walnut,
-    this.vhsCovers = false,
+    this.jellyfinPosters = false,
     this.soundEffects = true,
   });
 
@@ -25,9 +25,9 @@ class ExperiencePrefs {
   /// Shelf and TV-stand furniture look.
   final CabinetStyle cabinetStyle;
 
-  /// Show the scanned VHS front instead of the Jellyfin poster when the
-  /// whole sleeve is available.
-  final bool vhsCovers;
+  /// Always use Jellyfin's poster for a tape's box front. Off (default),
+  /// the scanned VHS front shows whenever the full sleeve is available.
+  final bool jellyfinPosters;
 
   /// Deck sounds: tape clunks and whirr, key clicks, switch chonks.
   final bool soundEffects;
@@ -36,14 +36,14 @@ class ExperiencePrefs {
     bool? saveTimestampOnEject,
     CrtTvSkin? crtSkin,
     CabinetStyle? cabinetStyle,
-    bool? vhsCovers,
+    bool? jellyfinPosters,
     bool? soundEffects,
   }) {
     return ExperiencePrefs(
       saveTimestampOnEject: saveTimestampOnEject ?? this.saveTimestampOnEject,
       crtSkin: crtSkin ?? this.crtSkin,
       cabinetStyle: cabinetStyle ?? this.cabinetStyle,
-      vhsCovers: vhsCovers ?? this.vhsCovers,
+      jellyfinPosters: jellyfinPosters ?? this.jellyfinPosters,
       soundEffects: soundEffects ?? this.soundEffects,
     );
   }
@@ -58,7 +58,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _saveTsKey = 'vhsfin.save_timestamp_on_eject';
   static const _crtSkinKey = 'vhsfin.crt_tv_skin.v1';
   static const _cabinetKey = 'vhsfin.cabinet_style.v1';
-  static const _vhsCoversKey = 'vhsfin.vhs_covers.v1';
+  static const _jellyfinPostersKey = 'vhsfin.jellyfin_posters.v1';
   static const _soundKey = 'vhsfin.sound_effects.v1';
 
   int _epoch = 0;
@@ -78,7 +78,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
       saveTimestampOnEject: prefs.getBool(_saveTsKey) ?? false,
       crtSkin: skin,
       cabinetStyle: CabinetStyleLabels.fromPrefs(prefs.getString(_cabinetKey)),
-      vhsCovers: prefs.getBool(_vhsCoversKey) ?? false,
+      jellyfinPosters: prefs.getBool(_jellyfinPostersKey) ?? false,
       soundEffects: prefs.getBool(_soundKey) ?? true,
     );
   }
@@ -105,11 +105,11 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     await prefs.setBool(_soundKey, value);
   }
 
-  Future<void> setVhsCovers(bool value) async {
+  Future<void> setJellyfinPosters(bool value) async {
     _epoch++;
-    state = state.copyWith(vhsCovers: value);
+    state = state.copyWith(jellyfinPosters: value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_vhsCoversKey, value);
+    await prefs.setBool(_jellyfinPostersKey, value);
   }
 
   Future<void> setCabinetStyle(CabinetStyle style) async {

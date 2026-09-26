@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -20,18 +21,20 @@ Future<void> showEpisodePicker(
   required void Function(Tape episode) onInsert,
   required Future<void> Function(Tape tape) onRejectSleeve,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (context) => DismissOnEscape(
-      child: EpisodePickerSheet(
-        series: series,
-        loadedId: loadedId,
-        loadEpisodes: loadEpisodes,
-        resolveArt: resolveArt,
-        onInsert: onInsert,
-        onRejectSleeve: onRejectSleeve,
+  return DeckFeedback.sheet(
+    () => showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DismissOnEscape(
+        child: EpisodePickerSheet(
+          series: series,
+          loadedId: loadedId,
+          loadEpisodes: loadEpisodes,
+          resolveArt: resolveArt,
+          onInsert: onInsert,
+          onRejectSleeve: onRejectSleeve,
+        ),
       ),
     ),
   );

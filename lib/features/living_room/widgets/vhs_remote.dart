@@ -19,24 +19,26 @@ Future<void> showVhsRemote(
   Stream<bool>? playing,
   bool initiallyPlaying = false,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (context) => DismissOnEscape(
-      child: VhsRemoteSheet(
-        title: title,
-        live: live,
-        powered: powered,
-        onRewStart: onRewStart,
-        onRewEnd: onRewEnd,
-        onPlay: onPlay,
-        onFfStart: onFfStart,
-        onFfEnd: onFfEnd,
-        onFullScreen: onFullScreen,
-        onEject: onEject,
-        playing: playing,
-        initiallyPlaying: initiallyPlaying,
+  return DeckFeedback.sheet(
+    () => showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DismissOnEscape(
+        child: VhsRemoteSheet(
+          title: title,
+          live: live,
+          powered: powered,
+          onRewStart: onRewStart,
+          onRewEnd: onRewEnd,
+          onPlay: onPlay,
+          onFfStart: onFfStart,
+          onFfEnd: onFfEnd,
+          onFullScreen: onFullScreen,
+          onEject: onEject,
+          playing: playing,
+          initiallyPlaying: initiallyPlaying,
+        ),
       ),
     ),
   );

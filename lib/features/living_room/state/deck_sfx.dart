@@ -20,14 +20,15 @@ class DeckSfx {
     _insert = _preloaded('sounds/vhs_insert.ogg');
     _eject = _preloaded('sounds/vhs_eject.ogg');
     _ui = {
-      for (final (sound, file) in const [
-        (DeckUiSound.tick, 'ui_tick'),
-        (DeckUiSound.key, 'ui_key'),
-        (DeckUiSound.toggle, 'ui_switch'),
+      for (final (sound, files) in const [
+        (DeckUiSound.key, ['ui_key_1', 'ui_key_2', 'ui_key_3']),
+        (DeckUiSound.toggle, ['ui_switch_1', 'ui_switch_2', 'ui_switch_3']),
+        (DeckUiSound.sheetUp, ['ui_sheet_up']),
+        (DeckUiSound.sheetDown, ['ui_sheet_down']),
       ])
         sound: [
-          for (var i = 1; i <= 3; i++)
-            _preloaded('sounds/${file}_$i.wav', volume: _uiVolume[sound]!),
+          for (final file in files)
+            _preloaded('sounds/$file.wav', volume: _uiVolume[sound]!),
         ],
     };
   }
@@ -40,9 +41,10 @@ class DeckSfx {
   final _random = math.Random();
 
   static const _uiVolume = {
-    DeckUiSound.tick: 0.35,
     DeckUiSound.key: 0.55,
     DeckUiSound.toggle: 0.7,
+    DeckUiSound.sheetUp: 0.5,
+    DeckUiSound.sheetDown: 0.45,
   };
 
   /// The SOUND EFFECTS setting: off silences every deck sound.
@@ -59,7 +61,9 @@ class DeckSfx {
     if (variants == null || variants.isEmpty) return;
     final last = _lastVariant[sound];
     var pick = _random.nextInt(variants.length);
-    if (pick == last) pick = (pick + 1) % variants.length;
+    if (pick == last && variants.length > 1) {
+      pick = (pick + 1) % variants.length;
+    }
     _lastVariant[sound] = pick;
     final player = variants[pick];
     final volume = _uiVolume[sound]! * (0.82 + _random.nextDouble() * 0.18);

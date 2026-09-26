@@ -464,8 +464,9 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
 }
 
 /// Exactly the strip [left]..[right] (fractions of the image width) of a
-/// sleeve image whose proportions are [imageAspect], scaled to cover its box.
-/// Size the box to the strip's own aspect and nothing is cropped.
+/// sleeve image whose proportions are [imageAspect], fitted inside its box:
+/// the whole strip always shows, full height and full width. Sized to the
+/// strip's own aspect, the box has no bars.
 class SleeveRegion extends StatelessWidget {
   const SleeveRegion({
     super.key,
@@ -487,8 +488,8 @@ class SleeveRegion extends StatelessWidget {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
         final regionAspect = (right - left) * imageAspect;
-        // Cover: the strip fills the box on its tighter axis.
-        final regionH = regionAspect > w / h ? h : w / regionAspect;
+        // Contain: the strip fits the box on its tighter axis, never cropped.
+        final regionH = regionAspect > w / h ? w / regionAspect : h;
         final regionW = regionH * regionAspect;
         final imageH = regionH;
         final imageW = imageH * imageAspect;

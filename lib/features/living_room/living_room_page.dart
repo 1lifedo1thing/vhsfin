@@ -37,12 +37,12 @@ class LivingRoomPage extends ConsumerWidget {
       vhsOnly: displayPrefs.vhsOnly,
       sortLabel: displayPrefs.sort.buttonLabel,
       saveTimestampOnEject: experience.saveTimestampOnEject,
-      vhsCovers: experience.vhsCovers,
+      jellyfinPosters: experience.jellyfinPosters,
       soundEffects: experience.soundEffects,
       onSoundEffectsChanged: (value) =>
           ref.read(experiencePrefsProvider.notifier).setSoundEffects(value),
-      onVhsCoversChanged: (value) =>
-          ref.read(experiencePrefsProvider.notifier).setVhsCovers(value),
+      onJellyfinPostersChanged: (value) =>
+          ref.read(experiencePrefsProvider.notifier).setJellyfinPosters(value),
       crtSkin: experience.crtSkin,
       cabinetStyle: experience.cabinetStyle,
       onCollection: () => context.push('/libraries'),
@@ -307,7 +307,7 @@ class LivingRoomPage extends ConsumerWidget {
     showTapeInspectSheet(
       context,
       tape: tape,
-      useVhsCover: experience.vhsCovers,
+      useVhsCover: !experience.jellyfinPosters,
       cabinetStyle: experience.cabinetStyle,
       art: ref.read(vhsSpineArtProvider(tape)).asData?.value,
       loadArt: () => ref.read(vhsSpineArtProvider(tape).future),

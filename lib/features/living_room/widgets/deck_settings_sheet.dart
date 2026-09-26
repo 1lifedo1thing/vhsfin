@@ -15,10 +15,10 @@ Future<void> showDeckSettingsSheet(
   required bool vhsOnly,
   required String sortLabel,
   required bool saveTimestampOnEject,
-  required bool vhsCovers,
+  required bool jellyfinPosters,
   required bool soundEffects,
   required ValueChanged<bool> onSoundEffectsChanged,
-  required ValueChanged<bool> onVhsCoversChanged,
+  required ValueChanged<bool> onJellyfinPostersChanged,
   required CrtTvSkin crtSkin,
   required VoidCallback onCollection,
   required VoidCallback onConnect,
@@ -39,10 +39,10 @@ Future<void> showDeckSettingsSheet(
       vhsOnly: vhsOnly,
       sortLabel: sortLabel,
       saveTimestampOnEject: saveTimestampOnEject,
-      vhsCovers: vhsCovers,
+      jellyfinPosters: jellyfinPosters,
       soundEffects: soundEffects,
       onSoundEffectsChanged: onSoundEffectsChanged,
-      onVhsCoversChanged: onVhsCoversChanged,
+      onJellyfinPostersChanged: onJellyfinPostersChanged,
       crtSkin: crtSkin,
       onCollection: onCollection,
       onConnect: onConnect,
@@ -63,10 +63,10 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.vhsOnly,
     required this.sortLabel,
     required this.saveTimestampOnEject,
-    required this.vhsCovers,
+    required this.jellyfinPosters,
     required this.soundEffects,
     required this.onSoundEffectsChanged,
-    required this.onVhsCoversChanged,
+    required this.onJellyfinPostersChanged,
     required this.crtSkin,
     required this.onCollection,
     required this.onConnect,
@@ -85,10 +85,10 @@ class _DeckSettingsSheet extends StatefulWidget {
   final bool vhsOnly;
   final String sortLabel;
   final bool saveTimestampOnEject;
-  final bool vhsCovers;
+  final bool jellyfinPosters;
   final bool soundEffects;
   final ValueChanged<bool> onSoundEffectsChanged;
-  final ValueChanged<bool> onVhsCoversChanged;
+  final ValueChanged<bool> onJellyfinPostersChanged;
   final CrtTvSkin crtSkin;
   final VoidCallback onCollection;
   final VoidCallback onConnect;
@@ -107,7 +107,7 @@ class _DeckSettingsSheet extends StatefulWidget {
 class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   late bool _vhsOnly = widget.vhsOnly;
   late bool _saveOnEject = widget.saveTimestampOnEject;
-  late bool _vhsCovers = widget.vhsCovers;
+  late bool _jellyfinPosters = widget.jellyfinPosters;
   late bool _sound = widget.soundEffects;
   late CrtTvSkin _crtSkin = widget.crtSkin;
   late CabinetStyle _cabinet = widget.cabinetStyle;
@@ -121,11 +121,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DeckPanelHeader(
-          title: 'SETTINGS',
-          detail: widget.connected ? 'ONLINE' : 'NO SIGNAL',
-          onClose: _close,
-        ),
+        DeckPanelHeader(title: 'SETTINGS', onClose: _close),
         const DeckLabel('SHELF'),
         Row(
           children: [
@@ -190,13 +186,12 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
         ),
         const SizedBox(height: 8),
         DeckOptionRow(
-          label: 'VHS COVERS',
-          subtitle:
-              'Show the scanned VHS front when the whole sleeve is available.',
-          value: _vhsCovers,
+          label: 'JELLYFIN POSTERS',
+          subtitle: "Use Jellyfin's poster instead of the scanned VHS front.",
+          value: _jellyfinPosters,
           onChanged: (value) {
-            setState(() => _vhsCovers = value);
-            widget.onVhsCoversChanged(value);
+            setState(() => _jellyfinPosters = value);
+            widget.onJellyfinPostersChanged(value);
           },
         ),
         const SizedBox(height: 8),
