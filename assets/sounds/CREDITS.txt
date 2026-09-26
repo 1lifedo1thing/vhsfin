@@ -14,7 +14,9 @@
 #   https://bigsoundbank.com/vcr-rewind-s2693.html
 #
 # Press sounds, cut from the clips above (also CC0):
-# ui_key.wav      — the eject button click, 90ms from vhs_eject at 0.07s
-# ui_tick.wav     — the slot flap click, 70ms from vhs_insert at 0.31s
-# ui_switch.wav   — the cassette pop from vhs_eject at 0.97s, low-passed at
-#                   2.2 kHz and pitched down ~12% for a heavier switch chonk
+# ui_key_*.wav    — the eject button click, 90ms from vhs_eject at 0.07s
+# ui_tick_*.wav   — the slot flap click, 70ms from vhs_insert at 0.31s
+# ui_switch_*.wav — the cassette pop from vhs_eject at 0.97s, low-passed at
+#                   ~2.2 kHz and pitched down ~12% for a heavier switch chonk
+# Each comes in three variants (_1 lower/darker, _2 as cut, _3 higher) that
+# the app rotates so repeated presses don't sound identical.

@@ -196,7 +196,8 @@ class _PopupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 8, 0),
+      // Same side insets as the body, so the X sits on its right edge.
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
       child: DeckSheetHeader(
         title: 'TAPE INFO',
         detail: year?.toString(),
@@ -206,6 +207,8 @@ class _PopupHeader extends StatelessWidget {
             PopupMenuButton<_TapeMenuAction>(
               tooltip: 'More',
               iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 180),
               icon: const Icon(
                 Icons.more_vert_rounded,
                 color: VhsColors.inkMuted,
@@ -833,34 +836,51 @@ class _FrontArt extends StatelessWidget {
         right: front.right,
       );
     }
-    if (measuring) return const ColoredBox(color: VhsColors.surfaceSunken);
+    // Still learning whether the scan has a front: hold the blank box rather
+    // than flash the poster and swap it.
+    if (measuring) return const _BlankCassetteBox();
     final url = tape.imageUrl;
     if (url == null || url.isEmpty) {
-      // A plain black box with the format mark pressed into it.
-      return ColoredBox(
-        color: const Color(0xFF0D0E10),
-        child: Center(
-          child: Text(
-            'VHS',
-            semanticsLabel: 'No cover',
-            style: vhsBrandStyle(size: 30).copyWith(
-              color: const Color(0xFF1C1E21),
-              letterSpacing: 4,
-              shadows: const [
-                Shadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
-                Shadow(color: Color(0xCC000000), offset: Offset(0, -1)),
-              ],
-            ),
-          ),
-        ),
-      );
+      return const _BlankCassetteBox(noCover: true);
     }
+    // Same decode size as the preload in showTapeInspectSheet, so an image
+    // that's already warm paints at once; otherwise the blank box shows until
+    // it arrives and the poster fades in over it.
     return VhsImageCache.image(
       url: url,
       fit: BoxFit.cover,
-      memCacheHeight: null,
-      errorBuilder: (_, _, _) =>
-          const ColoredBox(color: VhsColors.surfaceSunken),
+      placeholder: const _BlankCassetteBox(),
+      fadeIn: const Duration(milliseconds: 150),
+      errorBuilder: (_, _, _) => const _BlankCassetteBox(noCover: true),
+    );
+  }
+}
+
+/// A plain black video box with the format mark pressed into it — shown
+/// while a cover loads, or when there's none.
+class _BlankCassetteBox extends StatelessWidget {
+  const _BlankCassetteBox({this.noCover = false});
+
+  final bool noCover;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFF0D0E10),
+      child: Center(
+        child: Text(
+          'VHS',
+          semanticsLabel: noCover ? 'No cover' : 'Cover loading',
+          style: vhsBrandStyle(size: 30).copyWith(
+            color: const Color(0xFF1C1E21),
+            letterSpacing: 4,
+            shadows: const [
+              Shadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
+              Shadow(color: Color(0xCC000000), offset: Offset(0, -1)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

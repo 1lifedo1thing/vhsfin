@@ -97,12 +97,11 @@ class DeckPanel extends StatelessWidget {
           child: Stack(
             children: [
               Padding(padding: padding, child: child),
+              // Top screws only; the bottom edge stays clear for the keys.
               if (screws)
                 for (final corner in const [
                   Alignment.topLeft,
                   Alignment.topRight,
-                  Alignment.bottomLeft,
-                  Alignment.bottomRight,
                 ])
                   Positioned.fill(
                     child: IgnorePointer(
@@ -321,32 +320,39 @@ class DeckSheetHeader extends StatelessWidget {
       children: [
         const DeckLed(on: true, color: VhsColors.record),
         const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFC9D1D4),
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2.6,
-            ),
+        // One flexible group, so the leftover space ends up before the
+        // actions and the X stays on the right edge.
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFC9D1D4),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.6,
+                  ),
+                ),
+              ),
+              if (detail != null) ...[
+                const SizedBox(width: 10),
+                Text(
+                  detail!,
+                  style: const TextStyle(
+                    color: VhsColors.inkFaint,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.6,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        if (detail != null) ...[
-          const SizedBox(width: 10),
-          Text(
-            detail!,
-            style: const TextStyle(
-              color: VhsColors.inkFaint,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.6,
-            ),
-          ),
-        ],
-        const Spacer(),
         ...actions,
         DeckCloseButton(onPressed: onClose),
       ],
@@ -354,24 +360,47 @@ class DeckSheetHeader extends StatelessWidget {
   }
 }
 
-/// The one close control every sheet uses: a small, quiet X.
+/// The one close control every sheet uses: a small, quiet X whose drawn
+/// stroke sits on the content's right edge (its 40px target extends left).
 class DeckCloseButton extends StatelessWidget {
   const DeckCloseButton({super.key, required this.onPressed});
 
   final VoidCallback onPressed;
 
+  /// Material's close glyph leaves ~4px of empty box at size 20.
+  static const _glyphInset = 4.0;
+
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () {
-        DeckFeedback.tap();
-        onPressed();
-      },
-      tooltip: 'Close',
-      visualDensity: VisualDensity.compact,
-      iconSize: 20,
-      color: VhsColors.inkMuted,
-      icon: const Icon(Icons.close_rounded),
+    return Tooltip(
+      message: 'Close',
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        label: 'Close',
+        excludeSemantics: true,
+        child: InkResponse(
+          onTap: () {
+            DeckFeedback.tap();
+            onPressed();
+          },
+          radius: 20,
+          child: SizedBox.square(
+            dimension: 40,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Transform.translate(
+                offset: const Offset(_glyphInset, 0),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: VhsColors.inkMuted,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

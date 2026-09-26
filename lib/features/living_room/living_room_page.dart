@@ -254,6 +254,8 @@ class LivingRoomPage extends ConsumerWidget {
       title: deck.loadedTape?.title,
       live: deck.isPlaying,
       powered: deck.isPowered,
+      playing: player.isReady ? player.player.stream.playing : null,
+      initiallyPlaying: player.isReady && player.player.state.playing,
       onRewStart: () {
         player.startRewind();
         sfx.startRewind();

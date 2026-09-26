@@ -70,6 +70,8 @@ class VhsImageCache {
     int? memCacheHeight = sharedDecodeHeight,
     FilterQuality filterQuality = FilterQuality.medium,
     Widget Function(BuildContext, String, Object)? errorBuilder,
+    Widget? placeholder,
+    Duration fadeIn = Duration.zero,
   }) {
     return CachedNetworkImage(
       imageUrl: url,
@@ -82,7 +84,7 @@ class VhsImageCache {
       alignment: alignment,
       memCacheHeight: memCacheHeight,
       filterQuality: filterQuality,
-      fadeInDuration: Duration.zero,
+      fadeInDuration: fadeIn,
       fadeOutDuration: Duration.zero,
       placeholderFadeInDuration: Duration.zero,
       errorWidget: (context, failedUrl, error) {
@@ -91,7 +93,8 @@ class VhsImageCache {
         }
         return const ColoredBox(color: Colors.black);
       },
-      placeholder: (_, _) => const ColoredBox(color: Colors.transparent),
+      placeholder: (_, _) =>
+          placeholder ?? const ColoredBox(color: Colors.transparent),
     );
   }
 }

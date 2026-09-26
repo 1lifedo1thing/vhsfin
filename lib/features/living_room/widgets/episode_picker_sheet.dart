@@ -128,7 +128,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 8, 0),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: DeckSheetHeader(
                       title: 'TAPE SELECT',
                       detail: episodes == null

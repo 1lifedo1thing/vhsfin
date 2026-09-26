@@ -16,6 +16,8 @@ Future<void> showVhsRemote(
   required VoidCallback onFfEnd,
   required VoidCallback onFullScreen,
   required VoidCallback onEject,
+  Stream<bool>? playing,
+  bool initiallyPlaying = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -33,6 +35,8 @@ Future<void> showVhsRemote(
         onFfEnd: onFfEnd,
         onFullScreen: onFullScreen,
         onEject: onEject,
+        playing: playing,
+        initiallyPlaying: initiallyPlaying,
       ),
     ),
   );
@@ -51,6 +55,8 @@ class VhsRemoteSheet extends StatelessWidget {
     required this.onFfEnd,
     required this.onFullScreen,
     required this.onEject,
+    this.playing,
+    this.initiallyPlaying = false,
   });
 
   final String? title;
@@ -63,6 +69,10 @@ class VhsRemoteSheet extends StatelessWidget {
   final VoidCallback onFfEnd;
   final VoidCallback onFullScreen;
   final VoidCallback onEject;
+
+  /// Whether the tape is running (not paused), live from the player.
+  final Stream<bool>? playing;
+  final bool initiallyPlaying;
 
   @override
   Widget build(BuildContext context) {
@@ -101,37 +111,53 @@ class VhsRemoteSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  DeckDisplay(
-                    text: live ? (title ?? 'PLAYING').toUpperCase() : 'NO TAPE',
-                    detail: live ? 'PLAY' : null,
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _RubberKey(
-                        label: 'REW',
-                        icon: Icons.fast_rewind_rounded,
-                        enabled: live,
-                        onPressStart: onRewStart,
-                        onPressEnd: onRewEnd,
-                      ),
-                      _RubberKey(
-                        label: 'PLAY',
-                        icon: Icons.play_arrow_rounded,
-                        enabled: live,
-                        large: true,
-                        onTap: onPlay,
-                      ),
-                      _RubberKey(
-                        label: 'FF',
-                        icon: Icons.fast_forward_rounded,
-                        enabled: live,
-                        onPressStart: onFfStart,
-                        onPressEnd: onFfEnd,
-                      ),
-                    ],
+                  StreamBuilder<bool>(
+                    stream: playing,
+                    initialData: initiallyPlaying,
+                    builder: (context, snapshot) {
+                      final running = live && (snapshot.data ?? false);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          DeckDisplay(
+                            text: live
+                                ? (title ?? 'PLAYING').toUpperCase()
+                                : 'NO TAPE',
+                            detail: live ? (running ? 'PLAY' : 'PAUSE') : null,
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              _RubberKey(
+                                label: 'REW',
+                                icon: Icons.fast_rewind_rounded,
+                                enabled: live,
+                                onPressStart: onRewStart,
+                                onPressEnd: onRewEnd,
+                              ),
+                              _RubberKey(
+                                label: running ? 'PAUSE' : 'PLAY',
+                                icon: running
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                enabled: live,
+                                large: true,
+                                onTap: onPlay,
+                              ),
+                              _RubberKey(
+                                label: 'FF',
+                                icon: Icons.fast_forward_rounded,
+                                enabled: live,
+                                onPressStart: onFfStart,
+                                onPressEnd: onFfEnd,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 18),
                   Row(

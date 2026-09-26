@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
@@ -19,29 +20,54 @@ class DeckSfx {
     _insert = _preloaded('sounds/vhs_insert.ogg');
     _eject = _preloaded('sounds/vhs_eject.ogg');
     _ui = {
-      DeckUiSound.tick: _preloaded('sounds/ui_tick.wav', volume: 0.35),
-      DeckUiSound.key: _preloaded('sounds/ui_key.wav', volume: 0.55),
-      DeckUiSound.toggle: _preloaded('sounds/ui_switch.wav', volume: 0.7),
+      for (final (sound, file) in const [
+        (DeckUiSound.tick, 'ui_tick'),
+        (DeckUiSound.key, 'ui_key'),
+        (DeckUiSound.toggle, 'ui_switch'),
+      ])
+        sound: [
+          for (var i = 1; i <= 3; i++)
+            _preloaded('sounds/${file}_$i.wav', volume: _uiVolume[sound]!),
+        ],
     };
   }
 
   late final AudioPlayer _insert;
   late final AudioPlayer _eject;
   late final AudioPlayer _shuttle;
-  late final Map<DeckUiSound, AudioPlayer> _ui;
+  late final Map<DeckUiSound, List<AudioPlayer>> _ui;
+  final _lastVariant = <DeckUiSound, int>{};
+  final _random = math.Random();
+
+  static const _uiVolume = {
+    DeckUiSound.tick: 0.35,
+    DeckUiSound.key: 0.55,
+    DeckUiSound.toggle: 0.7,
+  };
 
   /// The SOUND EFFECTS setting: off silences every deck sound.
   bool enabled = true;
 
   /// Press sounds for keys, switches, and choices (see [DeckFeedback]).
+  ///
+  /// Each sound has three recorded variants; a press never repeats the last
+  /// one and lands at a slightly different level, so repeated taps don't
+  /// sound mechanical in the bad way.
   void playUi(DeckUiSound sound) {
     if (!enabled) return;
-    final player = _ui[sound];
-    if (player == null) return;
+    final variants = _ui[sound];
+    if (variants == null || variants.isEmpty) return;
+    final last = _lastVariant[sound];
+    var pick = _random.nextInt(variants.length);
+    if (pick == last) pick = (pick + 1) % variants.length;
+    _lastVariant[sound] = pick;
+    final player = variants[pick];
+    final volume = _uiVolume[sound]! * (0.82 + _random.nextDouble() * 0.18);
     unawaited(() async {
       try {
         // stop + resume retriggers in every mode (low-latency can't seek).
         await player.stop();
+        await player.setVolume(volume);
         await player.resume();
       } catch (err) {
         debugPrint('deck-sfx ui $sound failed: $err');
@@ -110,7 +136,7 @@ class DeckSfx {
   Future<void> dispose() async {
     await _insert.dispose();
     await _eject.dispose();
-    for (final player in _ui.values) {
+    for (final player in _ui.values.expand((v) => v)) {
       await player.dispose();
     }
     await _shuttle.dispose();
