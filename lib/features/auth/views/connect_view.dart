@@ -142,9 +142,9 @@ class _ConnectViewState extends State<ConnectView> {
                                 enabled: !widget.busy,
                                 decoration: const InputDecoration(
                                   labelText: 'Server address',
-                                  hintText: 'http://jellyfin.local:8096',
+                                  hintText: 'jellyfin.local:8096',
                                   prefixIcon: Icon(Icons.dns_outlined),
-                                  helperText: 'Include http:// or https://',
+                                  helperText: 'Name or IP and port — https:// is tried first',
                                   errorMaxLines: 3,
                                 ),
                                 keyboardType: TextInputType.url,
@@ -153,7 +153,7 @@ class _ConnectViewState extends State<ConnectView> {
                                 enableSuggestions: false,
                                 validator: (value) {
                                   try {
-                                    normalizeServerAddress(value ?? '');
+                                    serverAddressCandidates(value ?? '');
                                     return null;
                                   } on FormatException catch (error) {
                                     return error.message;

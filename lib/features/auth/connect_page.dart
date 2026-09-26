@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vhsfin/features/auth/model/server_address.dart';
@@ -45,13 +47,27 @@ class _ConnectPageState extends ConsumerState<ConnectPage> {
       _error = null;
     });
     try {
-      await ref
-          .read(sessionProvider.notifier)
-          .signIn(
-            serverUrl: normalizeServerAddress(_serverController.text),
-            username: _userController.text.trim(),
-            password: _passwordController.text,
-          );
+      final candidates = serverAddressCandidates(
+        _serverController.text,
+        httpsOnly: kIsWeb && Uri.base.scheme == 'https',
+      );
+      for (var i = 0; i < candidates.length; i++) {
+        try {
+          await ref
+              .read(sessionProvider.notifier)
+              .signIn(
+                serverUrl: candidates[i],
+                username: _userController.text.trim(),
+                password: _passwordController.text,
+              );
+          break;
+        } on DioException catch (error) {
+          // Only move on when nothing answered; a reply (like a wrong
+          // password) means this address is the server.
+          final unreachable = error.response == null;
+          if (!unreachable || i == candidates.length - 1) rethrow;
+        }
+      }
       if (!mounted) return;
       TextInput.finishAutofillContext();
       ref.invalidate(shelvesProvider);

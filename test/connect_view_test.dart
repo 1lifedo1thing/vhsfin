@@ -12,7 +12,6 @@ void main() {
     expect(normalizeServerAddress('http://[::1]:8096/'), 'http://[::1]:8096');
     for (final address in [
       '',
-      'media.local:8096',
       'ftp://media.local',
       'https://user:password@media.local',
       'https://media.local/web/#/home',
@@ -25,6 +24,20 @@ void main() {
         reason: address,
       );
     }
+  });
+
+  test('addresses without a scheme try https, then http', () {
+    expect(serverAddressCandidates(' jellyfin.local:8096/ '), [
+      'https://jellyfin.local:8096',
+      'http://jellyfin.local:8096',
+    ]);
+    expect(serverAddressCandidates('192.168.1.20:8096', httpsOnly: true), [
+      'https://192.168.1.20:8096',
+    ], reason: 'an https page cannot reach an http server');
+    expect(serverAddressCandidates('http://media.local'), [
+      'http://media.local',
+    ]);
+    expect(() => serverAddressCandidates('my server'), throwsFormatException);
   });
 
   testWidgets(
