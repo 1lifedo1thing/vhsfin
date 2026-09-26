@@ -28,8 +28,8 @@ abstract final class VhsColors {
   /// Secondary text and icons.
   static const inkMuted = Color(0xFF98A4AB);
 
-  /// Captions and disabled text.
-  static const inkFaint = Color(0xFF5C676E);
+  /// Captions and disabled text (4.5:1 on panels, WCAG AA).
+  static const inkFaint = Color(0xFF78868F);
 
   /// VFD cyan — selection, labels, progress, focus.
   static const accent = Color(0xFF6FE0E6);
