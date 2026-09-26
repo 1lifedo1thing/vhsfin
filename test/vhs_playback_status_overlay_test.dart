@@ -68,7 +68,7 @@ void main() {
     expect(find.text('TAPE ERROR'), findsOneWidget);
     expect(find.textContaining('HTTP 503'), findsNothing);
 
-    await tester.tap(find.text('\u25B6 RETRY'));
+    await tester.tap(find.text('\u25B6\uFE0E RETRY'));
     await tester.pump();
 
     expect(retries, 1);
@@ -150,8 +150,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('\u25B6 RETRY'));
-    await tester.tap(find.text('\u25B6 RETRY'));
+    await tester.ensureVisible(find.text('\u25B6\uFE0E RETRY'));
+    await tester.tap(find.text('\u25B6\uFE0E RETRY'));
     await tester.pump();
     expect(retries, 1);
     expect(tester.takeException(), isNull);
@@ -176,7 +176,7 @@ void main() {
     expect(find.text('TRACKING'), findsNothing);
   });
 
-  testWidgets('flashes PLAY when the picture first locks', (tester) async {
+  testWidgets('a clean start shows nothing over the picture', (tester) async {
     await tester.pumpWidget(
       _StatusHarness(
         playing: playing.stream,
@@ -186,12 +186,9 @@ void main() {
         initialBuffering: false,
       ),
     );
-    expect(find.text('PLAY \u25B6'), findsNothing);
     position.add(const Duration(milliseconds: 300));
     await tester.pump();
-    expect(find.text('PLAY \u25B6'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
-    expect(find.text('PLAY \u25B6'), findsNothing);
+    expect(find.byType(Text), findsNothing);
   });
 
   testWidgets('does not show a transient error when playback advances', (

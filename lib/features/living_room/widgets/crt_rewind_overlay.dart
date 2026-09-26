@@ -111,7 +111,7 @@ class _RewindPainter extends CustomPainter {
     // OSD corner label.
     final tp = TextPainter(
       text: TextSpan(
-        text: '◀◀ REW',
+        text: '◀\uFE0E◀\uFE0E REW',
         style: TextStyle(
           color: VhsColors.accent.withValues(alpha: 0.9),
           fontSize: math.max(11, size.width * 0.045),

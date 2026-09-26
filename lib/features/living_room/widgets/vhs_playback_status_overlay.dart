@@ -4,9 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/feedback.dart';
 
-/// What a VCR shows when the tape isn't giving a clean picture: a PLAY
-/// readout as playback starts, rolling tracking noise while the signal
-/// stalls, a TRACKING readout if it stays lost, and the blue screen when the
+/// What a VCR shows when the tape isn't giving a clean picture: rolling
+/// tracking noise while the signal stalls, a TRACKING readout if it stays lost, and the blue screen when the
 /// stream fails outright.
 class VhsPlaybackStatusOverlay extends StatefulWidget {
   const VhsPlaybackStatusOverlay({
@@ -61,14 +60,12 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
   final _subscriptions = <StreamSubscription<Object?>>[];
   Timer? _noiseTimer;
   Timer? _trackingTimer;
-  Timer? _playOsdTimer;
   late Duration _lastPosition;
   late bool _playing;
   late bool _buffering;
   var _started = false;
   var _progressing = false;
   var _signal = _Signal.clean;
-  var _showPlayOsd = false;
   String? _pendingError;
 
   @override
@@ -119,7 +116,6 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
 
   void _unbind() {
     _cancelStallTimers();
-    _playOsdTimer?.cancel();
     for (final subscription in _subscriptions) {
       unawaited(subscription.cancel());
     }
@@ -196,14 +192,7 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
   void _clearStatus() {
     _cancelStallTimers();
     if (!mounted) return;
-    if (!_started) {
-      _started = true;
-      // A deck flashes PLAY when the picture locks.
-      setState(() => _showPlayOsd = true);
-      _playOsdTimer = Timer(const Duration(milliseconds: 2600), () {
-        if (mounted) setState(() => _showPlayOsd = false);
-      });
-    }
+    _started = true;
     final recovered = _pendingError != null || _signal == _Signal.failed;
     _pendingError = null;
     _setSignal(_Signal.clean);
@@ -248,11 +237,6 @@ class _VhsPlaybackStatusOverlayState extends State<VhsPlaybackStatusOverlay> {
             ],
           ),
           _Signal.noisy => const _TrackingNoise(strength: 0.6),
-          _Signal.clean when _showPlayOsd => _Osd(
-            unit: unit,
-            alignment: Alignment.topLeft,
-            child: _OsdText('PLAY ▶', unit: unit),
-          ),
           _Signal.clean => const SizedBox.shrink(),
         };
       },
@@ -290,24 +274,16 @@ class _OsdText extends StatelessWidget {
 }
 
 class _Osd extends StatelessWidget {
-  const _Osd({
-    required this.unit,
-    required this.child,
-    this.alignment = Alignment.center,
-  });
+  const _Osd({required this.unit, required this.child});
 
   final double unit;
   final Widget child;
-  final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      ignoring: alignment == Alignment.topLeft,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(unit * 1.4, unit * 1.1, unit, unit),
-        child: Align(alignment: alignment, child: child),
-      ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(unit * 1.4, unit * 1.1, unit, unit),
+      child: Center(child: child),
     );
   }
 }
@@ -341,7 +317,7 @@ class _OsdButton extends StatelessWidget {
             horizontal: unit * 0.6,
             vertical: unit * 0.35,
           ),
-          child: _OsdText('▶ $label', unit: unit),
+          child: _OsdText('▶\uFE0E $label', unit: unit),
         ),
       ),
     );
