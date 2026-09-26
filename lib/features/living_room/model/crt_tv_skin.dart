@@ -51,7 +51,7 @@ extension CrtTvSkinLabels on CrtTvSkin {
   /// How much of the art's width the cabinet itself fills; the rest is
   /// transparent edge. Lets the layout size the TV by its body.
   double get bodyWidthFraction => switch (this) {
-    CrtTvSkin.crtIcon => 0.943,
+    CrtTvSkin.crtIcon => 0.947,
     CrtTvSkin.crt90s => 0.983,
     _ => 1,
   };

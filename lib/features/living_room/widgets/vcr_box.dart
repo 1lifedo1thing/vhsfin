@@ -188,16 +188,8 @@ class VcrBox extends StatelessWidget {
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: onEject,
-                            // The tape sitting in the slot, unlabelled.
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF151511),
-                                borderRadius: BorderRadius.circular(2),
-                                border: Border.all(
-                                  color: const Color(0xFF3F3C30),
-                                ),
-                              ),
-                            ),
+                            // The art's own slot shows; tapping it ejects.
+                            child: const SizedBox.expand(),
                           ),
                         )
                       : null,
