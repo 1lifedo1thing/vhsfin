@@ -54,7 +54,8 @@ class CrtSpriteLayout {
   /// glass hole, expanded a hair under the opaque bezel.
   final Rect screen;
 
-  /// Painted cassette mouth; title + tape-flight landing target.
+  /// The dark recess of the painted cassette mouth (measured on the art);
+  /// title plate and tape-flight landing target.
   final Rect slot;
 
   /// Transport keycaps under the mouth, left to right, measured on the art.
@@ -79,7 +80,7 @@ class CrtSpriteLayout {
       // Feet land at ~97.3% of the square canvas.
       sourceRect: Rect.fromLTWH(0, 0, 1254, 1220),
       screen: Rect.fromLTRB(0.089, 0.099, 0.911, 0.718),
-      slot: Rect.fromLTRB(0.226, 0.770, 0.774, 0.852),
+      slot: Rect.fromLTRB(0.224, 0.782, 0.777, 0.856),
       keys: [
         DeckKeycap(
           Rect.fromLTRB(0.275, 0.889, 0.350, 0.928),
@@ -111,7 +112,7 @@ class CrtSpriteLayout {
       sourceRect: Rect.fromLTWH(0, 0, 1254, 1200),
       screen: Rect.fromLTRB(0.11, 0.13, 0.90, 0.725),
       // The original cassette mouth remains visible and interactive.
-      slot: Rect.fromLTRB(0.201, 0.776, 0.673, 0.868),
+      slot: Rect.fromLTRB(0.203, 0.777, 0.672, 0.867),
       // Keycaps are painted on the strip below the cassette mouth.
       keys: [
         DeckKeycap(
@@ -141,90 +142,90 @@ class CrtSpriteLayout {
     CrtTvSkin.graphite => const CrtSpriteLayout(
       asset: _atlas,
       assetSize: _atlasSize,
-      sourceRect: Rect.fromLTWH(39, 42, 473, 445),
-      screen: Rect.fromLTRB(0.089, 0.077, 0.919, 0.725),
-      slot: Rect.fromLTRB(0.222, 0.778, 0.753, 0.862),
+      sourceRect: Rect.fromLTWH(39, 42, 477, 446),
+      screen: Rect.fromLTRB(0.088, 0.077, 0.911, 0.723),
+      slot: Rect.fromLTRB(0.220, 0.776, 0.747, 0.860),
       keys: [
         DeckKeycap(
-          Rect.fromLTRB(0.284, 0.883, 0.362, 0.930),
+          Rect.fromLTRB(0.282, 0.881, 0.359, 0.928),
           DeckKeyAction.rewind,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.391, 0.883, 0.469, 0.930),
+          Rect.fromLTRB(0.388, 0.881, 0.465, 0.928),
           DeckKeyAction.playPause,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.500, 0.883, 0.578, 0.930),
+          Rect.fromLTRB(0.496, 0.881, 0.573, 0.928),
           DeckKeyAction.fastForward,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.609, 0.883, 0.687, 0.930),
+          Rect.fromLTRB(0.604, 0.881, 0.681, 0.928),
           DeckKeyAction.eject,
         ),
       ],
-      remote: Rect.fromLTRB(0.045, 0.78, 0.175, 0.92),
-      full: Rect.fromLTRB(0.74, 0.72, 0.96, 0.94),
+      remote: Rect.fromLTRB(0.045, 0.778, 0.174, 0.918),
+      full: Rect.fromLTRB(0.734, 0.718, 0.952, 0.938),
     ),
     CrtTvSkin.ivory => const CrtSpriteLayout(
       asset: _atlas,
       assetSize: _atlasSize,
-      sourceRect: Rect.fromLTWH(512, 41, 512, 446),
-      screen: Rect.fromLTRB(0.119, 0.079, 0.897, 0.732),
-      slot: Rect.fromLTRB(0.255, 0.787, 0.727, 0.862),
+      sourceRect: Rect.fromLTWH(537, 41, 469, 447),
+      screen: Rect.fromLTRB(0.077, 0.079, 0.926, 0.730),
+      slot: Rect.fromLTRB(0.222, 0.783, 0.742, 0.861),
       keys: [
         DeckKeycap(
-          Rect.fromLTRB(0.300, 0.888, 0.374, 0.940),
+          Rect.fromLTRB(0.274, 0.886, 0.355, 0.938),
           DeckKeyAction.rewind,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.400, 0.888, 0.472, 0.940),
+          Rect.fromLTRB(0.383, 0.886, 0.462, 0.938),
           DeckKeyAction.playPause,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.500, 0.888, 0.573, 0.940),
+          Rect.fromLTRB(0.493, 0.886, 0.572, 0.938),
           DeckKeyAction.fastForward,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.601, 0.888, 0.674, 0.940),
+          Rect.fromLTRB(0.603, 0.886, 0.682, 0.938),
           DeckKeyAction.eject,
         ),
       ],
-      remote: Rect.fromLTRB(0.07, 0.80, 0.20, 0.94),
-      full: Rect.fromLTRB(0.76, 0.74, 0.97, 0.94),
+      remote: Rect.fromLTRB(0.023, 0.798, 0.165, 0.938),
+      full: Rect.fromLTRB(0.776, 0.738, 1.000, 0.938),
     ),
     CrtTvSkin.crimson => const CrtSpriteLayout(
       asset: _atlas,
       assetSize: _atlasSize,
-      sourceRect: Rect.fromLTWH(19, 512, 493, 448),
-      screen: Rect.fromLTRB(0.087, 0.077, 0.900, 0.684),
-      slot: Rect.fromLTRB(0.217, 0.752, 0.749, 0.836),
+      sourceRect: Rect.fromLTWH(19, 510, 505, 451),
+      screen: Rect.fromLTRB(0.085, 0.081, 0.879, 0.684),
+      slot: Rect.fromLTRB(0.202, 0.749, 0.733, 0.838),
       keys: [
         DeckKeycap(
-          Rect.fromLTRB(0.260, 0.865, 0.349, 0.921),
+          Rect.fromLTRB(0.254, 0.864, 0.341, 0.919),
           DeckKeyAction.rewind,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.378, 0.865, 0.467, 0.921),
+          Rect.fromLTRB(0.369, 0.864, 0.456, 0.919),
           DeckKeyAction.playPause,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.495, 0.865, 0.584, 0.921),
+          Rect.fromLTRB(0.483, 0.864, 0.570, 0.919),
           DeckKeyAction.fastForward,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.613, 0.865, 0.702, 0.921),
+          Rect.fromLTRB(0.598, 0.864, 0.685, 0.919),
           DeckKeyAction.eject,
         ),
       ],
-      remote: Rect.fromLTRB(0.035, 0.76, 0.165, 0.92),
-      full: Rect.fromLTRB(0.73, 0.70, 0.97, 0.93),
+      remote: Rect.fromLTRB(0.034, 0.759, 0.161, 0.918),
+      full: Rect.fromLTRB(0.713, 0.700, 0.947, 0.928),
     ),
     CrtTvSkin.knob => const CrtSpriteLayout(
       asset: 'assets/knob.png',
       assetSize: Size(495, 481),
       sourceRect: Rect.fromLTWH(2, 0, 490, 481),
       screen: Rect.fromLTRB(0.106, 0.108, 0.730, 0.603),
-      slot: Rect.fromLTRB(0.188, 0.800, 0.786, 0.878),
+      slot: Rect.fromLTRB(0.186, 0.796, 0.788, 0.879),
       keys: [
         DeckKeycap(
           Rect.fromLTRB(0.256, 0.899, 0.348, 0.958),
@@ -255,7 +256,7 @@ class CrtSpriteLayout {
       assetSize: Size(498, 477),
       sourceRect: Rect.fromLTWH(3, 2, 493, 475),
       screen: Rect.fromLTRB(0.106, 0.108, 0.728, 0.602),
-      slot: Rect.fromLTRB(0.200, 0.770, 0.784, 0.852),
+      slot: Rect.fromLTRB(0.195, 0.773, 0.759, 0.857),
       keys: [
         DeckKeycap(
           Rect.fromLTRB(0.256, 0.874, 0.348, 0.928),
