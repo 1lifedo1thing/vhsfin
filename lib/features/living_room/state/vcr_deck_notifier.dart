@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vhsfin/constants/haptics.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
@@ -105,8 +105,8 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     if (!ref.mounted || operation != _operation) return;
     unawaited(sfx.playInsert());
     // Felt on the clip's beats: the flap (0.30s) and the tape seating (1.14s).
-    _feel(operation, const Duration(milliseconds: 300), DeckHaptics.latch);
-    _feel(operation, const Duration(milliseconds: 1140), DeckHaptics.clunk);
+    _feel(operation, const Duration(milliseconds: 300), DeckFeedback.latch);
+    _feel(operation, const Duration(milliseconds: 1140), DeckFeedback.clunk);
     await Future<void>.delayed(
       DeckTiming.insertFlight - DeckTiming.insertSfxAt,
     );
@@ -141,9 +141,9 @@ class VcrDeckNotifier extends Notifier<VcrDeckState> {
     // Request the clunk, then leave playback before the intentional stop can
     // be mistaken for a stream failure.
     unawaited(sfx.playEject());
-    DeckHaptics.latch();
+    DeckFeedback.latch();
     // The tape pops out on the clip's 0.97s beat.
-    _feel(operation, const Duration(milliseconds: 970), DeckHaptics.clunk);
+    _feel(operation, const Duration(milliseconds: 970), DeckFeedback.clunk);
     state = state.copyWith(power: VcrPower.ejecting);
     await Future<void>.delayed(
       DeckTiming.ejectMechanism + DeckTiming.ejectFlight,

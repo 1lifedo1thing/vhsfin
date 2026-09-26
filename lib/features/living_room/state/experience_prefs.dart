@@ -13,6 +13,7 @@ class ExperiencePrefs {
     this.crtSkin = CrtTvSkin.crtIcon,
     this.cabinetStyle = CabinetStyle.walnut,
     this.vhsCovers = false,
+    this.soundEffects = true,
   });
 
   /// Remember playback position on eject; seek there on next insert.
@@ -28,17 +29,22 @@ class ExperiencePrefs {
   /// whole sleeve is available.
   final bool vhsCovers;
 
+  /// Deck sounds: tape clunks and whirr, key clicks, switch chonks.
+  final bool soundEffects;
+
   ExperiencePrefs copyWith({
     bool? saveTimestampOnEject,
     CrtTvSkin? crtSkin,
     CabinetStyle? cabinetStyle,
     bool? vhsCovers,
+    bool? soundEffects,
   }) {
     return ExperiencePrefs(
       saveTimestampOnEject: saveTimestampOnEject ?? this.saveTimestampOnEject,
       crtSkin: crtSkin ?? this.crtSkin,
       cabinetStyle: cabinetStyle ?? this.cabinetStyle,
       vhsCovers: vhsCovers ?? this.vhsCovers,
+      soundEffects: soundEffects ?? this.soundEffects,
     );
   }
 }
@@ -53,6 +59,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
   static const _crtSkinKey = 'vhsfin.crt_tv_skin.v1';
   static const _cabinetKey = 'vhsfin.cabinet_style.v1';
   static const _vhsCoversKey = 'vhsfin.vhs_covers.v1';
+  static const _soundKey = 'vhsfin.sound_effects.v1';
 
   int _epoch = 0;
 
@@ -72,6 +79,7 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
       crtSkin: skin,
       cabinetStyle: CabinetStyleLabels.fromPrefs(prefs.getString(_cabinetKey)),
       vhsCovers: prefs.getBool(_vhsCoversKey) ?? false,
+      soundEffects: prefs.getBool(_soundKey) ?? true,
     );
   }
 
@@ -88,6 +96,13 @@ class ExperiencePrefsNotifier extends Notifier<ExperiencePrefs> {
     state = state.copyWith(crtSkin: skin);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_crtSkinKey, skin.name);
+  }
+
+  Future<void> setSoundEffects(bool value) async {
+    _epoch++;
+    state = state.copyWith(soundEffects: value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_soundKey, value);
   }
 
   Future<void> setVhsCovers(bool value) async {

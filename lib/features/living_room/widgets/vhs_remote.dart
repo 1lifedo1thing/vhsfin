@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vhsfin/constants/haptics.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
@@ -221,7 +221,7 @@ class _RubberKey extends StatelessWidget {
         onTap: enabled ? (onTap ?? () {}) : null,
         onPressStart: enabled ? onPressStart : null,
         onPressEnd: enabled ? onPressEnd : null,
-        haptic: DeckHaptics.key,
+        haptic: DeckFeedback.key,
         builder: (context, down) {
           final side = down ? 1.0 : _travel;
           return Column(

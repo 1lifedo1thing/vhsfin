@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:vhsfin/constants/haptics.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
@@ -358,7 +358,7 @@ class _DeckKeyState extends State<_DeckKey> {
           child: Listener(
             onPointerDown: widget.enabled
                 ? (_) {
-                    DeckHaptics.key();
+                    DeckFeedback.key();
                     setState(() => _pressed = true);
                     hold?.$1();
                   }

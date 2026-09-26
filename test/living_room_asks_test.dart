@@ -88,6 +88,8 @@ void main() {
                 sortLabel: 'A–Z',
                 saveTimestampOnEject: false,
                 vhsCovers: false,
+                soundEffects: true,
+                onSoundEffectsChanged: (_) {},
                 onVhsCoversChanged: (_) {},
                 crtSkin: CrtTvSkin.crtIcon,
                 onCollection: () {},

@@ -39,6 +39,21 @@ void main() {
     expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.knob);
   });
 
+  test('sound effects default on, persist, and restore', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(experiencePrefsProvider).soundEffects, isTrue);
+    await container
+        .read(experiencePrefsProvider.notifier)
+        .setSoundEffects(false);
+    final restored = ProviderContainer();
+    addTearDown(restored.dispose);
+    restored.read(experiencePrefsProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(restored.read(experiencePrefsProvider).soundEffects, isFalse);
+  });
+
   test('cabinet style defaults to walnut, persists, and restores', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();

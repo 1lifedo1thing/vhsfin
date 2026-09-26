@@ -16,6 +16,8 @@ Future<void> showDeckSettingsSheet(
   required String sortLabel,
   required bool saveTimestampOnEject,
   required bool vhsCovers,
+  required bool soundEffects,
+  required ValueChanged<bool> onSoundEffectsChanged,
   required ValueChanged<bool> onVhsCoversChanged,
   required CrtTvSkin crtSkin,
   required VoidCallback onCollection,
@@ -38,6 +40,8 @@ Future<void> showDeckSettingsSheet(
       sortLabel: sortLabel,
       saveTimestampOnEject: saveTimestampOnEject,
       vhsCovers: vhsCovers,
+      soundEffects: soundEffects,
+      onSoundEffectsChanged: onSoundEffectsChanged,
       onVhsCoversChanged: onVhsCoversChanged,
       crtSkin: crtSkin,
       onCollection: onCollection,
@@ -60,6 +64,8 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.sortLabel,
     required this.saveTimestampOnEject,
     required this.vhsCovers,
+    required this.soundEffects,
+    required this.onSoundEffectsChanged,
     required this.onVhsCoversChanged,
     required this.crtSkin,
     required this.onCollection,
@@ -80,6 +86,8 @@ class _DeckSettingsSheet extends StatefulWidget {
   final String sortLabel;
   final bool saveTimestampOnEject;
   final bool vhsCovers;
+  final bool soundEffects;
+  final ValueChanged<bool> onSoundEffectsChanged;
   final ValueChanged<bool> onVhsCoversChanged;
   final CrtTvSkin crtSkin;
   final VoidCallback onCollection;
@@ -100,6 +108,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
   late bool _vhsOnly = widget.vhsOnly;
   late bool _saveOnEject = widget.saveTimestampOnEject;
   late bool _vhsCovers = widget.vhsCovers;
+  late bool _sound = widget.soundEffects;
   late CrtTvSkin _crtSkin = widget.crtSkin;
   late CabinetStyle _cabinet = widget.cabinetStyle;
 
@@ -188,6 +197,16 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
           onChanged: (value) {
             setState(() => _vhsCovers = value);
             widget.onVhsCoversChanged(value);
+          },
+        ),
+        const SizedBox(height: 8),
+        DeckOptionRow(
+          label: 'SOUND EFFECTS',
+          subtitle: 'Tape clunks, key clicks, and switch chonks.',
+          value: _sound,
+          onChanged: (value) {
+            setState(() => _sound = value);
+            widget.onSoundEffectsChanged(value);
           },
         ),
         const SizedBox(height: 16),

@@ -49,6 +49,8 @@ void main() {
         sortLabel: 'YEAR ↓',
         saveTimestampOnEject: false,
         vhsCovers: true,
+        soundEffects: true,
+        onSoundEffectsChanged: (_) {},
         onVhsCoversChanged: (_) {},
         crtSkin: CrtTvSkin.crtIcon,
         cabinetStyle: CabinetStyle.walnut,

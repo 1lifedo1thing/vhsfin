@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:vhsfin/constants/haptics.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Parts of a VCR front panel, used to build sheets and dialogs that feel like
@@ -364,7 +364,7 @@ class DeckCloseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () {
-        DeckHaptics.tap();
+        DeckFeedback.tap();
         onPressed();
       },
       tooltip: 'Close',
@@ -384,7 +384,7 @@ class DeckPressable extends StatefulWidget {
     super.key,
     required this.onTap,
     required this.builder,
-    this.haptic = DeckHaptics.tap,
+    this.haptic = DeckFeedback.tap,
     this.minimum = const Duration(milliseconds: 90),
     this.onPressStart,
     this.onPressEnd,
@@ -398,7 +398,7 @@ class DeckPressable extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget Function(BuildContext context, bool pressed) builder;
 
-  /// Felt the moment the pointer lands (see [DeckHaptics]); null for none.
+  /// Felt the moment the pointer lands (see [DeckFeedback]); null for none.
   final VoidCallback? haptic;
   final Duration minimum;
 
@@ -617,7 +617,7 @@ class DeckSlideSwitch extends StatelessWidget {
       onHorizontalDragEnd: (details) {
         final v = details.primaryVelocity ?? 0;
         if (v.abs() > 50 && (v > 0) != value) {
-          DeckHaptics.toggle();
+          DeckFeedback.toggle();
           onChanged(v > 0);
         }
       },
@@ -725,7 +725,7 @@ class DeckOptionRow extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: DeckPressable(
         onTap: () => onChanged(!value),
-        haptic: DeckHaptics.toggle,
+        haptic: DeckFeedback.toggle,
         builder: (context, pressed) => Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           decoration: BoxDecoration(
@@ -803,7 +803,7 @@ class DeckHardKey extends StatelessWidget {
       excludeSemantics: true,
       child: DeckPressable(
         onTap: onPressed,
-        haptic: DeckHaptics.key,
+        haptic: DeckFeedback.key,
         builder: (context, down) {
           final side = down ? 1.0 : _travel;
           final key = Container(

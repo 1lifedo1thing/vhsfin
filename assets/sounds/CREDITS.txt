@@ -12,3 +12,9 @@
 #
 # vhs_rew.ogg     — VCR: rewind (#2693), trimmed to 8s + looped in app
 #   https://bigsoundbank.com/vcr-rewind-s2693.html
+#
+# Press sounds, cut from the clips above (also CC0):
+# ui_key.wav      — the eject button click, 90ms from vhs_eject at 0.07s
+# ui_tick.wav     — the slot flap click, 70ms from vhs_insert at 0.31s
+# ui_switch.wav   — the cassette pop from vhs_eject at 0.97s, low-passed at
+#                   2.2 kHz and pitched down ~12% for a heavier switch chonk

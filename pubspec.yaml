@@ -45,6 +45,9 @@ flutter:
     - assets/sounds/vhs_eject.ogg
     - assets/sounds/vhs_ff.ogg
     - assets/sounds/vhs_rew.ogg
+    - assets/sounds/ui_tick.wav
+    - assets/sounds/ui_key.wav
+    - assets/sounds/ui_switch.wav
   fonts:
     - family: Nunito
       fonts:

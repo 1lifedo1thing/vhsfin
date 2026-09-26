@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vhsfin/constants/haptics.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -38,6 +38,9 @@ class LivingRoomPage extends ConsumerWidget {
       sortLabel: displayPrefs.sort.buttonLabel,
       saveTimestampOnEject: experience.saveTimestampOnEject,
       vhsCovers: experience.vhsCovers,
+      soundEffects: experience.soundEffects,
+      onSoundEffectsChanged: (value) =>
+          ref.read(experiencePrefsProvider.notifier).setSoundEffects(value),
       onVhsCoversChanged: (value) =>
           ref.read(experiencePrefsProvider.notifier).setVhsCovers(value),
       crtSkin: experience.crtSkin,
@@ -282,7 +285,7 @@ class LivingRoomPage extends ConsumerWidget {
     Tape tape,
     String instanceKey,
   ) {
-    DeckHaptics.tap();
+    DeckFeedback.tap();
     ref.read(flightSourceKeyProvider.notifier).select(instanceKey);
     if (tape.kind == TapeKind.series) {
       showEpisodePicker(

@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 
 class _SilentSfx implements DeckSfx {
+  @override
+  bool enabled = true;
+  @override
+  void playUi(DeckUiSound sound) {}
   @override
   Future<void> playInsert() async {}
   @override
