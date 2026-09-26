@@ -444,14 +444,7 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
             ? 1.0
             : widget.widthFraction.clamp(0.02, 1.0);
         if (fraction >= 0.99) {
-          return VhsImageCache.image(
-            url: url,
-            fit: BoxFit.fitHeight,
-            width: w,
-            height: h,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.medium,
-          );
+          return VhsImageCache.image(url: url, width: w, height: h);
         }
 
         return ClipRect(
@@ -461,13 +454,7 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
             heightFactor: 1,
             child: SizedBox(
               height: h,
-              child: VhsImageCache.image(
-                url: url,
-                height: h,
-                fit: BoxFit.fitHeight,
-                alignment: Alignment.center,
-                filterQuality: FilterQuality.medium,
-              ),
+              child: VhsImageCache.image(url: url, height: h),
             ),
           ),
         );
@@ -507,7 +494,6 @@ class SleeveRegion extends StatelessWidget {
         final imageW = imageH * imageAspect;
         return ClipRect(
           child: Stack(
-            clipBehavior: Clip.hardEdge,
             children: [
               Positioned(
                 left: -left * imageW + (w - regionW) / 2,
@@ -519,7 +505,6 @@ class SleeveRegion extends StatelessWidget {
                   width: imageW,
                   height: imageH,
                   fit: BoxFit.fill,
-                  filterQuality: FilterQuality.medium,
                 ),
               ),
             ],
@@ -552,7 +537,6 @@ class ProceduralVhsSpine extends StatelessWidget {
           VhsImageCache.image(
             url: tape.imageUrl!,
             fit: BoxFit.cover,
-            alignment: Alignment.center,
             memCacheHeight: null,
             errorBuilder: (_, _, _) => ColoredBox(color: palette.shell),
           )
@@ -717,7 +701,7 @@ class _ProceduralSpineStyle {
       'CLAMSHELL',
     ];
     final badge = badges[hash % badges.length];
-    final catalog = 'C${(hash % 9000 + 1000)}-${(hash ~/ 7 % 90 + 10)}';
+    final catalog = 'C${hash % 9000 + 1000}-${hash ~/ 7 % 90 + 10}';
 
     return _ProceduralSpineStyle(
       stripe: palette.accent,
@@ -785,11 +769,7 @@ class _SpineTitlePlate extends StatelessWidget {
                           blurRadius: 5,
                           offset: Offset(0, 1),
                         ),
-                        Shadow(
-                          color: Colors.black54,
-                          blurRadius: 1,
-                          offset: Offset(0, 0),
-                        ),
+                        Shadow(color: Colors.black54, blurRadius: 1),
                       ]
                     : null,
               ),
@@ -906,8 +886,8 @@ class ShelfPlank extends StatelessWidget {
             children: [
               SizedBox(height: 180, child: child),
               const SizedBox(height: 8),
-              CustomPaint(
-                size: const Size(double.infinity, 10),
+              const CustomPaint(
+                size: Size(double.infinity, 10),
                 painter: ShelfLipPainter(),
               ),
             ],

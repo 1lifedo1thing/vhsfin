@@ -80,7 +80,7 @@ class _CrtPainter extends CustomPainter {
       canvas.drawRect(Rect.fromLTWH(0, y, size.width, 1), scan);
     }
 
-    final roll = ((time.value * 28) % size.height);
+    final roll = (time.value * 28) % size.height;
     canvas.drawRect(
       Rect.fromLTWH(0, roll, size.width, 18),
       Paint()..color = Colors.white.withValues(alpha: 0.03),

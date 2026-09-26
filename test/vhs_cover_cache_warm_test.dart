@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
-import 'package:vhsfin/features/library/model/tape.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,18 +22,13 @@ void main() {
 
     final resolver = VhsCoverResolver();
     expect(
-      await resolver.hasCachedLookup(
-        title: 'Ghostbusters',
-        year: 1984,
-        kind: TapeKind.movie,
-      ),
+      await resolver.hasCachedLookup(title: 'Ghostbusters', year: 1984),
       isTrue,
     );
     expect(
       await resolver.spineArtFor(
         title: 'Ghostbusters',
         year: 1984,
-        kind: TapeKind.movie,
         allowNetwork: false,
       ),
       isNull,
@@ -52,7 +46,6 @@ void main() {
     final art = await resolver.spineArtFor(
       title: 'Jaws',
       year: 1975,
-      kind: TapeKind.movie,
       allowNetwork: false,
     );
     expect(art?.imageUrl, 'https://example.com/jaws.jpg');

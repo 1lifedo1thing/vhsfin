@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
@@ -22,8 +24,6 @@ Future<void> showEpisodePicker(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
     builder: (context) => DismissOnEscape(
       child: EpisodePickerSheet(
         series: series,
@@ -85,10 +85,16 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
       });
       // Resolve sleeve art in the background; spines update as results arrive.
       for (final episode in episodes) {
-        widget.resolveArt(episode).then((art) {
-          if (!mounted) return;
-          setState(() => _arts[episode.id] = art);
-        });
+        unawaited(
+          widget
+              .resolveArt(episode)
+              .then((art) {
+                if (!mounted) return;
+                setState(() => _arts[episode.id] = art);
+              })
+              // A missing sleeve just leaves the printed spine.
+              .catchError((Object _) {}),
+        );
       }
     } catch (error) {
       if (!mounted) return;
@@ -151,10 +157,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                   ),
                   Expanded(
                     child: _busy
-                        ? const CrtLoadingIndicator(
-                            message: 'TUNING…',
-                            style: CrtLoadStyle.tape,
-                          )
+                        ? const CrtLoadingIndicator(message: 'TUNING…')
                         : _error != null
                         ? Center(
                             child: Padding(

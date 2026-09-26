@@ -21,8 +21,6 @@ Future<T?> showDeckPanelSheet<T>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
     builder: (context) {
       final bottom = MediaQuery.paddingOf(context).bottom;
       final body = builder(context);
@@ -79,7 +77,7 @@ class DeckPanel extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,
-        border: Border.all(color: Colors.black),
+        border: Border.all(),
         boxShadow: const [
           BoxShadow(
             color: Color(0xCC000000),
@@ -238,7 +236,7 @@ class DeckDisplay extends StatelessWidget {
         boxShadow: const [
           BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
         ],
-        border: Border.all(color: Colors.black),
+        border: Border.all(),
       ),
       child: Row(
         children: [
@@ -494,7 +492,7 @@ class DeckLed extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: on ? color : const Color(0xFF1F2A2B),
-        border: Border.all(color: Colors.black, width: 0.5),
+        border: Border.all(width: 0.5),
         boxShadow: on
             ? [
                 BoxShadow(color: color, blurRadius: 6),
@@ -543,7 +541,7 @@ class DeckBay extends StatelessWidget {
                   ? const [Color(0xFF050607), Color(0xFF0D0E10)]
                   : const [Color(0xFF0B0C0E), Color(0xFF16181B)],
             ),
-            border: Border.all(color: Colors.black),
+            border: Border.all(),
             boxShadow: const [
               BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
             ],
@@ -614,7 +612,7 @@ class DeckSlideSwitch extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [Color(0xFF050606), Color(0xFF121416)],
               ),
-              border: Border.all(color: Colors.black),
+              border: Border.all(),
               boxShadow: const [
                 BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
               ],
@@ -633,7 +631,6 @@ class DeckSlideSwitch extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                   // Ridged metal thumb.
                   gradient: const LinearGradient(
-                    begin: Alignment(-1, 0),
                     end: Alignment(-0.83, 0),
                     colors: [Color(0xFF6E7377), Color(0xFFA2A8AC)],
                     tileMode: TileMode.mirror,

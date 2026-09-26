@@ -34,10 +34,7 @@ final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
   final ignoreBox = rejectsNotifier.shouldIgnoreBox(tape.id, tape.boxImageUrl);
 
   if (tape.hasBoxImage && !ignoreBox) {
-    return VhsSpineArt(
-      imageUrl: tape.boxImageUrl!,
-      centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
-    );
+    return VhsSpineArt(imageUrl: tape.boxImageUrl!);
   }
 
   // Open-movie samples never had a retail VHS release; skip remote lookups.

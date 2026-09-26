@@ -546,11 +546,7 @@ class VhsCoverResolver {
       );
     }
     if (comb != null) {
-      return VhsSpineArt(
-        imageUrl: comb,
-        centerWidthFraction: wraparoundSpineFraction,
-        frontImageUrl: front,
-      );
+      return VhsSpineArt(imageUrl: comb, frontImageUrl: front);
     }
     return null;
   }
@@ -562,9 +558,7 @@ class VhsCoverResolver {
           '?q=${Uri.encodeQueryComponent(query)}'
           '&fl[]=identifier&fl[]=title&fl[]=year&fl[]=mediatype'
           '&rows=8&output=json';
-      final data = await iaJsonp(multiFl);
-      final docs = data['response']?['docs'] as List<dynamic>? ?? const [];
-      return docs.cast<Map<String, dynamic>>();
+      return _docsOf(await iaJsonp(multiFl));
     }
 
     final response = await _dio.get<Map<String, dynamic>>(
@@ -576,9 +570,18 @@ class VhsCoverResolver {
         'output': 'json',
       },
     );
-    final docs =
-        response.data?['response']?['docs'] as List<dynamic>? ?? const [];
-    return docs.cast<Map<String, dynamic>>();
+    return _docsOf(response.data);
+  }
+
+  /// `response.docs` from an Internet Archive search, skipping anything
+  /// that isn't shaped like a result (an unexpected reply means no results).
+  static List<Map<String, dynamic>> _docsOf(Object? data) {
+    if (data is! Map) return const [];
+    final response = data['response'];
+    if (response is! Map) return const [];
+    final docs = response['docs'];
+    if (docs is! List) return const [];
+    return docs.whereType<Map<String, dynamic>>().toList();
   }
 
   Future<VhsSpineArt?> _artFromIdentifier(
@@ -606,10 +609,7 @@ class VhsCoverResolver {
       return VhsSpineArt(imageUrl: url, centerWidthFraction: fraction);
     } catch (err) {
       debugPrint('vhs-spine metadata error id=$id: $err');
-      return VhsSpineArt(
-        imageUrl: 'https://archive.org/services/img/$id',
-        centerWidthFraction: wraparoundSpineFraction,
-      );
+      return VhsSpineArt(imageUrl: 'https://archive.org/services/img/$id');
     }
   }
 

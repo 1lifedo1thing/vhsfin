@@ -170,7 +170,7 @@ void main() {
       ),
     );
     for (var i = 1; i <= 10; i++) {
-      position.add(Duration(minutes: 3) - Duration(seconds: i));
+      position.add(const Duration(minutes: 3) - Duration(seconds: i));
       await tester.pump(const Duration(milliseconds: 400));
     }
     expect(find.text('TRACKING'), findsNothing);

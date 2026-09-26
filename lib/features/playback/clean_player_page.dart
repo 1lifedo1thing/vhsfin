@@ -41,7 +41,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
       deck.reattachSurface(DeckSurfaceOwner.fullscreen);
       if (!mounted) return;
       setState(() => _bindVideo = true);
-      await deck.load(tape.streamUrl, play: true);
+      await deck.load(tape.streamUrl);
     });
   }
 

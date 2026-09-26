@@ -29,7 +29,6 @@ void main() {
       tapeId: 'tape-1',
       blockedUrls: {'http://jellyfin/Items/1/Images/Box?tag=old'},
       ignoredBoxTag: 'old',
-      suppressArt: true,
     );
     expect(rejection.suppressArt, isTrue);
     expect(

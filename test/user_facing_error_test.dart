@@ -76,9 +76,7 @@ void main() {
   });
 
   test('unknown Dio uses fallback without request internals', () {
-    final message = userFacingError(
-      DioException(requestOptions: opts(), type: DioExceptionType.unknown),
-    );
+    final message = userFacingError(DioException(requestOptions: opts()));
     expect(message, 'Something went wrong. Please try again.');
   });
 }

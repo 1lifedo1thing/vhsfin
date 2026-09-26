@@ -153,7 +153,6 @@ class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
           normalizeArtUrl(boxImageUrl),
       },
       ignoredBoxTag: boxTag ?? existing?.ignoredBoxTag,
-      suppressArt: true,
     );
     state = {...state, tapeId: next};
     await _persist();

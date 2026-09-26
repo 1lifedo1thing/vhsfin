@@ -175,7 +175,7 @@ class JellyfinClient {
       final label = [
         if (season != null) 'S${season.toString().padLeft(2, '0')}',
         if (episode != null) 'E${episode.toString().padLeft(2, '0')}',
-      ].join('');
+      ].join();
       final resolvedSeries =
           seriesTitle ?? item['SeriesName'] as String? ?? libraryName;
       return Tape(

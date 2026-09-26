@@ -280,7 +280,7 @@ class _OsdText extends StatelessWidget {
         letterSpacing: unit * 0.12,
         color: dim ? const Color(0xCCE9F1F2) : const Color(0xFFF4FAFA),
         shadows: const [
-          Shadow(color: Colors.black, offset: Offset(1.5, 1.5)),
+          Shadow(offset: Offset(1.5, 1.5)),
           Shadow(color: Color(0x6629C7CF), blurRadius: 6),
         ],
       ),

@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
+import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
@@ -16,11 +16,7 @@ import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 Map<String, VhsSpineArt?> immediateBoxSpineArts(Iterable<Tape> tapes) {
   return {
     for (final tape in tapes)
-      if (tape.hasBoxImage)
-        tape.id: VhsSpineArt(
-          imageUrl: tape.boxImageUrl!,
-          centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
-        ),
+      if (tape.hasBoxImage) tape.id: VhsSpineArt(imageUrl: tape.boxImageUrl!),
   };
 }
 
@@ -171,7 +167,6 @@ class _ShelfBlock extends StatelessWidget {
                           arts: arts,
                           loadedId: loadedId,
                           loadedSeriesId: loadedSeriesId,
-                          gap: _spineGap,
                           flightAnchors: flightAnchors,
                           flyingTapeId: flyingTapeId,
                           flightSourceKey: flightSourceKey,
@@ -473,8 +468,6 @@ class _GhostSpineRow extends StatelessWidget {
                       top: Radius.circular(2),
                     ),
                     gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
                       colors: [
                         Colors.white.withValues(alpha: 0.035),
                         Colors.white.withValues(alpha: 0.07),
@@ -660,7 +653,6 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
                 color: Color(0x66000000),
                 child: CrtLoadingIndicator(
                   compact: true,
-                  style: CrtLoadStyle.tape,
                   message: 'LOADING VHS ART',
                 ),
               ),
@@ -685,8 +677,7 @@ class _ShelfTapeRow extends StatelessWidget {
     required this.flyingTapeId,
     required this.flightSourceKey,
     required this.onTap,
-    this.gap = 2,
-  });
+  }) : gap = 2;
 
   final String shelfId;
   final int rowIndex;
@@ -741,7 +732,6 @@ class _ShelfTapeRow extends StatelessWidget {
                     child: VhsSpine(
                       tape: tapes[i],
                       art: arts[tapes[i].id],
-                      height: baseHeight,
                       selected:
                           tapes[i].kind == TapeKind.series &&
                           tapes[i].id == loadedSeriesId,

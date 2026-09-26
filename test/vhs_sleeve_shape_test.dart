@@ -26,10 +26,7 @@ void main() {
   });
 
   test('spine-only and unmeasured sleeves have no front', () {
-    const art = VhsSpineArt(
-      imageUrl: 'box.jpg',
-      centerWidthFraction: VhsCoverResolver.wraparoundSpineFraction,
-    );
+    const art = VhsSpineArt(imageUrl: 'box.jpg');
     expect(vhsFrontCoverOf(art), isNull);
     VhsSleeveShapes.debugRecord('box.jpg', 0.14);
     expect(vhsFrontCoverOf(art), isNull);
@@ -38,7 +35,7 @@ void main() {
 
   test('a wraparound front is everything right of the spine', () {
     const spine = VhsCoverResolver.wraparoundSpineFraction;
-    const art = VhsSpineArt(imageUrl: 'wrap.jpg', centerWidthFraction: spine);
+    const art = VhsSpineArt(imageUrl: 'wrap.jpg');
     const sleeveAspect = 1.25;
     VhsSleeveShapes.debugRecord('wrap.jpg', sleeveAspect);
 

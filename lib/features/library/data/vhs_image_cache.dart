@@ -1,6 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart'
-    show ImageRenderMethodForWeb;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -33,7 +31,6 @@ class VhsImageCache {
       cacheManager: manager,
       maxHeight: kIsWeb ? null : diskMaxHeight,
       maxWidth: kIsWeb ? null : diskMaxWidth,
-      imageRenderMethodForWeb: ImageRenderMethodForWeb.HtmlImage,
     );
     final height = cacheHeight ?? sharedDecodeHeight;
     return ResizeImage(network, height: height);
@@ -79,7 +76,6 @@ class VhsImageCache {
       cacheManager: manager,
       maxHeightDiskCache: kIsWeb ? null : diskMaxHeight,
       maxWidthDiskCache: kIsWeb ? null : diskMaxWidth,
-      imageRenderMethodForWeb: ImageRenderMethodForWeb.HtmlImage,
       fit: fit,
       width: width,
       height: height,

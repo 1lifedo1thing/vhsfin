@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:vhsfin/constants/haptics.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -10,11 +9,12 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/widgets/art_grab_onboarding_dialog.dart';
-import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
-import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
+import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
+import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
+import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
@@ -141,7 +141,7 @@ class LivingRoomView extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(pad, wide ? 28 : 16, pad, 40),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxConsole),
+                        constraints: const BoxConstraints(maxWidth: maxConsole),
                         child: Column(
                           children: [
                             Padding(
@@ -300,7 +300,6 @@ class _BookshelfBody extends StatelessWidget {
         height: 180,
         child: CrtLoadingIndicator(
           compact: true,
-          style: CrtLoadStyle.tape,
           // A first try failed and another is on its way.
           message: shelvesRetrying ? 'TRYING YOUR SERVER' : 'STAND BY',
         ),

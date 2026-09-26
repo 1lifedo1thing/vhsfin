@@ -20,8 +20,6 @@ Future<void> showVhsRemote(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
     builder: (context) => DismissOnEscape(
       child: VhsRemoteSheet(
         title: title,

@@ -25,12 +25,7 @@ class CleanPlayerView extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           if (controller != null)
-            Video(
-              key: ValueKey('full-$surfaceEpoch'),
-              controller: controller!,
-              fit: BoxFit.contain,
-              fill: Colors.black,
-            )
+            Video(key: ValueKey('full-$surfaceEpoch'), controller: controller!)
           else
             const ColoredBox(color: Colors.black),
           SafeArea(

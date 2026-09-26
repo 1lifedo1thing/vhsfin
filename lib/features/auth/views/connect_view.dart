@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/auth/model/server_address.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
 /// Local form state stays in the view; the page owns authentication.
 class ConnectView extends StatefulWidget {
@@ -286,15 +286,15 @@ class _ConnectionHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Theme(
     data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-    child: ExpansionTile(
-      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: const Text(
+    child: const ExpansionTile(
+      tilePadding: EdgeInsets.symmetric(horizontal: 8),
+      title: Text(
         'First time here?',
         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
       ),
-      leading: const Icon(Icons.help_outline_rounded, size: 20),
-      childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-      children: const [
+      leading: Icon(Icons.help_outline_rounded, size: 20),
+      childrenPadding: EdgeInsets.fromLTRB(8, 0, 8, 12),
+      children: [
         Text(
           'VHSFin plays the movies and shows on your own Jellyfin server. '
           'It does not include movies or create Jellyfin accounts. Ask the person who manages your server for its address and your login.\n\n'

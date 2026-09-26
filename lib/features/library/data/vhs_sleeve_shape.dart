@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
-import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/data/image_aspect_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/library/data/image_aspect_web.dart';
+import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 
 /// What a sleeve scan actually contains, judged by its proportions.
 ///

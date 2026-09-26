@@ -40,7 +40,7 @@ class CabinetPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final walnut = CabinetScope.of(context) == CabinetStyle.walnut;
     final shape = BorderRadius.circular(radius);
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,
         color: walnut
@@ -57,7 +57,6 @@ class CabinetPanel extends StatelessWidget {
                 fit: BoxFit.none,
                 repeat: ImageRepeat.repeat,
                 alignment: grain,
-                filterQuality: FilterQuality.medium,
               )
             : null,
         boxShadow: recessed
@@ -130,7 +129,6 @@ class CabinetLedge extends StatelessWidget {
   Widget build(BuildContext context) {
     final walnut = CabinetScope.of(context) == CabinetStyle.walnut;
     return CabinetPanel(
-      radius: 3,
       grain: grain,
       child: SizedBox(
         height: height,

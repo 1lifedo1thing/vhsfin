@@ -161,19 +161,13 @@ class ArtWarmProgressNotifier extends Notifier<ArtWarmProgress> {
       index.seedFromTapes(tapes);
 
       if (tapes.isEmpty) {
-        state = const ArtWarmProgress(
-          phase: ArtWarmPhase.done,
-          completed: 0,
-          total: 0,
-          foundCount: 0,
-        );
+        state = const ArtWarmProgress(phase: ArtWarmPhase.done);
         await ref.read(artOnboardingDoneProvider.notifier).markDone();
         return;
       }
 
       state = ArtWarmProgress(
         phase: ArtWarmPhase.running,
-        completed: 0,
         total: tapes.length,
         foundCount: ref.read(vhsArtIndexProvider).length,
       );

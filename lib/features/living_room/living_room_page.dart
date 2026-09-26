@@ -180,7 +180,7 @@ class LivingRoomPage extends ConsumerWidget {
         player.stopShuttle();
         sfx.stopShuttle();
       },
-      onPlay: () => player.togglePlayPause(),
+      onPlay: player.togglePlayPause,
       onFf: () {
         player.startFastForward();
         sfx.startFastForward();
@@ -259,7 +259,7 @@ class LivingRoomPage extends ConsumerWidget {
         player.stopShuttle();
         sfx.stopShuttle();
       },
-      onPlay: () => player.togglePlayPause(),
+      onPlay: player.togglePlayPause,
       onFfStart: () {
         player.startFastForward();
         sfx.startFastForward();

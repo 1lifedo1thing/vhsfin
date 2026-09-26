@@ -78,10 +78,10 @@ ThemeData buildVhsTheme() {
       bodyColor: VhsColors.ink,
       displayColor: VhsColors.ink,
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: const TextStyle(
+      titleTextStyle: TextStyle(
         fontFamily: 'Bungee',
         fontSize: 22,
         color: VhsColors.ink,

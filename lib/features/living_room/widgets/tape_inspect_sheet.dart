@@ -56,8 +56,6 @@ Future<void> showTapeInspectSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.72),
     builder: (_) => content,
@@ -215,7 +213,7 @@ class _PopupHeader extends StatelessWidget {
               color: VhsColors.surfaceRaised,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: Colors.black),
+                side: const BorderSide(),
               ),
               onSelected: (action) {
                 if (action == _TapeMenuAction.wrongSleeve) onWrongSleeve!();
@@ -470,8 +468,6 @@ class _FrontSleeve extends StatelessWidget {
                   right: Radius.circular(cornerRadius * 0.35),
                 ),
                 gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
                   colors: [
                     const Color(0xFF2B2E31),
                     const Color(0xFF16181A),
@@ -681,7 +677,7 @@ class _TapeMetaBlock extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [Color(0xFF0B0C0E), Color(0xFF16181B)],
               ),
-              border: Border.all(color: Colors.black),
+              border: Border.all(),
               boxShadow: const [
                 BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
               ],

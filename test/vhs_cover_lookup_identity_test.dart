@@ -5,11 +5,7 @@ import 'package:vhsfin/features/library/model/tape.dart';
 void main() {
   group('VhsCoverResolver.lookupIdentity', () {
     test('movies pass through', () {
-      final id = VhsCoverResolver.lookupIdentity(
-        title: 'Jumanji',
-        year: 1995,
-        kind: TapeKind.movie,
-      );
+      final id = VhsCoverResolver.lookupIdentity(title: 'Jumanji', year: 1995);
       expect(id.title, 'Jumanji');
       expect(id.year, 1995);
       expect(id.kind, TapeKind.movie);

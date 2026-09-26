@@ -75,12 +75,7 @@ class DeckPlayerController {
 
   void _ensure() {
     if (_player != null) return;
-    _player = Player(
-      configuration: const PlayerConfiguration(
-        title: 'VHSFin',
-        bufferSize: 32 * 1024 * 1024,
-      ),
-    );
+    _player = Player(configuration: const PlayerConfiguration(title: 'VHSFin'));
     _errorSubscription = _player!.stream.error.listen((error) {
       if (_loadedUrl == null || error.trim().isEmpty) return;
       _lastError = error;
@@ -120,7 +115,7 @@ class DeckPlayerController {
   }
 
   Future<void> load(String url, {bool play = true, Duration? seekTo}) async {
-    stopShuttle();
+    await stopShuttle();
     _ensure();
     if (_loadedUrl == url) {
       // A prepared web video must be playing before setting currentTime.
@@ -157,7 +152,7 @@ class DeckPlayerController {
 
   Future<void> togglePlayPause() async {
     if (_player == null) return;
-    stopShuttle();
+    await stopShuttle();
     await _player!.playOrPause();
   }
 
@@ -177,7 +172,7 @@ class DeckPlayerController {
   }
 
   Future<void> stop() async {
-    stopShuttle();
+    await stopShuttle();
     if (_player == null) return;
     _loadedUrl = null;
     _lastError = null;

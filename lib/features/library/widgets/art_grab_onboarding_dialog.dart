@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
-import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/library/state/art_onboarding.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
 /// First-time VHS art grab tour — props only; page owns Riverpod.
 class ArtGrabOnboardingDialog extends StatelessWidget {
@@ -57,7 +57,7 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
                     color: const Color(0xFF050607),
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(),
                     boxShadow: const [
                       BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
                     ],

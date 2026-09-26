@@ -57,7 +57,7 @@ class _RewindPainter extends CustomPainter {
 
     // Coarse snow / dropouts.
     final random = math.Random((time * 48).floor());
-    final cell = 4.0;
+    const cell = 4.0;
     final cols = (size.width / cell).ceil();
     final rows = (size.height / cell).ceil();
     final snow = Paint();

@@ -306,7 +306,6 @@ class _TvPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final src = CrtSpriteLayout.of(skin).sourceRect;
     return FittedBox(
-      fit: BoxFit.contain,
       child: SizedBox(
         width: src.width,
         height: src.height,
