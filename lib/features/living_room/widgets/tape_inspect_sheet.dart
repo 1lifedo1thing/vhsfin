@@ -336,17 +336,20 @@ class _SleeveArtState extends State<_SleeveArt> {
   }
 
   /// With VHS covers on, learn whether the scan has a front before choosing
-  /// between it and the poster.
+  /// between it and the poster. Only the scan that could hold the front is
+  /// measured: a dedicated spine goes straight to the poster.
   void _measure() {
     final art = widget.art;
     if (!widget.useVhsCover || art == null) return;
-    final urls = [
-      art.imageUrl,
-      if (art.frontImageUrl?.isNotEmpty ?? false) art.frontImageUrl!,
-    ].where((u) => VhsSleeveShapes.aspectOf(u) == null).toList();
-    if (urls.isEmpty) return;
+    final front = art.frontImageUrl;
+    final url = front != null && front.isNotEmpty
+        ? front
+        : art.isWraparound
+        ? art.imageUrl
+        : null;
+    if (url == null || VhsSleeveShapes.aspectOf(url) != null) return;
     _measuring = true;
-    Future.wait(urls.map(VhsSleeveShapes.resolve)).whenComplete(() {
+    VhsSleeveShapes.resolve(url).whenComplete(() {
       if (mounted) setState(() => _measuring = false);
     });
   }

@@ -33,6 +33,12 @@ void main() {
     expect(VhsSleeveShapes.spineFraction(art), 1, reason: 'show it whole');
   });
 
+  test('a dedicated spine has no front without being measured', () {
+    const art = VhsSpineArt(imageUrl: 'spine.jpg', centerWidthFraction: 1);
+    expect(vhsFrontCoverOf(art), isNull);
+    expect(VhsSleeveShapes.aspectOf('spine.jpg'), isNull);
+  });
+
   test('a wraparound front is everything right of the spine', () {
     const spine = VhsCoverResolver.wraparoundSpineFraction;
     const art = VhsSpineArt(imageUrl: 'wrap.jpg');

@@ -103,6 +103,8 @@ VhsFrontCover? vhsFrontCoverOf(VhsSpineArt art) {
     if (aspect == null) return null;
     return (url: front, left: 0, right: 1, aspect: aspect);
   }
+  // A dedicated spine scan never has a front; no need to measure it.
+  if (art.isFullBleedSpine) return null;
   final sleeve = VhsSleeveShapes.aspectOf(art.imageUrl);
   if (sleeve == null ||
       SleeveShape.fromAspect(sleeve) != SleeveShape.wraparound) {
