@@ -19,7 +19,7 @@ class VcrBox extends StatelessWidget {
     required this.player,
     required this.surfaceEpoch,
     required this.surfaceOwner,
-    this.crtSkin = CrtTvSkin.crt90s,
+    this.crtSkin = CrtTvSkin.crtIcon,
     required this.slotKey,
     required this.flyingTapeId,
     required this.onRew,

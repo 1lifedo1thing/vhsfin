@@ -255,7 +255,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                       crossAxisSpacing: 6,
                       childAspectRatio: 1.12,
                       children: [
-                        for (final skin in CrtTvSkin.values)
+                        for (final skin in selectableCrtTvSkins)
                           _SkinThumb(
                             skin: skin,
                             selected: skin == _crtSkin,

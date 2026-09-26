@@ -88,7 +88,7 @@ void main() {
                 saveTimestampOnEject: false,
                 vhsCovers: false,
                 onVhsCoversChanged: (_) {},
-                crtSkin: CrtTvSkin.crt90s,
+                crtSkin: CrtTvSkin.crtIcon,
                 onCollection: () {},
                 onConnect: () {},
                 onSignOut: () {},
@@ -121,8 +121,9 @@ void main() {
     await tester.pump();
     expect(cabinet, CabinetStyle.flat);
     expect(find.text('TV'), findsOneWidget);
+    expect(find.text('ICON'), findsOneWidget);
     expect(find.text('90S'), findsOneWidget);
-    expect(find.text('GRAPHITE'), findsOneWidget);
+    expect(find.text('GRAPHITE'), findsNothing);
     await tester.ensureVisible(find.text('CRIMSON'));
     await tester.tap(find.text('CRIMSON'));
     await tester.pump();
@@ -173,9 +174,9 @@ void main() {
     expect(const ShelfDisplayPrefs().vhsOnly, isTrue);
   });
 
-  test('all CRT skins are selectable labels', () {
-    expect(CrtTvSkin.values, hasLength(6));
-    for (final skin in CrtTvSkin.values) {
+  test('TV picker offers six labeled skins', () {
+    expect(selectableCrtTvSkins, hasLength(6));
+    for (final skin in selectableCrtTvSkins) {
       expect(skin.settingsLabel, isNotEmpty);
     }
   });

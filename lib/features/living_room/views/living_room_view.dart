@@ -54,7 +54,7 @@ class LivingRoomView extends StatelessWidget {
     this.artWarmProgress = const ArtWarmProgress(),
     this.shelvesError,
     this.shelves,
-    this.crtSkin = CrtTvSkin.crt90s,
+    this.crtSkin = CrtTvSkin.crtIcon,
     this.cabinetStyle = CabinetStyle.walnut,
   });
 

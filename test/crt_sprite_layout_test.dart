@@ -54,12 +54,14 @@ void main() {
   });
 
   test('fromPrefs maps current and legacy cabinet names', () {
-    expect(CrtTvSkinLabels.fromPrefs(null), CrtTvSkin.crt90s);
+    expect(CrtTvSkinLabels.fromPrefs(null), CrtTvSkin.crtIcon);
+    expect(CrtTvSkinLabels.fromPrefs('graphite'), CrtTvSkin.crtIcon);
     expect(CrtTvSkinLabels.fromPrefs('skeuomorphic'), CrtTvSkin.crt90s);
     expect(CrtTvSkinLabels.fromPrefs('wegaSilver'), CrtTvSkin.ivory);
     expect(CrtTvSkinLabels.fromPrefs('woodConsole'), CrtTvSkin.knob);
     expect(CrtTvSkinLabels.fromPrefs('walnutGrille'), CrtTvSkin.knob2);
     expect(CrtTvSkinLabels.fromPrefs('crt90s'), CrtTvSkin.crt90s);
+    expect(CrtTvSkinLabels.fromPrefs('crtIcon'), CrtTvSkin.crtIcon);
   });
 
   test('sprite layouts keep the cassette mouth under the screen', () {
@@ -96,7 +98,10 @@ void main() {
     }
   });
 
-  test('six CRT looks are available', () {
-    expect(CrtTvSkin.values, hasLength(6));
+  test('six CRT looks are selectable in two rows', () {
+    expect(CrtTvSkin.values, hasLength(7));
+    expect(selectableCrtTvSkins, hasLength(6));
+    expect(selectableCrtTvSkins.first, CrtTvSkin.crtIcon);
+    expect(selectableCrtTvSkins, isNot(contains(CrtTvSkin.graphite)));
   });
 }

@@ -41,9 +41,9 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(room(CrtTvSkin.crt90s));
+    await tester.pumpWidget(room(CrtTvSkin.crtIcon));
     final screen = tester.state(find.byType(VcrCrtScreen));
-    for (final skin in [...CrtTvSkin.values.skip(1), CrtTvSkin.crt90s]) {
+    for (final skin in [...CrtTvSkin.values.skip(1), CrtTvSkin.crtIcon]) {
       await tester.pumpWidget(room(skin));
       expect(tester.takeException(), isNull, reason: skin.name);
       expect(

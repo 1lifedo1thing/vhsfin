@@ -10,12 +10,12 @@ import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('crtSkin defaults to crt90s and persists selection', () async {
+  test('crtSkin defaults to the icon and persists selection', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.crt90s);
+    expect(container.read(experiencePrefsProvider).crtSkin, CrtTvSkin.crtIcon);
 
     await container
         .read(experiencePrefsProvider.notifier)

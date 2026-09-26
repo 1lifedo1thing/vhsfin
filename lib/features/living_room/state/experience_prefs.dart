@@ -10,7 +10,7 @@ import 'package:vhsfin/features/living_room/model/crt_tv_skin.dart';
 class ExperiencePrefs {
   const ExperiencePrefs({
     this.saveTimestampOnEject = false,
-    this.crtSkin = CrtTvSkin.crt90s,
+    this.crtSkin = CrtTvSkin.crtIcon,
     this.cabinetStyle = CabinetStyle.walnut,
     this.vhsCovers = false,
   });

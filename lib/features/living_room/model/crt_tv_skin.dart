@@ -1,5 +1,8 @@
 /// Selectable CRT cabinets for the living-room deck.
 enum CrtTvSkin {
+  /// Dark metal TV/VCR derived from the app icon.
+  crtIcon,
+
   /// Late-90s TV/VCR combo (`assets/branding/crt-90s.png`).
   crt90s,
 
@@ -14,9 +17,20 @@ enum CrtTvSkin {
   knob2,
 }
 
+/// The six cabinets offered in the TV picker, in display order.
+const selectableCrtTvSkins = <CrtTvSkin>[
+  CrtTvSkin.crtIcon,
+  CrtTvSkin.crt90s,
+  CrtTvSkin.ivory,
+  CrtTvSkin.crimson,
+  CrtTvSkin.knob,
+  CrtTvSkin.knob2,
+];
+
 extension CrtTvSkinLabels on CrtTvSkin {
   String get settingsLabel => switch (this) {
     CrtTvSkin.crt90s => '90S',
+    CrtTvSkin.crtIcon => 'ICON',
     CrtTvSkin.graphite => 'GRAPHITE',
     CrtTvSkin.ivory => 'IVORY',
     CrtTvSkin.crimson => 'CRIMSON',
@@ -26,6 +40,7 @@ extension CrtTvSkinLabels on CrtTvSkin {
 
   String get menuTitle => switch (this) {
     CrtTvSkin.crt90s => 'Late-90s TV / VCR',
+    CrtTvSkin.crtIcon => 'Dark metal TV / VCR',
     CrtTvSkin.graphite => 'Graphite portable',
     CrtTvSkin.ivory => 'Ivory portable',
     CrtTvSkin.crimson => 'Crimson portable',
@@ -33,11 +48,12 @@ extension CrtTvSkinLabels on CrtTvSkin {
     CrtTvSkin.knob2 => 'Walnut on putty deck',
   };
 
-  /// Map current and legacy prefs keys onto the six cabinets.
+  /// Map current and legacy prefs keys onto the available cabinets.
   static CrtTvSkin fromPrefs(String? raw) {
     return switch (raw) {
       'crt90s' || 'skeuomorphic' || 'zenith' => CrtTvSkin.crt90s,
-      'graphite' => CrtTvSkin.graphite,
+      'crtIcon' => CrtTvSkin.crtIcon,
+      'graphite' => CrtTvSkin.crtIcon,
       'ivory' ||
       'bubbleTube' ||
       'portable' ||
@@ -48,7 +64,7 @@ extension CrtTvSkinLabels on CrtTvSkin {
       'crimson' || 'aquaGraphite' => CrtTvSkin.crimson,
       'knob' || 'walnutKnobs' || 'woodConsole' => CrtTvSkin.knob,
       'knob2' || 'walnutGrille' => CrtTvSkin.knob2,
-      _ => CrtTvSkin.crt90s,
+      _ => CrtTvSkin.crtIcon,
     };
   }
 }

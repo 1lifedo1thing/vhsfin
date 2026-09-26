@@ -40,6 +40,7 @@ flutter:
     - assets/knob.png
     - assets/knob2.png
     - assets/branding/crt-90s.png
+    - assets/branding/crt-icon-cutout.png
     - assets/branding/walnut.jpg
     - assets/sounds/vhs_insert.ogg
     - assets/sounds/vhs_eject.ogg
