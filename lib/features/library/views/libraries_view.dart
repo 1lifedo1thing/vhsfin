@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
 /// Collection picker UI — page owns browse/selection state.
 class LibrariesView extends StatelessWidget {
@@ -132,17 +133,7 @@ class LibrariesView extends StatelessWidget {
                               ),
                             ],
                             if (selected.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                'ON THE CONSOLE',
-                                style: TextStyle(
-                                  color: VhsColors.ink.withValues(alpha: 0.55),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
+                              const DeckLabel('ON THE CONSOLE'),
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
@@ -172,16 +163,14 @@ class LibrariesView extends StatelessWidget {
                       if (currentName != null && onToggleCurrent != null)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
-                          child: SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: onToggleCurrent,
-                              child: Text(
-                                currentSelected
-                                    ? 'REMOVE “${currentName!.toUpperCase()}”'
-                                    : 'ADD “${currentName!.toUpperCase()}” AS SHELF',
-                              ),
-                            ),
+                          child: DeckHardKey(
+                            tone: currentSelected
+                                ? DeckKeyTone.grey
+                                : DeckKeyTone.record,
+                            onPressed: onToggleCurrent!,
+                            label: currentSelected
+                                ? 'REMOVE “${currentName!.toUpperCase()}”'
+                                : 'ADD “${currentName!.toUpperCase()}” AS SHELF',
                           ),
                         ),
                       const SizedBox(height: 8),

@@ -3,6 +3,7 @@ import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/living_room/widgets/tape_inspect_sheet.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 import 'package:vhsfin/user_facing_error.dart';
@@ -114,57 +115,32 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
             maxHeight: MediaQuery.sizeOf(context).height * 0.78,
           ),
           child: Material(
-            color: VhsColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            elevation: 18,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.45)),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [VhsColors.surfaceRaised, VhsColors.surface],
-                ),
-              ),
+            type: MaterialType.transparency,
+            child: DeckPanel(
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'TAPE SELECT',
-                                style: TextStyle(
-                                  color: VhsColors.ink.withValues(alpha: 0.5),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.series.title.toUpperCase(),
-                                style: vhsBrandStyle(size: 18)
-                                    .copyWith(letterSpacing: 1.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: VhsColors.ink),
-                        ),
-                      ],
+                    padding: const EdgeInsets.fromLTRB(18, 20, 18, 4),
+                    child: DeckPanelHeader(
+                      title: 'TAPE SELECT',
+                      detail: episodes == null
+                          ? null
+                          : '${episodes.length} EPS',
+                      onClose: () => Navigator.pop(context),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 2),
+                    child: Text(
+                      widget.series.title.toUpperCase(),
+                      style: vhsBrandStyle(size: 18)
+                          .copyWith(letterSpacing: 1.5),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                     child: Text(
                       'Tap a spine for the art',
                       style: TextStyle(

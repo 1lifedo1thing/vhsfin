@@ -8,6 +8,7 @@ import 'package:vhsfin/features/library/data/vhs_sleeve_shape.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/living_room/widgets/vhs_spine.dart';
 
 /// Movie-info style popup: front poster + spine, then insert.
@@ -128,78 +129,52 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 520, maxHeight: maxH),
           child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    VhsColors.surfaceRaised,
-                    VhsColors.surface,
-                    VhsColors.surface,
-                  ],
-                ),
-                border: Border.all(color: VhsColors.line),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    blurRadius: 28,
-                    offset: const Offset(0, 14),
-                  ),
-                  BoxShadow(
-                    color: VhsColors.accent.withValues(alpha: 0.06),
-                    blurRadius: 18,
-                    spreadRadius: -2,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _PopupHeader(
-                      showWrongSleeve: art != null,
-                      onWrongSleeve: () async {
-                        await widget.onRejectSleeve();
-                        if (!mounted) return;
-                        setState(() => _art = null);
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Sleeve marked as a mismatch — using printed spine instead.',
-                            ),
-                            duration: Duration(seconds: 3),
+            type: MaterialType.transparency,
+            child: DeckPanel(
+              padding: EdgeInsets.zero,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _PopupHeader(
+                    year: widget.tape.productionYear,
+                    showWrongSleeve: art != null,
+                    onWrongSleeve: () async {
+                      await widget.onRejectSleeve();
+                      if (!mounted) return;
+                      setState(() => _art = null);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Sleeve marked as a mismatch — using printed spine instead.',
                           ),
-                        );
-                      },
-                    ),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                        child: CabinetScope(
-                          style: widget.cabinetStyle,
-                          child: _InfoBody(
-                            tape: widget.tape,
-                            art: art,
-                            useVhsCover: widget.useVhsCover,
-                          ),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    },
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
+                      child: CabinetScope(
+                        style: widget.cabinetStyle,
+                        child: _InfoBody(
+                          tape: widget.tape,
+                          art: art,
+                          useVhsCover: widget.useVhsCover,
                         ),
                       ),
                     ),
-                    _ActionBar(
-                      onBack: () => Navigator.of(context).pop(),
-                      onInsert: () {
-                        Navigator.of(context).pop();
-                        widget.onInsert();
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                  _ActionBar(
+                    onBack: () => Navigator.of(context).pop(),
+                    onInsert: () {
+                      Navigator.of(context).pop();
+                      widget.onInsert();
+                    },
+                  ),
+                ],
               ),
             ),
           ),
@@ -210,90 +185,69 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
 }
 
 class _PopupHeader extends StatelessWidget {
-  const _PopupHeader({required this.showWrongSleeve, this.onWrongSleeve});
+  const _PopupHeader({
+    required this.showWrongSleeve,
+    this.year,
+    this.onWrongSleeve,
+  });
 
   final bool showWrongSleeve;
+  final int? year;
   final VoidCallback? onWrongSleeve;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 4, 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.28),
-        border: Border(
-          bottom: BorderSide(color: Colors.black.withValues(alpha: 0.45)),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: VhsColors.ledOn,
-              boxShadow: [
-                BoxShadow(
-                  color: VhsColors.ledOn.withValues(alpha: 0.55),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
+          Expanded(
+            child: DeckDisplay(text: 'TAPE INFO', detail: year?.toString()),
           ),
-          const SizedBox(width: 10),
-          Text(
-            'TAPE INFO',
-            style: TextStyle(
-              color: VhsColors.accent.withValues(alpha: 0.9),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2.4,
-            ),
-          ),
-          const Spacer(),
-          if (showWrongSleeve && onWrongSleeve != null)
+          if (showWrongSleeve && onWrongSleeve != null) ...[
+            const SizedBox(width: 10),
             PopupMenuButton<_TapeMenuAction>(
               tooltip: 'More',
               padding: EdgeInsets.zero,
-              offset: const Offset(0, 36),
-              color: VhsColors.surface,
+              offset: const Offset(0, 46),
+              color: VhsColors.surfaceRaised,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              icon: Icon(
-                Icons.more_vert_rounded,
-                color: VhsColors.ink.withValues(alpha: 0.7),
-                size: 22,
+                side: const BorderSide(color: Colors.black),
               ),
               onSelected: (action) {
-                if (action == _TapeMenuAction.wrongSleeve) {
-                  onWrongSleeve!();
-                }
+                if (action == _TapeMenuAction.wrongSleeve) onWrongSleeve!();
               },
-              itemBuilder: (context) => [
+              itemBuilder: (context) => const [
                 PopupMenuItem(
                   value: _TapeMenuAction.wrongSleeve,
                   child: Text(
                     'Wrong sleeve',
                     style: TextStyle(
-                      color: VhsColors.ink.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w600,
+                      color: VhsColors.ink,
+                      fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
                   ),
                 ),
               ],
+              // The menu button owns the tap; the key is its face.
+              child: IgnorePointer(
+                child: DeckHardKey(
+                  label: '⋮',
+                  semanticLabel: 'More',
+                  compact: true,
+                  onPressed: () {},
+                ),
+              ),
             ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
+          ],
+          const SizedBox(width: 10),
+          DeckHardKey(
+            label: '✕',
+            semanticLabel: 'Close',
+            compact: true,
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.close,
-              color: VhsColors.ink.withValues(alpha: 0.7),
-              size: 22,
-            ),
           ),
         ],
       ),
@@ -733,22 +687,30 @@ class _TapeMetaBlock extends StatelessWidget {
         if (tape.overview != null && tape.overview!.isNotEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            // Recessed into the panel, like the tape window.
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.28),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              borderRadius: BorderRadius.circular(7),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0B0C0E), Color(0xFF16181B)],
+              ),
+              border: Border.all(color: Colors.black),
+              boxShadow: const [
+                BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'SYNOPSIS',
                   style: TextStyle(
-                    color: VhsColors.accent.withValues(alpha: 0.75),
+                    color: Color(0xFFC9D1D4),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.8,
+                    letterSpacing: 2.6,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -842,56 +804,20 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        color: VhsColors.surfaceSunken,
-        border: Border(
-          top: BorderSide(color: Colors.black.withValues(alpha: 0.5)),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: VhsColors.ink,
-                side: BorderSide(color: VhsColors.ink.withValues(alpha: 0.35)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              onPressed: onBack,
-              child: const Text(
-                'BACK',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.4,
-                ),
-              ),
-            ),
+            child: DeckHardKey(label: 'BACK', onPressed: onBack),
           ),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: VhsColors.record,
-                foregroundColor: VhsColors.ink,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
+            child: DeckHardKey(
+              label: 'INSERT TAPE',
+              tone: DeckKeyTone.record,
               onPressed: onInsert,
-              child: const Text(
-                'INSERT TAPE',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                ),
-              ),
             ),
           ),
         ],
@@ -929,12 +855,21 @@ class _FrontArt extends StatelessWidget {
     if (measuring) return const ColoredBox(color: VhsColors.surfaceSunken);
     final url = tape.imageUrl;
     if (url == null || url.isEmpty) {
-      return const ColoredBox(
-        color: VhsColors.surfaceSunken,
+      // A plain black box with the format mark pressed into it.
+      return ColoredBox(
+        color: const Color(0xFF0D0E10),
         child: Center(
           child: Text(
-            'No cover',
-            style: TextStyle(color: VhsColors.inkMuted, fontSize: 12),
+            'VHS',
+            semanticsLabel: 'No cover',
+            style: vhsBrandStyle(size: 30).copyWith(
+              color: const Color(0xFF1C1E21),
+              letterSpacing: 4,
+              shadows: const [
+                Shadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
+                Shadow(color: Color(0xCC000000), offset: Offset(0, -1)),
+              ],
+            ),
           ),
         ),
       );
