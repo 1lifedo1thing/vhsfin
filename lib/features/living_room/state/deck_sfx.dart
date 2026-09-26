@@ -21,6 +21,7 @@ class DeckSfx {
     _eject = _preloaded('sounds/vhs_eject.ogg');
     _ui = {
       for (final (sound, files) in const [
+        (DeckUiSound.tick, ['ui_tick_1', 'ui_tick_2', 'ui_tick_3']),
         (DeckUiSound.key, ['ui_key_1', 'ui_key_2', 'ui_key_3']),
         (DeckUiSound.toggle, ['ui_switch_1', 'ui_switch_2', 'ui_switch_3']),
         (DeckUiSound.sheetUp, ['ui_sheet_up']),
@@ -41,6 +42,7 @@ class DeckSfx {
   final _random = math.Random();
 
   static const _uiVolume = {
+    DeckUiSound.tick: 0.4,
     DeckUiSound.key: 0.55,
     DeckUiSound.toggle: 0.7,
     DeckUiSound.sheetUp: 0.5,

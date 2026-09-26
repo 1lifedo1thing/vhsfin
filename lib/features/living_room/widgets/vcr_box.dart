@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -323,10 +324,18 @@ class _DeckKeyState extends State<_DeckKey> {
     _ => null,
   };
 
+  Offset? _downAt;
+  var _holding = false;
+
+  bool get _isHoldKey =>
+      _action == DeckKeyAction.rewind || _action == DeckKeyAction.fastForward;
+
   void _release((VoidCallback, VoidCallback)? hold) {
-    if (!_pressed) return;
-    setState(() => _pressed = false);
-    hold?.$2();
+    if (_holding) {
+      _holding = false;
+      hold?.$2();
+    }
+    if (_pressed) setState(() => _pressed = false);
   }
 
   @override
@@ -353,22 +362,38 @@ class _DeckKeyState extends State<_DeckKey> {
         child: Tooltip(
           message: _label,
           excludeFromSemantics: true,
-          // Press, feel, and shuttle start on pointer-down: the tap recognizer
-          // waits up to 100ms inside the scrolling room.
+          // The cap presses (and REW/FF start) the moment a finger lands —
+          // the tap recognizer waits up to 100ms in the scrolling room. Like a
+          // real deck, a key clicks even with no tape in; it just does
+          // nothing. A finger that moves off is a scroll: no click.
           child: Listener(
-            onPointerDown: widget.enabled
-                ? (_) {
-                    DeckFeedback.key();
-                    setState(() => _pressed = true);
-                    hold?.$1();
-                  }
-                : null,
+            onPointerDown: (event) {
+              _downAt = event.position;
+              setState(() => _pressed = true);
+              if (_isHoldKey) {
+                DeckFeedback.key();
+                if (hold != null) {
+                  hold.$1();
+                  _holding = true;
+                }
+              }
+            },
+            onPointerMove: (event) {
+              final start = _downAt;
+              if (!_pressed || start == null) return;
+              if ((event.position - start).distance > kTouchSlop) {
+                _release(hold);
+              }
+            },
             onPointerUp: (_) => _release(hold),
             onPointerCancel: (_) => _release(hold),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               excludeFromSemantics: true,
-              onTap: widget.enabled ? _onTap : null,
+              onTap: () {
+                if (!_isHoldKey) DeckFeedback.key();
+                if (widget.enabled) _onTap?.call();
+              },
               child: Center(
                 child: SizedBox.fromSize(
                   size: cap.size,

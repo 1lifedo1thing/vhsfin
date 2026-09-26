@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
@@ -409,7 +410,9 @@ class DeckCloseButton extends StatelessWidget {
 
 /// Immediate press feedback: [builder] sees the press the moment the pointer
 /// lands (tap recognizers wait up to 100ms inside scrollables), and it stays
-/// visible for at least [minimum] so quick taps still read.
+/// visible for at least [minimum] so quick taps still read. The [haptic]
+/// (and its sound) fires on a completed tap, so a scroll that starts on the
+/// control is silent; held keys ([onPressStart]) fire it on the way down.
 class DeckPressable extends StatefulWidget {
   const DeckPressable({
     super.key,
@@ -429,7 +432,7 @@ class DeckPressable extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget Function(BuildContext context, bool pressed) builder;
 
-  /// Felt the moment the pointer lands (see [DeckFeedback]); null for none.
+  /// Felt and heard on a completed tap (see [DeckFeedback]); null for none.
   final VoidCallback? haptic;
   final Duration minimum;
 
@@ -439,22 +442,47 @@ class DeckPressable extends StatefulWidget {
 
 class _DeckPressableState extends State<DeckPressable> {
   var _pressed = false;
-  DateTime? _downAt;
+  var _holding = false;
+  Offset? _downAt;
+  DateTime? _downTime;
   Timer? _release;
 
-  void _down(PointerDownEvent _) {
+  /// Held keys (REW/FF) act — and are felt — the instant they go down.
+  bool get _isHoldKey => widget.onPressStart != null;
+
+  void _down(PointerDownEvent event) {
     if (widget.onTap == null) return;
     _release?.cancel();
-    _downAt = DateTime.now();
-    widget.haptic?.call();
-    widget.onPressStart?.call();
+    _downAt = event.position;
+    _downTime = DateTime.now();
+    if (_isHoldKey) {
+      widget.haptic?.call();
+      widget.onPressStart!.call();
+      _holding = true;
+    }
     setState(() => _pressed = true);
   }
 
-  void _up(PointerEvent _) {
-    if (!_pressed) return;
+  /// A finger that travels is scrolling, not pressing: let go quietly.
+  void _move(PointerMoveEvent event) {
+    final start = _downAt;
+    if (!_pressed || start == null) return;
+    if ((event.position - start).distance <= kTouchSlop) return;
+    _endHold();
+    _release?.cancel();
+    setState(() => _pressed = false);
+  }
+
+  void _endHold() {
+    if (!_holding) return;
+    _holding = false;
     widget.onPressEnd?.call();
-    final held = DateTime.now().difference(_downAt ?? DateTime.now());
+  }
+
+  void _up(PointerEvent _) {
+    _endHold();
+    if (!_pressed) return;
+    final held = DateTime.now().difference(_downTime ?? DateTime.now());
     final wait = widget.minimum - held;
     _release?.cancel();
     if (wait <= Duration.zero) {
@@ -464,6 +492,12 @@ class _DeckPressableState extends State<DeckPressable> {
     _release = Timer(wait, () {
       if (mounted) setState(() => _pressed = false);
     });
+  }
+
+  void _tap() {
+    // Only a real tap is heard and felt, so scrolling past stays silent.
+    if (!_isHoldKey) widget.haptic?.call();
+    widget.onTap?.call();
   }
 
   @override
@@ -476,11 +510,12 @@ class _DeckPressableState extends State<DeckPressable> {
   Widget build(BuildContext context) {
     return Listener(
       onPointerDown: _down,
+      onPointerMove: _move,
       onPointerUp: _up,
       onPointerCancel: _up,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
+        onTap: widget.onTap == null ? null : _tap,
         child: widget.builder(context, _pressed),
       ),
     );
@@ -643,8 +678,11 @@ class DeckSlideSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      // The option row around it already gives the toggle its feel.
-      onTap: () => onChanged(!value),
+      // A tap on the switch itself doesn't reach the row, so it's felt here.
+      onTap: () {
+        DeckFeedback.toggle();
+        onChanged(!value);
+      },
       onHorizontalDragEnd: (details) {
         final v = details.primaryVelocity ?? 0;
         if (v.abs() > 50 && (v > 0) != value) {

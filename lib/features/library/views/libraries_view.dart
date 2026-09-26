@@ -284,7 +284,7 @@ class _ChildrenPane extends StatelessWidget {
                 activeColor: VhsColors.accent,
                 checkColor: VhsColors.room,
                 onChanged: (_) {
-                  DeckFeedback.toggle();
+                  DeckFeedback.check();
                   onToggleNode(node);
                 },
               ),

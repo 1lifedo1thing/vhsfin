@@ -246,7 +246,11 @@ class _RubberKey extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       child: DeckPressable(
-        onTap: enabled ? (onTap ?? () {}) : null,
+        // Like a real remote, a key clicks with no tape in; it just
+        // doesn't do anything.
+        onTap: () {
+          if (enabled) onTap?.call();
+        },
         onPressStart: enabled ? onPressStart : null,
         onPressEnd: enabled ? onPressEnd : null,
         haptic: DeckFeedback.key,

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 
 void main() {
-  testWidgets('press shows the moment the pointer lands, with haptic', (
+  testWidgets('press shows the moment the pointer lands; the tap is felt', (
     tester,
   ) async {
     final haptics = <String>[];
@@ -40,10 +40,47 @@ void main() {
     );
     await tester.pump(); // one frame, no waiting
     expect(pressedSeen, isTrue);
-    expect(haptics, ['HapticFeedbackType.selectionClick']);
+    expect(haptics, isEmpty, reason: 'a press might still become a scroll');
     await gesture.up();
     await tester.pump(const Duration(milliseconds: 100));
     expect(taps, 1);
+    expect(haptics, ['HapticFeedbackType.selectionClick']);
+  });
+
+  testWidgets('a scroll that starts on a control is silent and inert', (
+    tester,
+  ) async {
+    var felt = 0;
+    var taps = 0;
+    var pressed = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ListView(
+          children: [
+            DeckPressable(
+              onTap: () => taps++,
+              haptic: () => felt++,
+              builder: (context, down) {
+                pressed = down;
+                return const SizedBox(height: 80);
+              },
+            ),
+            const SizedBox(height: 2000),
+          ],
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(DeckPressable)),
+    );
+    await tester.pump();
+    expect(pressed, isTrue);
+    await gesture.moveBy(const Offset(0, -60));
+    await tester.pump();
+    expect(pressed, isFalse, reason: 'lets go as soon as it scrolls');
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect((felt, taps), (0, 0));
   });
 
   testWidgets('held keys start on press and end on release, once each', (
