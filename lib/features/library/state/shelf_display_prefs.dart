@@ -2,24 +2,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 
-enum ShelfSortMode {
-  titleAsc,
-  yearNewest,
-  yearOldest,
-}
+enum ShelfSortMode { titleAsc, yearNewest, yearOldest }
 
 extension ShelfSortModeLabel on ShelfSortMode {
   String get buttonLabel => switch (this) {
-        ShelfSortMode.titleAsc => 'A–Z',
-        ShelfSortMode.yearNewest => 'YEAR ↓',
-        ShelfSortMode.yearOldest => 'YEAR ↑',
-      };
+    ShelfSortMode.titleAsc => 'A–Z',
+    ShelfSortMode.yearNewest => 'YEAR ↓',
+    ShelfSortMode.yearOldest => 'YEAR ↑',
+  };
 
   String get menuTitle => switch (this) {
-        ShelfSortMode.titleAsc => 'Title A–Z',
-        ShelfSortMode.yearNewest => 'Year — newest first',
-        ShelfSortMode.yearOldest => 'Year — oldest first',
-      };
+    ShelfSortMode.titleAsc => 'Title A–Z',
+    ShelfSortMode.yearNewest => 'Year — newest first',
+    ShelfSortMode.yearOldest => 'Year — oldest first',
+  };
 }
 
 class ShelfDisplayPrefs {
@@ -32,10 +28,7 @@ class ShelfDisplayPrefs {
   final bool vhsOnly;
   final ShelfSortMode sort;
 
-  ShelfDisplayPrefs copyWith({
-    bool? vhsOnly,
-    ShelfSortMode? sort,
-  }) {
+  ShelfDisplayPrefs copyWith({bool? vhsOnly, ShelfSortMode? sort}) {
     return ShelfDisplayPrefs(
       vhsOnly: vhsOnly ?? this.vhsOnly,
       sort: sort ?? this.sort,
@@ -45,8 +38,8 @@ class ShelfDisplayPrefs {
 
 final shelfDisplayPrefsProvider =
     NotifierProvider<ShelfDisplayPrefsNotifier, ShelfDisplayPrefs>(
-  ShelfDisplayPrefsNotifier.new,
-);
+      ShelfDisplayPrefsNotifier.new,
+    );
 
 class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
   static const _vhsOnlyKey = 'vhsfin.box_art_only';
@@ -94,8 +87,9 @@ class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
 }
 
 /// Tape ids known to have real VHS sleeve art (Jellyfin Box or resolver hit).
-final vhsArtIndexProvider =
-    NotifierProvider<VhsArtIndexNotifier, Set<String>>(VhsArtIndexNotifier.new);
+final vhsArtIndexProvider = NotifierProvider<VhsArtIndexNotifier, Set<String>>(
+  VhsArtIndexNotifier.new,
+);
 
 class VhsArtIndexNotifier extends Notifier<Set<String>> {
   @override
@@ -148,9 +142,7 @@ List<Tape> applyShelfDisplayPrefs(
   var out = List<Tape>.of(items);
   if (prefs.vhsOnly) {
     out = out
-        .where(
-          (t) => t.hasBoxImage || t.isDemo || vhsArtIds.contains(t.id),
-        )
+        .where((t) => t.hasBoxImage || t.isDemo || vhsArtIds.contains(t.id))
         .toList();
   }
   switch (prefs.sort) {
@@ -177,4 +169,3 @@ List<Tape> applyShelfDisplayPrefs(
   }
   return out;
 }
-

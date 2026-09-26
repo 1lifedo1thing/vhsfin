@@ -32,10 +32,10 @@ class VhsSpineArt {
   bool get isWraparound => centerWidthFraction < 0.99;
 
   Map<String, dynamic> toJson() => {
-        'u': imageUrl,
-        'f': centerWidthFraction,
-        if (frontImageUrl != null) 'front': frontImageUrl,
-      };
+    'u': imageUrl,
+    'f': centerWidthFraction,
+    if (frontImageUrl != null) 'front': frontImageUrl,
+  };
 
   static VhsSpineArt? fromJson(Map<String, dynamic>? json) {
     if (json == null) return null;
@@ -58,16 +58,17 @@ class VhsSpineArt {
 /// (no CORS on vhscollector.com). IA still uses JSONP on web.
 class VhsCoverResolver {
   VhsCoverResolver({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                headers: const {
-                  'User-Agent': 'vhsfin/0.1 (kids jellyfin client)',
-                },
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 12),
-              ),
-            );
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              headers: const {
+                'User-Agent': 'vhsfin/0.1 (kids jellyfin client)',
+              },
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 12),
+            ),
+          );
 
   final Dio _dio;
 
@@ -75,6 +76,7 @@ class VhsCoverResolver {
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
+
   /// Keep ordinary misses around long enough that relaunch / VHS-only warm
   /// does not re-stampede VHSCollector + IA (timeouts stack up on phones).
   static const missTtl = Duration(days: 14);
@@ -87,12 +89,8 @@ class VhsCoverResolver {
   /// Episodes remap to one `"Show Season N"` lookup so we don't stampede
   /// VHSCollector / IA opening a long season. Year is cleared so every
   /// episode in the season shares the cache entry.
-  static ({
-    String title,
-    int? year,
-    String? seriesTitle,
-    TapeKind kind,
-  }) lookupIdentity({
+  static ({String title, int? year, String? seriesTitle, TapeKind kind})
+  lookupIdentity({
     required String title,
     int? year,
     String? seriesTitle,
@@ -118,12 +116,7 @@ class VhsCoverResolver {
         );
       }
     }
-    return (
-      title: title,
-      year: year,
-      seriesTitle: seriesTitle,
-      kind: kind,
-    );
+    return (title: title, year: year, seriesTitle: seriesTitle, kind: kind);
   }
 
   Future<VhsSpineArt?> spineArtFor({
@@ -234,8 +227,7 @@ class VhsCoverResolver {
       seriesTitle: seriesTitle,
       seasonNumber: seasonNumber,
       kind: kind,
-    ))
-        ?.imageUrl;
+    ))?.imageUrl;
   }
 
   /// Permanently treat this title key as a miss so a rejected sleeve is not
@@ -378,8 +370,10 @@ class VhsCoverResolver {
     if (fromIa != null) return fromIa;
 
     if (series != null && series.isNotEmpty) {
-      final fromIaSeries =
-          await _searchInternetArchive('$series $cleaned', iaYear);
+      final fromIaSeries = await _searchInternetArchive(
+        '$series $cleaned',
+        iaYear,
+      );
       if (fromIaSeries != null) return fromIaSeries;
     }
 
@@ -398,10 +392,7 @@ class VhsCoverResolver {
     return compact.length <= 14;
   }
 
-  Future<VhsSpineArt?> _searchInternetArchive(
-    String cleaned,
-    int? year,
-  ) async {
+  Future<VhsSpineArt?> _searchInternetArchive(String cleaned, int? year) async {
     final softYear = year != null
         ? ' AND year:[${year - 1} TO ${year + 10}]'
         : ' AND year:[1975 TO $vhsEraLastYear]';
@@ -468,8 +459,8 @@ class VhsCoverResolver {
           if (data == null || data['ok'] != true) continue;
           final url = data['imageUrl'] as String?;
           if (url == null || url.isEmpty) continue;
-          final fraction = (data['fraction'] as num?)?.toDouble() ??
-              wraparoundSpineFraction;
+          final fraction =
+              (data['fraction'] as num?)?.toDouble() ?? wraparoundSpineFraction;
           final front = data['frontImageUrl'] as String?;
           debugPrint(
             'vhs-spine collector HIT "${data['slug']}" (${data['kind']}) → $url',
@@ -566,13 +557,13 @@ class VhsCoverResolver {
 
   Future<List<Map<String, dynamic>>> _searchDocs(String query) async {
     if (kIsWeb) {
-      final multiFl = 'https://archive.org/advancedsearch.php'
+      final multiFl =
+          'https://archive.org/advancedsearch.php'
           '?q=${Uri.encodeQueryComponent(query)}'
           '&fl[]=identifier&fl[]=title&fl[]=year&fl[]=mediatype'
           '&rows=8&output=json';
       final data = await iaJsonp(multiFl);
-      final docs =
-          data['response']?['docs'] as List<dynamic>? ?? const [];
+      final docs = data['response']?['docs'] as List<dynamic>? ?? const [];
       return docs.cast<Map<String, dynamic>>();
     }
 
@@ -634,7 +625,8 @@ class VhsCoverResolver {
       final lower = name.toLowerCase();
       if (source == 'metadata') continue;
       if (lower.contains('_thumb') || lower.startsWith('__ia_thumb')) continue;
-      final isImage = format.contains('jpeg') ||
+      final isImage =
+          format.contains('jpeg') ||
           format.contains('jpg') ||
           format.contains('png') ||
           lower.endsWith('.jpg') ||
@@ -685,8 +677,10 @@ class VhsCoverResolver {
     final asciiWanted = _fold(wanted);
     final asciiDoc = _fold(docTitle);
     if (asciiDoc.contains(asciiWanted)) score += 0.55;
-    final wantedParts =
-        asciiWanted.split(RegExp(r'\s+')).where((w) => w.length > 2).toList();
+    final wantedParts = asciiWanted
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length > 2)
+        .toList();
     if (wantedParts.isNotEmpty) {
       var hits = 0;
       for (final part in wantedParts) {

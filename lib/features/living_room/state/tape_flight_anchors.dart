@@ -12,8 +12,7 @@ class TapeFlightAnchors {
     required int row,
     required int index,
     required String tapeId,
-  }) =>
-      '$shelfId|$row|$index|$tapeId';
+  }) => '$shelfId|$row|$index|$tapeId';
 
   GlobalKey spineKeyFor(String instanceKey) {
     return _spineKeys.putIfAbsent(
@@ -53,8 +52,8 @@ final tapeFlightAnchorsProvider = Provider<TapeFlightAnchors>((ref) {
 /// Which shelf spine instance the user tapped (survives duplicate titles).
 final flightSourceKeyProvider =
     NotifierProvider<FlightSourceKeyNotifier, String?>(
-  FlightSourceKeyNotifier.new,
-);
+      FlightSourceKeyNotifier.new,
+    );
 
 class FlightSourceKeyNotifier extends Notifier<String?> {
   @override

@@ -26,7 +26,8 @@ class LibraryNode {
 
   factory LibraryNode.fromItem(Map<String, dynamic> item) {
     final type = item['Type'] as String? ?? '';
-    final isFolder = type == 'Folder' ||
+    final isFolder =
+        type == 'Folder' ||
         type == 'CollectionFolder' ||
         type == 'UserView' ||
         type == 'BoxSet' ||
@@ -61,10 +62,10 @@ class ShelfSource {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'breadcrumb': breadcrumb,
-      };
+    'id': id,
+    'name': name,
+    'breadcrumb': breadcrumb,
+  };
 
   factory ShelfSource.fromJson(Map<String, dynamic> json) {
     return ShelfSource(

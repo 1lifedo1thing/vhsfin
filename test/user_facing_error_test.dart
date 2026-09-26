@@ -26,10 +26,7 @@ void main() {
       DioException(
         requestOptions: opts(),
         type: DioExceptionType.badResponse,
-        response: Response(
-          requestOptions: opts(),
-          statusCode: 401,
-        ),
+        response: Response(requestOptions: opts(), statusCode: 401),
       ),
     );
     expect(message.toLowerCase(), contains('password'));
@@ -62,10 +59,7 @@ void main() {
   test('cancel gets a soft message', () {
     expect(
       userFacingError(
-        DioException(
-          requestOptions: opts(),
-          type: DioExceptionType.cancel,
-        ),
+        DioException(requestOptions: opts(), type: DioExceptionType.cancel),
       ),
       'Request cancelled.',
     );
@@ -83,10 +77,7 @@ void main() {
 
   test('unknown Dio uses fallback without request internals', () {
     final message = userFacingError(
-      DioException(
-        requestOptions: opts(),
-        type: DioExceptionType.unknown,
-      ),
+      DioException(requestOptions: opts(), type: DioExceptionType.unknown),
     );
     expect(message, 'Something went wrong. Please try again.');
   });

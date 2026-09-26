@@ -16,7 +16,9 @@ Future<void> rejectTapeSleeveArt(ProviderContainer container, Tape tape) async {
 
   final boxTag = boxTagFromUrl(tape.boxImageUrl);
   final hadOwnBox = tape.hasBoxImage;
-  await container.read(vhsArtRejectsProvider.notifier).reject(
+  await container
+      .read(vhsArtRejectsProvider.notifier)
+      .reject(
         tapeId: tape.id,
         imageUrl: art.imageUrl,
         boxImageUrl: tape.boxImageUrl,
@@ -27,7 +29,9 @@ Future<void> rejectTapeSleeveArt(ProviderContainer container, Tape tape) async {
   // own Jellyfin Box must not mark the whole season as a miss.
   final sharesSeasonLookup = tape.kind == TapeKind.episode;
   if (!(hadOwnBox && sharesSeasonLookup)) {
-    await container.read(vhsCoverResolverProvider).forceMiss(
+    await container
+        .read(vhsCoverResolverProvider)
+        .forceMiss(
           title: tape.title,
           year: tape.productionYear,
           seriesTitle: tape.seriesTitle,
@@ -38,10 +42,9 @@ Future<void> rejectTapeSleeveArt(ProviderContainer container, Tape tape) async {
 
   final session = container.read(sessionProvider).value;
   if (session != null && hadOwnBox) {
-    await container.read(jellyfinClientProvider).deleteBoxImage(
-          session: session,
-          itemId: tape.id,
-        );
+    await container
+        .read(jellyfinClientProvider)
+        .deleteBoxImage(session: session, itemId: tape.id);
   }
 
   // Drop decoded/disk copies so a later URL reuse doesn't flash the old sleeve.

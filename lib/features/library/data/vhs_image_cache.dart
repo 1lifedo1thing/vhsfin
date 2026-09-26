@@ -40,19 +40,12 @@ class VhsImageCache {
   }
 
   /// Ensure [url] is in Flutter's image cache (and disk cache on mobile).
-  static Future<void> warm(
-    String url, {
-    BuildContext? context,
-  }) async {
+  static Future<void> warm(String url, {BuildContext? context}) async {
     if (!kIsWeb) {
       try {
         final imageManager = manager as VhsArtCacheManager;
         await imageManager
-            .getImageFile(
-              url,
-              maxHeight: diskMaxHeight,
-              maxWidth: diskMaxWidth,
-            )
+            .getImageFile(url, maxHeight: diskMaxHeight, maxWidth: diskMaxWidth)
             .firstWhere((response) => response is FileInfo);
       } catch (_) {
         // Still try [precacheImage] below.
@@ -64,10 +57,7 @@ class VhsImageCache {
 
   /// Drop memory + disk copies after a sleeve is marked wrong.
   static Future<void> evict(String url) async {
-    await CachedNetworkImage.evictFromCache(
-      url,
-      cacheManager: manager,
-    );
+    await CachedNetworkImage.evictFromCache(url, cacheManager: manager);
     imageCache.evict(provider(url));
     try {
       await manager.removeFile(url);
@@ -112,11 +102,11 @@ class VhsImageCache {
 
 class VhsArtCacheManager extends CacheManager with ImageCacheManager {
   VhsArtCacheManager()
-      : super(
-          Config(
-            VhsImageCache.key,
-            stalePeriod: const Duration(days: 365),
-            maxNrOfCacheObjects: 800,
-          ),
-        );
+    : super(
+        Config(
+          VhsImageCache.key,
+          stalePeriod: const Duration(days: 365),
+          maxNrOfCacheObjects: 800,
+        ),
+      );
 }

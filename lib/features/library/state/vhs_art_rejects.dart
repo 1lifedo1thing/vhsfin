@@ -26,11 +26,11 @@ class VhsArtRejection {
   final bool suppressArt;
 
   Map<String, dynamic> toJson() => {
-        'id': tapeId,
-        'urls': blockedUrls.toList(),
-        if (ignoredBoxTag != null) 'boxTag': ignoredBoxTag,
-        'suppress': suppressArt,
-      };
+    'id': tapeId,
+    'urls': blockedUrls.toList(),
+    if (ignoredBoxTag != null) 'boxTag': ignoredBoxTag,
+    'suppress': suppressArt,
+  };
 
   factory VhsArtRejection.fromJson(Map<String, dynamic> json) {
     final urls = json['urls'];
@@ -57,8 +57,9 @@ class VhsArtRejection {
     return VhsArtRejection(
       tapeId: tapeId,
       blockedUrls: blockedUrls ?? this.blockedUrls,
-      ignoredBoxTag:
-          clearIgnoredBoxTag ? null : (ignoredBoxTag ?? this.ignoredBoxTag),
+      ignoredBoxTag: clearIgnoredBoxTag
+          ? null
+          : (ignoredBoxTag ?? this.ignoredBoxTag),
       suppressArt: suppressArt ?? this.suppressArt,
     );
   }
@@ -71,11 +72,9 @@ String normalizeArtUrl(String url) {
   if (uri == null) return url.trim();
   // Keep `tag` for Jellyfin images — that's the real identity.
   final tag = uri.queryParameters['tag'];
-  return uri.replace(
-    queryParameters: {
-      if (tag != null && tag.isNotEmpty) 'tag': tag,
-    },
-  ).toString();
+  return uri
+      .replace(queryParameters: {if (tag != null && tag.isNotEmpty) 'tag': tag})
+      .toString();
 }
 
 String? boxTagFromUrl(String? boxImageUrl) {
@@ -85,8 +84,8 @@ String? boxTagFromUrl(String? boxImageUrl) {
 
 final vhsArtRejectsProvider =
     NotifierProvider<VhsArtRejectsNotifier, Map<String, VhsArtRejection>>(
-  VhsArtRejectsNotifier.new,
-);
+      VhsArtRejectsNotifier.new,
+    );
 
 class VhsArtRejectsNotifier extends Notifier<Map<String, VhsArtRejection>> {
   static const _key = 'vhsfin.spine_rejects.v1';

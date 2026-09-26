@@ -6,14 +6,8 @@ import 'package:vhsfin/features/playback/clean_player_page.dart';
 
 final appRouter = GoRouter(
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const LivingRoomPage(),
-    ),
-    GoRoute(
-      path: '/connect',
-      builder: (context, state) => const ConnectPage(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const LivingRoomPage()),
+    GoRoute(path: '/connect', builder: (context, state) => const ConnectPage()),
     GoRoute(
       path: '/libraries',
       builder: (context, state) => const LibrariesPage(),

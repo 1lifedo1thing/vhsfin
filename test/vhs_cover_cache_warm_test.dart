@@ -43,10 +43,7 @@ void main() {
 
   test('cached hit returns without network', () async {
     const key = 'jaws||1975|movie';
-    final hit = jsonEncode({
-      'u': 'https://example.com/jaws.jpg',
-      'f': 0.09,
-    });
+    final hit = jsonEncode({'u': 'https://example.com/jaws.jpg', 'f': 0.09});
     SharedPreferences.setMockInitialValues({
       'vhsfin.spine_art.v10': jsonEncode({key: hit}),
     });
