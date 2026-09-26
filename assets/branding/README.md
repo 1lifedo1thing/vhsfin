@@ -7,6 +7,8 @@ Original raster concepts generated for VHSFin with the built-in OpenAI image-gen
 | `cassette-icon.png` | Earlier app icon concept: tactile cassette, ivory reels, green play symbol |
 | `crt-icon.png` | Original miniature television concept with green phosphor glow |
 | `crt-icon-ios-squircle-v3.png` | Current transparent TV artwork; the modeled casing itself forms the iOS rounded-square silhouette |
+| `crt-icon-cutout-v3.png` | Detailed live TV cabinet matching the app icon's lighting, with a transparent screen and four subtle transport keys |
+| `crt-icon-cutout.png` | Earlier textured TV cabinet cutout |
 | `crt-icon-ios-v2.png` | Earlier opaque full-bleed TV face |
 | `crt-icon-cyan-cutout-v2.png` | Matching Android foreground with simplified controls and transparent surroundings |
 | `crt-icon-ios-fullbleed.png`, `crt-icon-cyan-cutout.png` | Earlier TV icon iterations |
@@ -34,6 +36,8 @@ The helper extends the nearest cabinet edge colors into the transparent corners 
 The web splash combines the generated TV icon with responsive HTML text and a status indicator. Android launch screens use the CRT over charcoal; iOS uses the rounded TV cabinet. Keeping text outside the bitmap makes the launch surface crisp at different sizes.
 
 `crt-90s.png` has real transparency outside the cabinet and across the entire screen opening. The live screen extends underneath the opaque bezel; the bitmap defines the visible contour. Its five physical transport keys have interactive symbol overlays. The source is 1254 × 1254 pixels; normalized positions in `VcrBox` keep the screen, slot, and keys aligned at every size.
+
+`crt-icon-cutout-v3.png` keeps the selectable live TV skin's small amber light, full speaker grille, cassette slot, knob, and four transport keys for viewing at larger sizes. Its smoother graphite-bronze casing borrows the app icon's warm upper-left light and restrained cyan edge light, without the original crackle texture. The screen opening and surroundings have true alpha, and the quieter printed keys remain interactive. Its screen and control regions are measured in `CrtSpriteLayout`.
 
 The knob decks were drawn with REW, PLAY, STOP, FF printed on their keys. The app has no stop, so the FF symbol was moved onto the third key and an EJECT symbol in the same cream ink was printed on the fourth. Key positions and actions for every cabinet are in `CrtSpriteLayout`.
 

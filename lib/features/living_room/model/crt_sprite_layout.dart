@@ -107,37 +107,36 @@ class CrtSpriteLayout {
       full: Rect.fromLTRB(0.78, 0.70, 0.95, 0.90),
     ),
     CrtTvSkin.crtIcon => const CrtSpriteLayout(
-      asset: 'assets/branding/crt-icon-cutout.png',
+      asset: 'assets/branding/crt-icon-cutout-v3.png',
       assetSize: Size(1254, 1254),
-      sourceRect: Rect.fromLTWH(0, 0, 1254, 1200),
-      screen: Rect.fromLTRB(0.11, 0.13, 0.90, 0.725),
-      // The original cassette mouth remains visible and interactive.
-      slot: Rect.fromLTRB(0.203, 0.777, 0.672, 0.867),
+      sourceRect: Rect.fromLTWH(0, 0, 1254, 1212),
+      screen: Rect.fromLTRB(0.125, 0.136, 0.876, 0.719),
+      slot: Rect.fromLTRB(0.206, 0.776, 0.666, 0.865),
       // Keycaps are painted on the strip below the cassette mouth.
       keys: [
         DeckKeycap(
-          Rect.fromLTRB(0.226, 0.878, 0.320, 0.933),
+          Rect.fromLTRB(0.226, 0.880, 0.316, 0.929),
           DeckKeyAction.rewind,
           printed: true,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.330, 0.878, 0.437, 0.933),
+          Rect.fromLTRB(0.333, 0.880, 0.428, 0.929),
           DeckKeyAction.playPause,
           printed: true,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.443, 0.878, 0.547, 0.933),
+          Rect.fromLTRB(0.446, 0.880, 0.538, 0.929),
           DeckKeyAction.fastForward,
           printed: true,
         ),
         DeckKeycap(
-          Rect.fromLTRB(0.554, 0.878, 0.653, 0.933),
+          Rect.fromLTRB(0.555, 0.880, 0.645, 0.929),
           DeckKeyAction.eject,
           printed: true,
         ),
       ],
-      remote: Rect.fromLTRB(0.806, 0.767, 0.916, 0.887),
-      full: Rect.fromLTRB(0.704, 0.765, 0.807, 0.877),
+      remote: Rect.fromLTRB(0.788, 0.746, 0.911, 0.883),
+      full: Rect.fromLTRB(0.705, 0.773, 0.801, 0.873),
     ),
     CrtTvSkin.graphite => const CrtSpriteLayout(
       asset: _atlas,
