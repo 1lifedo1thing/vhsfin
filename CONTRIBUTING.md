@@ -46,7 +46,7 @@ For playback changes, try a movie and a series, pause/resume, seek, eject during
 
 ## Reporting problems
 
-Include the platform, Flutter/app version, Jellyfin version, steps to reproduce, expected result, and actual result. For video problems, include the container/codec and whether Jellyfin is transcoding. Remove passwords, tokens, authorization headers, and full stream URLs before sharing logs.
+Use the bug report form. Include the platform, Flutter/app version, Jellyfin version, steps to reproduce, expected result, and actual result. For video problems, include the container/codec and whether Jellyfin is transcoding. Remove passwords, tokens, authorization headers, and full stream URLs before sharing logs. Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## Community
 
