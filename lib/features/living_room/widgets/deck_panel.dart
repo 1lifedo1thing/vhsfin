@@ -321,13 +321,17 @@ class DeckSheetHeader extends StatelessWidget {
       children: [
         const DeckLed(on: true, color: VhsColors.record),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFFC9D1D4),
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2.6,
+        Flexible(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFC9D1D4),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 2.6,
+            ),
           ),
         ),
         if (detail != null) ...[
@@ -464,13 +468,17 @@ class DeckLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(2, 16, 0, 8),
       child: Row(
         children: [
-          Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFFC9D1D4),
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2.6,
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFC9D1D4),
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 2.6,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -665,7 +673,12 @@ class DeckSlideSwitch extends StatelessWidget {
             width: _trackW,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [_mark('OFF', !value), _mark('ON', value)],
+              // Printed on the switch body; the toggled state is announced,
+              // so these grow only a little with large text.
+              children: [
+                _mark(context, 'OFF', !value),
+                _mark(context, 'ON', value),
+              ],
             ),
           ),
         ],
@@ -673,8 +686,9 @@ class DeckSlideSwitch extends StatelessWidget {
     );
   }
 
-  Widget _mark(String text, bool active) => Text(
+  Widget _mark(BuildContext context, String text, bool active) => Text(
     text,
+    textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
     style: TextStyle(
       color: active
           ? (text == 'ON' ? VhsColors.accent : const Color(0xFFC9D1D4))
