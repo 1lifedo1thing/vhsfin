@@ -1,21 +1,25 @@
 # VHSFin artwork
 
-Original raster concepts generated for VHSFin with the built-in OpenAI image-generation tool. No external reference images were supplied. The selected cassette artwork is the shared app identity; the CRT is an alternate concept, and the movie-night scene is editorial brand artwork, not an app screenshot.
+Original raster concepts generated for VHSFin with the built-in OpenAI image-generation tool. The current TV icon was made using the earlier iOS artwork, Android splash icon, and the supplied iOS shape template as references. The rounded TV casing is the iOS, macOS, and web app identity; a matching transparent cutout is used by Android. The cassette is an earlier concept, and the movie-night scene is editorial brand artwork, not an app screenshot.
 
 | File | Purpose |
 | --- | --- |
-| `cassette-icon.png` | Selected source: tactile cassette, ivory reels, green play symbol |
-| `crt-icon.png` | Alternate concept: miniature television with phosphor glow |
+| `cassette-icon.png` | Earlier app icon concept: tactile cassette, ivory reels, green play symbol |
+| `crt-icon.png` | Original miniature television concept with green phosphor glow |
+| `crt-icon-ios-squircle-v3.png` | Current transparent TV artwork; the modeled casing itself forms the iOS rounded-square silhouette |
+| `crt-icon-ios-v2.png` | Earlier opaque full-bleed TV face |
+| `crt-icon-cyan-cutout-v2.png` | Matching Android foreground with simplified controls and transparent surroundings |
+| `crt-icon-ios-fullbleed.png`, `crt-icon-cyan-cutout.png` | Earlier TV icon iterations |
 | `crt-90s.png` | Production late-90s TV/VCR with a transparent screen and integrated transport keys |
 | `walnut.jpg` | Walnut veneer, made seamless (`tool/make_seamless_texture.py`) and tiled at a fixed scale |
 | `../knob.png`, `../knob2.png` | Wood TVs on charcoal and putty decks; printed keys read REW, PLAY, FF, EJECT |
 | `movie-night.png` | Original movie-night illustration |
-| `adaptive-background.png` | Phosphor glow cropped from the left half of `assets/icon.png` |
+| `adaptive-background.png` | Solid dark background for Android adaptive icons |
 | `adaptive-foreground.png` | Transparent CRT safe-zone layer for Android adaptive icons |
 | `../../docs/movie-night.jpg` | Smaller JPEG export for the README |
-| `../icons/app_icon_1024.png` | 1024-pixel app master used by Flutter |
-| `../icon.png` | Two-up source sheet: glow background | CRT (baked checkerboard) |
-| `../tr_icon.png` | Transparent CRT foreground used by the Android adaptive icon |
+| `../icons/app_icon_1024.png` | Opaque 1024-pixel TV icon used by Flutter |
+| `../icon.png` | Earlier two-up source sheet: glow background | CRT (baked checkerboard) |
+| `../tr_icon.png` | Earlier transparent CRT foreground |
 
 ## Platform assets
 
@@ -25,15 +29,23 @@ The production assets are checked in; image generation is not a build dependency
 python3 tool/generate_brand_assets.py
 ```
 
-The helper uses the system `sips` utility to resize the cassette master for iOS, macOS, web install icons, and the iOS launch image. Android adaptive icons and the Android splash use the CRT pair instead: the left panel of `assets/icon.png` as the glow background, and `assets/tr_icon.png` as a transparent foreground fitted to the 72dp safe zone. `sips` padding is opaque, so transparent padding is written in Python. It deliberately retains the simplified SVG/PNG browser favicon, which is easier to read at 16 pixels.
+The helper extends the nearest cabinet edge colors into the transparent corners before exporting Apple's required opaque square icon. The visible bevel and shadow come from the TV casing itself; iOS applies its own rounded-square mask at display time. Android uses a separate charcoal background and a transparent TV foreground scaled to 54dp so its corners fit inside the circular 66dp safe area. `sips` padding is opaque, so transparent padding is written in Python. The simplified SVG/PNG browser favicon remains easier to read at 16 pixels.
 
-The web splash combines the generated cassette icon with responsive HTML text and a status indicator. Android launch screens use the CRT over the phosphor glow; iOS still uses the cassette on the shared dark brown background. Keeping text outside the bitmap makes the launch surface crisp at different sizes.
+The web splash combines the generated TV icon with responsive HTML text and a status indicator. Android launch screens use the CRT over charcoal; iOS uses the rounded TV cabinet. Keeping text outside the bitmap makes the launch surface crisp at different sizes.
 
 `crt-90s.png` has real transparency outside the cabinet and across the entire screen opening. The live screen extends underneath the opaque bezel; the bitmap defines the visible contour. Its five physical transport keys have interactive symbol overlays. The source is 1254 × 1254 pixels; normalized positions in `VcrBox` keep the screen, slot, and keys aligned at every size.
 
 The knob decks were drawn with REW, PLAY, STOP, FF printed on their keys. The app has no stop, so the FF symbol was moved onto the third key and an EJECT symbol in the same cream ink was printed on the fourth. Key positions and actions for every cabinet are in `CrtSpriteLayout`.
 
 `walnut.jpg` is a flat, horizontal-grain veneer, cross-faded so its edges tile without seams, used by the Walnut shelf look. `ExactAssetImage(scale: 2)` and `BoxFit.none` maintain the grain size without stretching it to fit tall cabinets or thin shelf edges.
+
+### Production icon edits
+
+The production masters were edited with the built-in image-generation tool. The user's home-screen screenshot, Android splash icon, and iOS icon grid guided the outer shape. The design briefs were:
+
+- Current iOS icon: make the outer TV casing itself follow the iOS icon squircle, with the bevel, highlights, and soft shadow inside that contour. Fill the canvas at the four side midpoints, keep the screen nearly black with subdued cyan light, and preserve the simplified controls at 48–60 pixels.
+- Earlier full-bleed icon: make the square itself a continuous graphite CRT face with no exterior TV silhouette; let the iOS mask form the only outside contour. Simplify the screen, play triangle, slot, amber LED, knob, and speaker holes for 48–60 pixel display. Use warm upper-left light, restrained cool right-edge glint, and lower-edge shadow inside the mask; keep the glass dark with cyan localized near the play symbol.
+- Android cutout: preserve genuine transparency outside the compact cabinet; match the simplified controls, dark screen, ivory play symbol, and restrained cyan glow of the production iOS icon.
 
 ### Late-90s production cabinet
 

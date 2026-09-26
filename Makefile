@@ -1,4 +1,4 @@
-PORT ?= 8080
+PORT ?= 8081
 PYTHON ?= python3
 
 .PHONY: help build serve stop restart web demo demo-onboarding

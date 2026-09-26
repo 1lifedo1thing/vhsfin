@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Resize the checked-in masters into platform assets (macOS, using sips).
+"""Resize the checked-in TV master into platform assets (macOS, using sips).
 
 No network or image-generation service is needed. Artwork source and prompts:
 assets/branding/README.md. Run from any directory: python3 tool/generate_brand_assets.py
 """
 import json
+from collections import deque
 from pathlib import Path
 import shutil
 import struct
@@ -13,15 +14,17 @@ import tempfile
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-CASSETTE = ROOT / 'assets/branding/cassette-icon.png'
-ICON_SHEET = ROOT / 'assets/icon.png'
-FOREGROUND_SOURCE = ROOT / 'assets/tr_icon.png'
+ICON_SOURCE = ROOT / 'assets/branding/crt-icon-ios-squircle-v3.png'
+FOREGROUND_SOURCE = ROOT / 'assets/branding/crt-icon-cyan-cutout-v2.png'
 ADAPTIVE_BACKGROUND = ROOT / 'assets/branding/adaptive-background.png'
 ADAPTIVE_FOREGROUND = ROOT / 'assets/branding/adaptive-foreground.png'
-BACKGROUND = '1A100C'
+BACKGROUND = '07090B'
 ADAPTIVE_SIZE = 432
-# Android adaptive key artwork sits in the inner 72dp of a 108dp layer.
-SAFE_ZONE = 72 / 108
+# The TV is nearly square, so its corners need room inside Android's circular
+# 66dp safe area. At 54dp, the visible cabinet (including the knob and feet)
+# fits inside that circle; the remaining space is transparent foreground.
+ADAPTIVE_ARTWORK_SIZE = 54 / 108
+LEGACY_ARTWORK_SIZE = 72 / 108
 
 
 def sips(*args):
@@ -110,11 +113,53 @@ def write_png(path, width, height, rows, color):
     )
 
 
-def extract_sheet_background(dest):
-    width, height, color, rows = decode_png(ICON_SHEET)
-    if color != 2 or width != height * 2:
-        raise ValueError(f'{ICON_SHEET} must be a side-by-side RGB pair of squares')
-    write_png(dest, height, height, [row[:height * 3] for row in rows], 2)
+def write_solid_background(dest, size):
+    pixel = bytes.fromhex(BACKGROUND)
+    write_png(dest, size, size, [pixel * size for _ in range(size)], 2)
+
+
+def extend_icon_edge(source, dest):
+    """Make Apple's required opaque square without a dark corner behind the TV.
+
+    The source's modeled casing supplies the visible edge. Pixels outside its
+    transparent silhouette inherit the nearest casing color, which Apple then
+    hides with its rounded-square mask.
+    """
+    width, height, color, rows = decode_png(source)
+    if color != 6 or width != height:
+        raise ValueError(f'{source} must be a square RGBA PNG')
+    pixels = b''.join(rows)
+    size = width * height
+    output = bytearray(size * 3)
+    seen = bytearray(size)
+    queue = deque()
+    for index in range(size):
+        rgba = index * 4
+        rgb = index * 3
+        alpha = pixels[rgba + 3]
+        if alpha >= 128:
+            output[rgb:rgb + 3] = pixels[rgba:rgba + 3]
+            seen[index] = 1
+            x, y = index % width, index // width
+            if (x == 0 or x == width - 1 or y == 0 or y == height - 1
+                    or any(pixels[neighbor * 4 + 3] < 128 for neighbor in
+                           (index - 1, index + 1, index - width, index + width)
+                           if 0 <= neighbor < size)):
+                queue.append(index)
+    while queue:
+        index = queue.popleft()
+        x, y = index % width, index // width
+        for neighbor in (index - 1 if x else -1,
+                         index + 1 if x < width - 1 else -1,
+                         index - width if y else -1,
+                         index + width if y < height - 1 else -1):
+            if neighbor < 0 or seen[neighbor]:
+                continue
+            seen[neighbor] = 1
+            output[neighbor * 3:neighbor * 3 + 3] = output[index * 3:index * 3 + 3]
+            queue.append(neighbor)
+    write_png(dest, width, height,
+              [output[y * width * 3:(y + 1) * width * 3] for y in range(height)], 2)
 
 
 def pad_rgba_to_square(source, dest, canvas):
@@ -137,6 +182,26 @@ def fit_rgba_in_square(source, dest, canvas, artwork_size=None):
         fitted_path = Path(scratch) / 'fitted.png'
         sips('-Z', str(fitted), str(source), '--out', str(fitted_path))
         pad_rgba_to_square(fitted_path, dest, canvas)
+
+
+def clean_adaptive_foreground(path):
+    width, height, color, rows = decode_png(path)
+    if color != 6 or width != height:
+        raise ValueError(f'{path} must be a square RGBA PNG')
+    safe_radius_squared = (width * 66 / 108 / 2) ** 2
+    cleaned = []
+    for y, row in enumerate(rows):
+        pixels = bytearray(row)
+        for x in range(width):
+            offset = x * 4
+            alpha = pixels[offset + 3]
+            if alpha < 16:
+                pixels[offset:offset + 4] = b'\0\0\0\0'
+            elif ((x - (width - 1) / 2) ** 2
+                  + (y - (height - 1) / 2) ** 2) > safe_radius_squared:
+                raise ValueError(f'{path} has visible artwork outside the Android safe circle')
+        cleaned.append(pixels)
+    write_png(path, width, height, cleaned, 6)
 
 
 def composite_launcher(background, foreground, dest):
@@ -166,20 +231,28 @@ def composite_launcher(background, foreground, dest):
 
 
 def export_android_adaptive(scratch):
-    extract_sheet_background(ADAPTIVE_BACKGROUND)
+    write_solid_background(ADAPTIVE_BACKGROUND, ADAPTIVE_SIZE)
     fit_rgba_in_square(
         FOREGROUND_SOURCE,
         ADAPTIVE_FOREGROUND,
         ADAPTIVE_SIZE,
-        artwork_size=round(ADAPTIVE_SIZE * SAFE_ZONE),
+        artwork_size=round(ADAPTIVE_SIZE * ADAPTIVE_ARTWORK_SIZE),
     )
+    clean_adaptive_foreground(ADAPTIVE_FOREGROUND)
     background = ROOT / 'android/app/src/main/res/drawable-nodpi/ic_launcher_background.png'
     foreground = ROOT / 'android/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png'
     background.parent.mkdir(parents=True, exist_ok=True)
     sips('-z', str(ADAPTIVE_SIZE), str(ADAPTIVE_SIZE), str(ADAPTIVE_BACKGROUND), '--out', str(background))
     shutil.copyfile(ADAPTIVE_FOREGROUND, foreground)
+    legacy_foreground = scratch / 'legacy_foreground.png'
+    fit_rgba_in_square(
+        FOREGROUND_SOURCE,
+        legacy_foreground,
+        ADAPTIVE_SIZE,
+        artwork_size=round(ADAPTIVE_SIZE * LEGACY_ARTWORK_SIZE),
+    )
     composite = scratch / 'launcher.png'
-    composite_launcher(background, foreground, composite)
+    composite_launcher(background, legacy_foreground, composite)
     for density, scale in [('mdpi', 1), ('hdpi', 1.5), ('xhdpi', 2), ('xxhdpi', 3), ('xxxhdpi', 4)]:
         mipmap = ROOT / f'android/app/src/main/res/mipmap-{density}/ic_launcher.png'
         splash = ROOT / f'android/app/src/main/res/drawable-{density}/splash_icon.png'
@@ -190,22 +263,28 @@ def export_android_adaptive(scratch):
 def main():
     if not shutil.which('sips'):
         raise SystemExit('This helper requires macOS sips. Generated assets are already checked in.')
-    export(CASSETTE, 'assets/icons/app_icon_1024.png', 1024)
-    for size in (192, 512):
-        export(CASSETTE, f'web/icons/Icon-{size}.png', size)
-        export(CASSETTE, f'web/icons/Icon-maskable-{size}.png', size, inset=True)
-    export(CASSETTE, 'web/icons/apple-touch-icon.png', 180)
     with tempfile.TemporaryDirectory() as scratch:
-        export_android_adaptive(Path(scratch))
-    for platform, catalog in [('ios', 'Runner'), ('macos', 'Runner')]:
-        folder = Path(platform) / catalog / 'Assets.xcassets/AppIcon.appiconset'
-        manifest = json.loads((ROOT / folder / 'Contents.json').read_text())
-        for entry in manifest['images']:
-            size = round(float(entry['size'].split('x')[0]) * float(entry['scale'].rstrip('x')))
-            export(CASSETTE, folder / entry['filename'], size)
-    for scale in (1, 2, 3):
-        suffix = '' if scale == 1 else f'@{scale}x'
-        export(CASSETTE, f'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage{suffix}.png', 160 * scale)
+        scratch = Path(scratch)
+        width, height, color, _ = decode_png(FOREGROUND_SOURCE)
+        if color != 6 or width != height:
+            raise ValueError(f'{FOREGROUND_SOURCE} must be a square RGBA PNG')
+        ios_master = scratch / 'ios_master.png'
+        extend_icon_edge(ICON_SOURCE, ios_master)
+        export(ios_master, 'assets/icons/app_icon_1024.png', 1024)
+        for size in (192, 512):
+            export(ios_master, f'web/icons/Icon-{size}.png', size)
+            export(ios_master, f'web/icons/Icon-maskable-{size}.png', size, inset=True)
+        export(ios_master, 'web/icons/apple-touch-icon.png', 180)
+        export_android_adaptive(scratch)
+        for platform, catalog in [('ios', 'Runner'), ('macos', 'Runner')]:
+            folder = Path(platform) / catalog / 'Assets.xcassets/AppIcon.appiconset'
+            manifest = json.loads((ROOT / folder / 'Contents.json').read_text())
+            for entry in manifest['images']:
+                size = round(float(entry['size'].split('x')[0]) * float(entry['scale'].rstrip('x')))
+                export(ios_master, folder / entry['filename'], size)
+        for scale in (1, 2, 3):
+            suffix = '' if scale == 1 else f'@{scale}x'
+            export(ios_master, f'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage{suffix}.png', 160 * scale)
     print('Updated Flutter, Android, iOS, macOS, and web brand assets.')
 
 
