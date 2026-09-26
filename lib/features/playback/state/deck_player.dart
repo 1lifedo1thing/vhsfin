@@ -38,6 +38,9 @@ class DeckPlayerController {
   VideoController? _controller;
   String? _loadedUrl;
   Timer? _shuttleTimer;
+  // Winding from pause runs the tape and parks it again on release, like a
+  // deck's picture search.
+  var _pauseAfterShuttle = false;
   StreamSubscription<String>? _errorSubscription;
   final _errors = StreamController<String>.broadcast();
   final _surface = DeckSurfaceLedger();
@@ -185,7 +188,11 @@ class DeckPlayerController {
     _shuttleTimer?.cancel();
     _shuttleTimer = null;
     _setShuttle(DeckShuttle.fastForward);
-    _player!.setRate(2.5);
+    if (!_player!.state.playing) {
+      _pauseAfterShuttle = true;
+      unawaited(_player!.play());
+    }
+    unawaited(_player!.setRate(2.5));
   }
 
   void startRewind() {
@@ -205,8 +212,11 @@ class DeckPlayerController {
     _shuttleTimer?.cancel();
     _shuttleTimer = null;
     _setShuttle(DeckShuttle.idle);
+    final pause = _pauseAfterShuttle;
+    _pauseAfterShuttle = false;
     if (_player == null) return;
     await _player!.setRate(1);
+    if (pause) await _player!.pause();
   }
 
   void _setShuttle(DeckShuttle next) {
