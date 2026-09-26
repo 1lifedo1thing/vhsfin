@@ -53,11 +53,17 @@ class LibrariesView extends StatelessWidget {
         title: const Text('SHELVES'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: onBack,
+          onPressed: () {
+            DeckFeedback.tap();
+            onBack();
+          },
         ),
         actions: [
           TextButton(
-            onPressed: onDone,
+            onPressed: () {
+              DeckFeedback.tap();
+              onDone();
+            },
             child: const Text(
               'DONE',
               style: TextStyle(
@@ -327,7 +333,11 @@ class _Crumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      enableFeedback: false,
+      onTap: () {
+        DeckFeedback.tap();
+        onTap();
+      },
       child: Text(
         label,
         style: const TextStyle(

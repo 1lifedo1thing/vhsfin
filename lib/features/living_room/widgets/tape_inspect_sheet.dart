@@ -120,9 +120,10 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
     }
     final bottom = MediaQuery.paddingOf(context).bottom;
     final maxH = MediaQuery.sizeOf(context).height * 0.82;
+    // Phones: rises from the bottom edge with no gap. Desktop: a dialog.
     final outerPadding = widget.desktop
         ? const EdgeInsets.all(24)
-        : EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom);
+        : EdgeInsets.zero;
 
     return Padding(
       padding: outerPadding,
@@ -134,6 +135,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
           child: Material(
             type: MaterialType.transparency,
             child: DeckPanel(
+              attachedToBottom: !widget.desktop,
               padding: EdgeInsets.zero,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -171,6 +173,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
                     ),
                   ),
                   _ActionBar(
+                    bottomInset: widget.desktop ? 0 : bottom,
                     onBack: () => Navigator.of(context).pop(),
                     onInsert: () {
                       Navigator.of(context).pop();
@@ -211,6 +214,8 @@ class _PopupHeader extends StatelessWidget {
           if (showWrongSleeve && onWrongSleeve != null)
             PopupMenuButton<_TapeMenuAction>(
               tooltip: 'More',
+              enableFeedback: false,
+              onOpened: DeckFeedback.tap,
               iconSize: 20,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 180),
@@ -786,15 +791,22 @@ class _MetaChip extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.onBack, required this.onInsert});
+  const _ActionBar({
+    required this.onBack,
+    required this.onInsert,
+    this.bottomInset = 0,
+  });
 
   final VoidCallback onBack;
   final VoidCallback onInsert;
 
+  /// Home-indicator clearance when the sheet runs into the bottom edge.
+  final double bottomInset;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+      padding: EdgeInsets.fromLTRB(18, 8, 18, 18 + bottomInset),
       child: Row(
         children: [
           Expanded(

@@ -5,7 +5,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   tearDown(() => DeckFeedback.player = null);
 
-  test('checks tick, keys click, switches chonk; taps are felt only', () {
+  test('taps and checks tick, keys click, switches chonk', () {
     final played = <DeckUiSound>[];
     DeckFeedback.player = played.add;
     DeckFeedback.tap();
@@ -15,7 +15,12 @@ void main() {
     // The tape clips already carry the latch and clunk.
     DeckFeedback.latch();
     DeckFeedback.clunk();
-    expect(played, [DeckUiSound.tick, DeckUiSound.key, DeckUiSound.toggle]);
+    expect(played, [
+      DeckUiSound.tick,
+      DeckUiSound.tick,
+      DeckUiSound.key,
+      DeckUiSound.toggle,
+    ]);
   });
 
   test('a sheet whooshes up on open and down once it is gone', () async {

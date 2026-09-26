@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
@@ -414,7 +415,11 @@ class _EmptyShelfPrompt extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onConnectPrompt,
+        enableFeedback: false,
+        onTap: () {
+          DeckFeedback.tap();
+          onConnectPrompt!();
+        },
         borderRadius: BorderRadius.circular(4),
         hoverColor: VhsColors.accent.withValues(alpha: 0.06),
         splashColor: VhsColors.accent.withValues(alpha: 0.12),

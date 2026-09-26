@@ -96,8 +96,18 @@ ThemeData buildVhsTheme() {
       ),
       labelStyle: const TextStyle(color: VhsColors.ink),
     ),
+    // The deck plays its own press sounds (DeckFeedback); Android's system
+    // click on stock widgets would double up with them.
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(enableFeedback: false),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(enableFeedback: false),
+    ),
+    listTileTheme: const ListTileThemeData(enableFeedback: false),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        enableFeedback: false,
         backgroundColor: VhsColors.record,
         foregroundColor: VhsColors.ink,
         textStyle: const TextStyle(fontFamily: 'Bungee', fontSize: 16),

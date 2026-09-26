@@ -42,11 +42,12 @@ class DeckSfx {
   final _random = math.Random();
 
   static const _uiVolume = {
-    DeckUiSound.tick: 0.4,
+    DeckUiSound.tick: 0.35,
     DeckUiSound.key: 0.55,
     DeckUiSound.toggle: 0.7,
-    DeckUiSound.sheetUp: 0.5,
-    DeckUiSound.sheetDown: 0.45,
+    // Background motion, not an event: kept well under the clicks.
+    DeckUiSound.sheetUp: 0.24,
+    DeckUiSound.sheetDown: 0.2,
   };
 
   /// The SOUND EFFECTS setting: off silences every deck sound.

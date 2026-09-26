@@ -114,7 +114,8 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
     final episodes = _episodes;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
+      // Rises from the bottom edge with no gap below.
+      padding: EdgeInsets.zero,
       child: Align(
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
@@ -126,6 +127,7 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
           child: Material(
             type: MaterialType.transparency,
             child: DeckPanel(
+              attachedToBottom: true,
               padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,11 +208,11 @@ class _EpisodePickerSheetState extends State<EpisodePickerSheet> {
                               }
 
                               return ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(
+                                padding: EdgeInsets.fromLTRB(
                                   10,
                                   0,
                                   10,
-                                  16,
+                                  16 + bottom,
                                 ),
                                 itemCount: rows.length,
                                 separatorBuilder: (_, _) =>

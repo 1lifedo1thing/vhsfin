@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/auth/model/server_address.dart';
 import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
@@ -47,7 +48,12 @@ class _ConnectViewState extends State<ConnectView> {
         leading: IconButton(
           tooltip: 'Back to the living room',
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: widget.busy ? null : widget.onBack,
+          onPressed: widget.busy
+              ? null
+              : () {
+                  DeckFeedback.tap();
+                  widget.onBack();
+                },
         ),
       ),
       body: DecoratedBox(
@@ -179,9 +185,12 @@ class _ConnectViewState extends State<ConnectView> {
                                     tooltip: _showPassword
                                         ? 'Hide password'
                                         : 'Show password',
-                                    onPressed: () => setState(
-                                      () => _showPassword = !_showPassword,
-                                    ),
+                                    onPressed: () {
+                                      DeckFeedback.tap();
+                                      setState(
+                                        () => _showPassword = !_showPassword,
+                                      );
+                                    },
                                     icon: Icon(
                                       _showPassword
                                           ? Icons.visibility_off_outlined

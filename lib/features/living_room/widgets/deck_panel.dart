@@ -26,9 +26,11 @@ Future<T?> showDeckPanelSheet<T>(
       builder: (context) {
         final bottom = MediaQuery.paddingOf(context).bottom;
         final body = builder(context);
+        // Rises from the bottom edge with no gap below; the content is
+        // inset above the home indicator instead.
         return DismissOnEscape(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottom),
+            padding: EdgeInsets.zero,
             child: Align(
               alignment: Alignment.bottomCenter,
               heightFactor: 1,
@@ -40,14 +42,25 @@ Future<T?> showDeckPanelSheet<T>(
                 child: Material(
                   type: MaterialType.transparency,
                   child: DeckPanel(
+                    attachedToBottom: true,
                     padding: EdgeInsets.zero,
                     child: scrollable
                         ? SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
+                            padding: EdgeInsets.fromLTRB(
+                              18,
+                              20,
+                              18,
+                              22 + bottom,
+                            ),
                             child: body,
                           )
                         : Padding(
-                            padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+                            padding: EdgeInsets.fromLTRB(
+                              18,
+                              20,
+                              18,
+                              16 + bottom,
+                            ),
                             child: body,
                           ),
                   ),
@@ -69,6 +82,7 @@ class DeckPanel extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(18, 20, 18, 18),
     this.radius = 14,
     this.screws = true,
+    this.attachedToBottom = false,
   });
 
   final Widget child;
@@ -78,9 +92,14 @@ class DeckPanel extends StatelessWidget {
   /// Corner screws; off for moulded shapes like the remote.
   final bool screws;
 
+  /// Runs into the bottom of the screen: only the top corners round.
+  final bool attachedToBottom;
+
   @override
   Widget build(BuildContext context) {
-    final shape = BorderRadius.circular(radius);
+    final shape = attachedToBottom
+        ? BorderRadius.vertical(top: Radius.circular(radius))
+        : BorderRadius.circular(radius);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,
@@ -383,6 +402,7 @@ class DeckCloseButton extends StatelessWidget {
         label: 'Close',
         excludeSemantics: true,
         child: InkResponse(
+          enableFeedback: false,
           onTap: () {
             DeckFeedback.tap();
             onPressed();

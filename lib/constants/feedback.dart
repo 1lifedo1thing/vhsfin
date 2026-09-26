@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 
 /// Short sounds that ride along with presses (see [DeckFeedback]).
 enum DeckUiSound {
-  /// A light plastic tick — the VCR's slot flap. For checkboxes.
+  /// A light plastic tick — the VCR's slot flap. For choosing things.
   tick,
 
   /// A key going down — the VCR's eject button.
@@ -27,16 +27,15 @@ enum DeckUiSound {
 abstract final class DeckFeedback {
   static void Function(DeckUiSound sound)? player;
 
-  /// Choosing something: a shelf, a TV, a tape, a row, closing a sheet.
-  /// Felt only — these are the most frequent touches, and a sound on each
-  /// becomes noise. Sheets they open carry their own whoosh.
-  static void tap() => HapticFeedback.selectionClick();
-
-  /// Checking or unchecking a box: a light tick, not a switch's chonk.
-  static void check() {
+  /// Choosing something: a shelf, a TV, a tape, a row, an icon, closing a
+  /// sheet — a selection tick you feel and a soft flap tick you hear.
+  static void tap() {
     HapticFeedback.selectionClick();
     player?.call(DeckUiSound.tick);
   }
+
+  /// Checking or unchecking a box: the same light tick, not a switch's chonk.
+  static void check() => tap();
 
   /// A hardware key going down.
   static void key() {
