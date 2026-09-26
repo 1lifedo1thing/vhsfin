@@ -65,7 +65,7 @@ void main() {
         ),
       );
       await tester.pumpWidget(view());
-      final submit = find.text('Connect & choose shelves');
+      final submit = find.text('CONNECT & CHOOSE SHELVES');
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pump();

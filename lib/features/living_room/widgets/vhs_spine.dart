@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
@@ -765,7 +764,8 @@ class _SpineTitlePlate extends StatelessWidget {
       textAlign: TextAlign.center,
       style:
           (style.useDisplayFont
-                  ? GoogleFonts.bungee(
+                  ? TextStyle(
+                      fontFamily: 'Bungee',
                       fontSize: style.fontSize,
                       letterSpacing: style.letterSpacing,
                       height: 1.05,

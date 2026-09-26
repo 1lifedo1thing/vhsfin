@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/app_icon_1024.png" width="120" height="120" alt="VHSFin cassette icon">
+  <img src="assets/icons/app_icon_1024.png" width="120" height="120" alt="VHSFin TV icon">
 </p>
 <h1 align="center">VHSFin</h1>
 <p align="center"><strong>Movie night, rewound.</strong><br>A small Jellyfin client with a VHS player interface.</p>
@@ -127,7 +127,7 @@ Android release builds currently use the debug signing configuration for easy lo
 
 Your password is sent to your Jellyfin server for authentication and is not persisted by VHSFin. A session token is saved in local app preferences (browser storage on web), so treat a signed-in device as having access to that account. This storage is not an encrypted credential vault. Sign out on shared devices, and revoke sessions from Jellyfin when needed.
 
-Cover lookup may send title/year searches to Internet Archive and VHSCollector. Artwork is cached locally; availability and matching vary. Google Fonts may fetch fonts when they are not cached. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
+Cover lookup may send title/year searches to Internet Archive and VHSCollector. Artwork is cached locally; availability and matching vary. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
 
 The original VHSFin icon concepts and movie-night illustration were generated for this project. Source images, prompts, and platform export instructions live in [assets/branding](assets/branding/README.md). Mechanical sound credits are in [assets/sounds/CREDITS.txt](assets/sounds/CREDITS.txt).
 

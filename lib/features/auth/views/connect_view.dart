@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/living_room/widgets/deck_panel.dart';
 import 'package:vhsfin/features/auth/model/server_address.dart';
 
 /// Local form state stays in the view; the page owns authentication.
@@ -101,22 +102,8 @@ class _ConnectViewState extends State<ConnectView> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(22),
-                          decoration: BoxDecoration(
-                            color: VhsColors.surface,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: VhsColors.ink.withValues(alpha: 0.12),
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 30,
-                                offset: Offset(0, 12),
-                              ),
-                            ],
-                          ),
+                        DeckPanel(
+                          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -230,34 +217,12 @@ class _ConnectViewState extends State<ConnectView> {
                                 ),
                               ],
                               const SizedBox(height: 22),
-                              FilledButton.icon(
+                              DeckHardKey(
+                                tone: DeckKeyTone.record,
+                                label: widget.busy
+                                    ? 'CONNECTING…'
+                                    : 'CONNECT & CHOOSE SHELVES',
                                 onPressed: widget.busy ? null : _submit,
-                                icon: widget.busy
-                                    ? const SizedBox.square(
-                                        dimension: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 20,
-                                      ),
-                                label: Text(
-                                  widget.busy
-                                      ? 'Connecting…'
-                                      : 'Connect & choose shelves',
-                                ),
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(54),
-                                  textStyle: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
                               ),
                             ],
                           ),

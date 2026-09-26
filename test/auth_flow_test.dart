@@ -119,8 +119,8 @@ void main() {
       'https://example.test',
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'alice');
-    await tester.ensureVisible(find.text('Connect & choose shelves'));
-    await tester.tap(find.text('Connect & choose shelves'));
+    await tester.ensureVisible(find.text('CONNECT & CHOOSE SHELVES'));
+    await tester.tap(find.text('CONNECT & CHOOSE SHELVES'));
     await tester.pumpAndSettle();
     expect(find.text('SHELVES'), findsOneWidget);
     await tester.tap(find.text('DONE'));
@@ -161,8 +161,8 @@ void main() {
         'https://example.test',
       );
       await tester.enterText(find.byType(TextFormField).at(1), 'alice');
-      await tester.ensureVisible(find.text('Connect & choose shelves'));
-      await tester.tap(find.text('Connect & choose shelves'));
+      await tester.ensureVisible(find.text('CONNECT & CHOOSE SHELVES'));
+      await tester.tap(find.text('CONNECT & CHOOSE SHELVES'));
       await tester.pump();
       router.go('/');
       await tester.pumpAndSettle();

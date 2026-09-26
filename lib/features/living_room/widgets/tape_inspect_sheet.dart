@@ -198,18 +198,20 @@ class _PopupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: DeckDisplay(text: 'TAPE INFO', detail: year?.toString()),
-          ),
-          if (showWrongSleeve && onWrongSleeve != null) ...[
-            const SizedBox(width: 10),
+      padding: const EdgeInsets.fromLTRB(20, 10, 8, 0),
+      child: DeckSheetHeader(
+        title: 'TAPE INFO',
+        detail: year?.toString(),
+        onClose: () => Navigator.of(context).pop(),
+        actions: [
+          if (showWrongSleeve && onWrongSleeve != null)
             PopupMenuButton<_TapeMenuAction>(
               tooltip: 'More',
-              padding: EdgeInsets.zero,
-              offset: const Offset(0, 46),
+              iconSize: 20,
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: VhsColors.inkMuted,
+              ),
               color: VhsColors.surfaceRaised,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -231,24 +233,7 @@ class _PopupHeader extends StatelessWidget {
                   ),
                 ),
               ],
-              // The menu button owns the tap; the key is its face.
-              child: IgnorePointer(
-                child: DeckHardKey(
-                  label: '⋮',
-                  semanticLabel: 'More',
-                  compact: true,
-                  onPressed: () {},
-                ),
-              ),
             ),
-          ],
-          const SizedBox(width: 10),
-          DeckHardKey(
-            label: '✕',
-            semanticLabel: 'Close',
-            compact: true,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
         ],
       ),
     );

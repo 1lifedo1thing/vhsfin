@@ -369,15 +369,14 @@ class _SortOption extends StatelessWidget {
       selected: selected,
       label: label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: DeckPressable(
         onTap: onTap,
-        child: Container(
+        builder: (context, pressed) => Container(
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            color: const Color(0x05FFFFFF),
+            color: pressed ? const Color(0x0DFFFFFF) : const Color(0x05FFFFFF),
             border: Border.all(color: const Color(0x0DFFFFFF)),
           ),
           child: Row(

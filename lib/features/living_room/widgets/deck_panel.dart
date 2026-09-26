@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:vhsfin/constants/theme.dart';
 
 /// Parts of a VCR front panel, used to build sheets and dialogs that feel like
@@ -208,7 +210,8 @@ class DeckDisplay extends StatelessWidget {
   /// Dimmer readout on the right, like a channel or counter.
   final String? detail;
 
-  static TextStyle style(double size, {double alpha = 1}) => GoogleFonts.vt323(
+  static TextStyle style(double size, {double alpha = 1}) => TextStyle(
+    fontFamily: 'VT323',
     fontSize: size,
     height: 1,
     letterSpacing: size * 0.1,
@@ -264,7 +267,7 @@ class DeckDisplay extends StatelessWidget {
   }
 }
 
-/// Display window plus a close key: the header of every deck sheet.
+/// Display window plus a slim close button: the header of a deck sheet.
 class DeckPanelHeader extends StatelessWidget {
   const DeckPanelHeader({
     super.key,
@@ -285,15 +288,149 @@ class DeckPanelHeader extends StatelessWidget {
           child: DeckDisplay(text: title, detail: detail),
         ),
         if (onClose != null) ...[
-          const SizedBox(width: 10),
-          DeckHardKey(
-            label: '✕',
-            semanticLabel: 'Close',
-            compact: true,
-            onPressed: onClose!,
-          ),
+          const SizedBox(width: 6),
+          DeckCloseButton(onPressed: onClose!),
         ],
       ],
+    );
+  }
+}
+
+/// A slim title row — silkscreened name, optional actions, and a close X.
+/// For sheets where the content, not the chrome, should lead.
+class DeckSheetHeader extends StatelessWidget {
+  const DeckSheetHeader({
+    super.key,
+    required this.title,
+    required this.onClose,
+    this.detail,
+    this.actions = const [],
+  });
+
+  final String title;
+  final String? detail;
+  final List<Widget> actions;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const DeckLed(on: true, color: VhsColors.record),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFC9D1D4),
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.6,
+          ),
+        ),
+        if (detail != null) ...[
+          const SizedBox(width: 10),
+          Text(
+            detail!,
+            style: const TextStyle(
+              color: VhsColors.inkFaint,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.6,
+            ),
+          ),
+        ],
+        const Spacer(),
+        ...actions,
+        DeckCloseButton(onPressed: onClose),
+      ],
+    );
+  }
+}
+
+/// The one close control every sheet uses: a small, quiet X.
+class DeckCloseButton extends StatelessWidget {
+  const DeckCloseButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: 'Close',
+      visualDensity: VisualDensity.compact,
+      iconSize: 20,
+      color: VhsColors.inkMuted,
+      icon: const Icon(Icons.close_rounded),
+    );
+  }
+}
+
+/// Immediate press feedback: [builder] sees the press the moment the pointer
+/// lands (tap recognizers wait up to 100ms inside scrollables), and it stays
+/// visible for at least [minimum] so quick taps still read.
+class DeckPressable extends StatefulWidget {
+  const DeckPressable({
+    super.key,
+    required this.onTap,
+    required this.builder,
+    this.haptic = true,
+    this.minimum = const Duration(milliseconds: 90),
+  });
+
+  final VoidCallback? onTap;
+  final Widget Function(BuildContext context, bool pressed) builder;
+  final bool haptic;
+  final Duration minimum;
+
+  @override
+  State<DeckPressable> createState() => _DeckPressableState();
+}
+
+class _DeckPressableState extends State<DeckPressable> {
+  var _pressed = false;
+  DateTime? _downAt;
+  Timer? _release;
+
+  void _down(PointerDownEvent _) {
+    if (widget.onTap == null) return;
+    _release?.cancel();
+    _downAt = DateTime.now();
+    if (widget.haptic) HapticFeedback.selectionClick();
+    setState(() => _pressed = true);
+  }
+
+  void _up(PointerEvent _) {
+    if (!_pressed) return;
+    final held = DateTime.now().difference(_downAt ?? DateTime.now());
+    final wait = widget.minimum - held;
+    _release?.cancel();
+    if (wait <= Duration.zero) {
+      setState(() => _pressed = false);
+      return;
+    }
+    _release = Timer(wait, () {
+      if (mounted) setState(() => _pressed = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _release?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: _down,
+      onPointerUp: _up,
+      onPointerCancel: _up,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: widget.builder(context, _pressed),
+      ),
     );
   }
 }
@@ -388,17 +525,18 @@ class DeckBay extends StatelessWidget {
       selected: selected,
       label: semanticLabel ?? label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: DeckPressable(
         onTap: onTap,
-        child: Container(
+        builder: (context, pressed) => Container(
           padding: const EdgeInsets.fromLTRB(8, 5, 8, 7),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF0B0C0E), Color(0xFF16181B)],
+              colors: pressed
+                  ? const [Color(0xFF050607), Color(0xFF0D0E10)]
+                  : const [Color(0xFF0B0C0E), Color(0xFF16181B)],
             ),
             border: Border.all(color: Colors.black),
             boxShadow: const [
@@ -551,14 +689,13 @@ class DeckOptionRow extends StatelessWidget {
       hint: subtitle,
       excludeSemantics: true,
       onTap: () => onChanged(!value),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: DeckPressable(
         onTap: () => onChanged(!value),
-        child: Container(
+        builder: (context, pressed) => Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            color: const Color(0x05FFFFFF),
+            color: pressed ? const Color(0x0DFFFFFF) : const Color(0x05FFFFFF),
             border: Border.all(color: const Color(0x0DFFFFFF)),
           ),
           child: Row(
@@ -598,117 +735,186 @@ class DeckOptionRow extends StatelessWidget {
   }
 }
 
-/// A light-grey hardware key that travels when pressed.
-class DeckHardKey extends StatefulWidget {
+/// A hardware key set into the panel: it sits in a dark socket with its
+/// side showing below the face, and sinks when pressed.
+class DeckHardKey extends StatelessWidget {
   const DeckHardKey({
     super.key,
     required this.label,
     required this.onPressed,
     this.sublabel,
     this.semanticLabel,
-    this.compact = false,
     this.tone = DeckKeyTone.grey,
   });
 
   final String label;
   final String? sublabel;
   final String? semanticLabel;
-  final VoidCallback onPressed;
 
-  /// Square key for icons (close) instead of a labelled key.
-  final bool compact;
+  /// Null disables the key (shown dimmed, doesn't press).
+  final VoidCallback? onPressed;
   final DeckKeyTone tone;
 
+  /// How far the face stands above its socket; a press takes all but 1px.
+  static const _travel = 4.0;
+
   @override
-  State<DeckHardKey> createState() => _DeckHardKeyState();
+  Widget build(BuildContext context) {
+    final t = _KeyTone.of(tone);
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      child: DeckPressable(
+        onTap: onPressed,
+        builder: (context, down) {
+          final side = down ? 1.0 : _travel;
+          final key = Container(
+            // Socket: the hole in the panel the key sits in.
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF020303), Color(0xFF0B0C0D)],
+              ),
+              boxShadow: const [
+                BoxShadow(color: Color(0x1AFFFFFF), offset: Offset(0, 1)),
+              ],
+            ),
+            child: Padding(
+              // Keep the footprint fixed while the key sinks.
+              padding: EdgeInsets.only(top: _travel - side),
+              child: DecoratedBox(
+                // The key's side, visible below the face.
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: t.side,
+                  boxShadow: down
+                      ? null
+                      : const [
+                          BoxShadow(
+                            color: Color(0x99000000),
+                            blurRadius: 3,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: side),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 38),
+                    padding: const EdgeInsets.fromLTRB(8, 7, 8, 6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        // A lit lip along the top edge, then the face.
+                        colors: down
+                            ? [
+                                t.faceTop,
+                                t.faceTop,
+                                t.pressedTop,
+                                t.pressedBottom,
+                              ]
+                            : [t.lip, t.lip, t.faceTop, t.faceBottom],
+                        stops: const [0, 0.04, 0.1, 1],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: t.ink,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.6,
+                            shadows: [
+                              Shadow(
+                                color: t.engrave,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (sublabel != null)
+                          Text(
+                            sublabel!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: t.ink.withValues(alpha: 0.7),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          return onPressed == null ? Opacity(opacity: 0.55, child: key) : key;
+        },
+      ),
+    );
+  }
 }
 
 enum DeckKeyTone { grey, record }
 
-class _DeckHardKeyState extends State<DeckHardKey> {
-  var _down = false;
+class _KeyTone {
+  const _KeyTone({
+    required this.lip,
+    required this.faceTop,
+    required this.faceBottom,
+    required this.pressedTop,
+    required this.pressedBottom,
+    required this.side,
+    required this.ink,
+    required this.engrave,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    final record = widget.tone == DeckKeyTone.record;
-    final top = record ? const Color(0xFFE65A4F) : const Color(0xFFC9CED1);
-    final bottom = record ? const Color(0xFFB53228) : const Color(0xFF9AA0A4);
-    final skirt = record ? const Color(0xFF6B1B15) : const Color(0xFF4A4F53);
-    final ink = record ? Colors.white : const Color(0xFF1D2023);
-    final travel = _down ? 2.0 : 0.0;
+  final Color lip;
+  final Color faceTop;
+  final Color faceBottom;
+  final Color pressedTop;
+  final Color pressedBottom;
+  final Color side;
+  final Color ink;
+  final Color engrave;
 
-    return Semantics(
-      button: true,
-      label: widget.semanticLabel ?? widget.label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _down = true),
-        onTapCancel: () => setState(() => _down = false),
-        onTapUp: (_) => setState(() => _down = false),
-        onTap: widget.onPressed,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 3),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 60),
-            transform: Matrix4.translationValues(0, travel, 0),
-            constraints: BoxConstraints(
-              minWidth: widget.compact ? 40 : 0,
-              minHeight: widget.compact ? 40 : 44,
-            ),
-            padding: widget.compact
-                ? EdgeInsets.zero
-                : const EdgeInsets.fromLTRB(8, 9, 8, 8),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [top, bottom],
-              ),
-              border: const Border(top: BorderSide(color: Color(0x99FFFFFF))),
-              boxShadow: [
-                BoxShadow(color: skirt, offset: Offset(0, 3 - travel)),
-                BoxShadow(
-                  color: const Color(0xAA000000),
-                  blurRadius: 8 - travel * 2,
-                  offset: Offset(0, 5 - travel),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: ink,
-                    fontSize: widget.compact ? 15 : 10.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: widget.compact ? 0 : 1.6,
-                  ),
-                ),
-                if (widget.sublabel != null)
-                  Text(
-                    widget.sublabel!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: ink.withValues(alpha: 0.72),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  static _KeyTone of(DeckKeyTone tone) => switch (tone) {
+    DeckKeyTone.grey => const _KeyTone(
+      lip: Color(0xFFF2F4F5),
+      faceTop: Color(0xFFD2D6D9),
+      faceBottom: Color(0xFFA3A9AD),
+      pressedTop: Color(0xFFB4B9BD),
+      pressedBottom: Color(0xFF93999D),
+      side: Color(0xFF52575B),
+      ink: Color(0xFF1D2023),
+      engrave: Color(0x80FFFFFF),
+    ),
+    DeckKeyTone.record => const _KeyTone(
+      lip: Color(0xFFFFA59C),
+      faceTop: Color(0xFFEB6257),
+      faceBottom: Color(0xFFC0372D),
+      pressedTop: Color(0xFFCB4439),
+      pressedBottom: Color(0xFFA42C23),
+      side: Color(0xFF6E1B15),
+      ink: Colors.white,
+      engrave: Color(0x66000000),
+    ),
+  };
 }

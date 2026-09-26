@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// What a VCR shows when the tape isn't giving a clean picture: a PLAY
 /// readout as playback starts, rolling tracking noise while the signal
@@ -274,7 +273,8 @@ class _OsdText extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.center,
-      style: GoogleFonts.vt323(
+      style: TextStyle(
+        fontFamily: 'VT323',
         fontSize: unit * 1.25,
         height: 1,
         letterSpacing: unit * 0.12,

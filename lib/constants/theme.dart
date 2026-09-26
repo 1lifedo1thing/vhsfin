@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Living-room palette: a dark room, charcoal plastics, and a VCR's cyan
 /// fluorescent display. Red is reserved for record/insert actions.
@@ -60,6 +59,7 @@ ThemeData buildVhsTheme() {
   final base = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+    fontFamily: 'Nunito',
     scaffoldBackgroundColor: VhsColors.room,
     colorScheme: const ColorScheme.dark(
       primary: VhsColors.accent,
@@ -74,12 +74,18 @@ ThemeData buildVhsTheme() {
   );
 
   return base.copyWith(
-    textTheme: GoogleFonts.nunitoTextTheme(base.textTheme)
-        .apply(bodyColor: VhsColors.ink, displayColor: VhsColors.ink),
+    textTheme: base.textTheme.apply(
+      bodyColor: VhsColors.ink,
+      displayColor: VhsColors.ink,
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: GoogleFonts.bungee(fontSize: 22, color: VhsColors.ink),
+      titleTextStyle: const TextStyle(
+        fontFamily: 'Bungee',
+        fontSize: 22,
+        color: VhsColors.ink,
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -94,7 +100,7 @@ ThemeData buildVhsTheme() {
       style: ElevatedButton.styleFrom(
         backgroundColor: VhsColors.record,
         foregroundColor: VhsColors.ink,
-        textStyle: GoogleFonts.bungee(fontSize: 16),
+        textStyle: const TextStyle(fontFamily: 'Bungee', fontSize: 16),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
     ),
@@ -102,7 +108,8 @@ ThemeData buildVhsTheme() {
 }
 
 TextStyle vhsBrandStyle({double size = 48}) {
-  return GoogleFonts.bungee(
+  return TextStyle(
+    fontFamily: 'Bungee',
     fontSize: size,
     color: VhsColors.ink,
     letterSpacing: 2,
