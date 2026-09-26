@@ -48,6 +48,19 @@ class LibrariesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // System back does what the arrow does: up a folder, then home.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        DeckFeedback.tap();
+        onBack();
+      },
+      child: _scaffold(),
+    );
+  }
+
+  Widget _scaffold() {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SHELVES'),
@@ -87,7 +100,7 @@ class LibrariesView extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.all(24),
                   child: Text(
-                    'Connect to Jellyfin first, then add folders like Kids Movies and TV Shows as separate shelves.',
+                    'Connect to Jellyfin to choose shelves.',
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -106,7 +119,7 @@ class LibrariesView extends StatelessWidget {
                             Text(heading, style: vhsBrandStyle(size: 22)),
                             const SizedBox(height: 6),
                             Text(
-                              'Add as many shelves as you want — each checked folder gets its own row under the VCR.',
+                              'Each checked folder becomes a shelf.',
                               style: TextStyle(
                                 color: VhsColors.ink.withValues(alpha: 0.7),
                                 height: 1.35,
@@ -194,17 +207,7 @@ class LibrariesView extends StatelessWidget {
                           onOpenNode: onOpenNode,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                        child: Text(
-                          'Tip: open Movies → Kids Movies and check it, then go back and check TV Shows too. Each becomes its own shelf.',
-                          style: TextStyle(
-                            color: VhsColors.ink.withValues(alpha: 0.45),
-                            fontSize: 12,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -243,7 +246,7 @@ class _ChildrenPane extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            atRoot ? 'No libraries found.' : 'No more folders here. Add this folder with the button above.',
+            atRoot ? 'No libraries found.' : 'No folders inside.',
             textAlign: TextAlign.center,
             style: TextStyle(color: VhsColors.ink.withValues(alpha: 0.7)),
           ),

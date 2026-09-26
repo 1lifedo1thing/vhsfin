@@ -188,7 +188,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
         const SizedBox(height: 8),
         DeckOptionRow(
           label: 'JELLYFIN POSTERS',
-          subtitle: "Use Jellyfin's poster instead of the scanned VHS front.",
+          subtitle: 'Instead of the scanned VHS box.',
           value: _jellyfinPosters,
           onChanged: (value) {
             setState(() => _jellyfinPosters = value);
@@ -198,7 +198,6 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
         const SizedBox(height: 8),
         DeckOptionRow(
           label: 'SOUND EFFECTS',
-          subtitle: 'Tape clunks, key clicks, and switch chonks.',
           value: _sound,
           onChanged: (value) {
             setState(() => _sound = value);

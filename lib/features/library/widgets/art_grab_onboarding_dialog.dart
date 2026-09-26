@@ -39,12 +39,9 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   _finished
-                      ? 'Found original VHS sleeves for '
-                            '${progress.foundCount} of ${progress.total} titles. '
-                            'The rest get a printed spine.'
-                      : 'Looking for the original VHS sleeve of each title. '
-                            'This happens once; you can keep browsing while '
-                            'it finishes.',
+                      ? 'Found VHS sleeves for ${progress.foundCount} of '
+                            '${progress.total} titles.'
+                      : 'Finding VHS sleeves for your titles.',
                   style: TextStyle(
                     color: VhsColors.ink.withValues(alpha: 0.75),
                     height: 1.35,

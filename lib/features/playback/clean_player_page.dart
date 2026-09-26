@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vhsfin/app_orientation.dart';
+import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/playback/state/deck_player.dart';
 import 'package:vhsfin/features/playback/views/clean_player_view.dart';
@@ -93,6 +94,7 @@ class _CleanPlayerPageState extends ConsumerState<CleanPlayerPage> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        DeckFeedback.tap();
         _backToVcr();
       },
       child: CleanPlayerView(

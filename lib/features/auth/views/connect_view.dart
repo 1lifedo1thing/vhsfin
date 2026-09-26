@@ -41,6 +41,18 @@ class _ConnectViewState extends State<ConnectView> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || widget.busy) return;
+        DeckFeedback.tap();
+        widget.onBack();
+      },
+      child: _scaffold(context),
+    );
+  }
+
+  Widget _scaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: VhsColors.room,
       appBar: AppBar(
@@ -137,7 +149,6 @@ class _ConnectViewState extends State<ConnectView> {
                                   labelText: 'Server address',
                                   hintText: 'jellyfin.local:8096',
                                   prefixIcon: Icon(Icons.dns_outlined),
-                                  helperText: 'Name or IP and port — https:// is tried first',
                                   errorMaxLines: 3,
                                 ),
                                 keyboardType: TextInputType.url,

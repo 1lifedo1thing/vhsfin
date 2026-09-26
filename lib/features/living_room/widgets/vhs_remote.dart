@@ -192,17 +192,6 @@ class VhsRemoteSheet extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'HOLD REW / FF TO WIND',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: VhsColors.inkFaint,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                    ),
-                  ),
                 ],
               ),
             ),

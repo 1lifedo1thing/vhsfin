@@ -151,9 +151,7 @@ class _TapeInspectSheetState extends State<_TapeInspectSheet> {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Sleeve marked as a mismatch — using printed spine instead.',
-                          ),
+                          content: Text('Wrong sleeve removed.'),
                           duration: Duration(seconds: 3),
                         ),
                       );

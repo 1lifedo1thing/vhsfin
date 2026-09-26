@@ -802,13 +802,13 @@ class DeckOptionRow extends StatelessWidget {
   const DeckOptionRow({
     super.key,
     required this.label,
-    required this.subtitle,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
 
   final String label;
-  final String subtitle;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -845,15 +845,17 @@ class DeckOptionRow extends StatelessWidget {
                         letterSpacing: 1.6,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: VhsColors.inkMuted,
-                        fontSize: 12,
-                        height: 1.3,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          color: VhsColors.inkMuted,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
