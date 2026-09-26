@@ -4,9 +4,9 @@
 <h1 align="center">VHSFin</h1>
 <p align="center"><strong>Movie night, rewound.</strong><br>A small Jellyfin client with a VHS player interface.</p>
 <p align="center">
-  <a href="LICENSE"><img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-8FE8A8?style=flat-square&labelColor=211E1A"></a>
-  <img alt="Built with Flutter" src="https://img.shields.io/badge/built_with-Flutter-F2E6D0?style=flat-square&labelColor=211E1A">
-  <img alt="Status: early access" src="https://img.shields.io/badge/status-early_access-E9A56B?style=flat-square&labelColor=211E1A">
+  <a href="LICENSE"><img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-6FE0E6?style=flat-square&labelColor=111417"></a>
+  <img alt="Built with Flutter" src="https://img.shields.io/badge/built_with-Flutter-E6ECEE?style=flat-square&labelColor=111417">
+  <img alt="Status: early access" src="https://img.shields.io/badge/status-early_access-E0483E?style=flat-square&labelColor=111417">
 </p>
 <p align="center"><a href="#get-started">Get started</a> · <a href="#what-it-does">Take a look</a> · <a href="#self-host-the-web-app">Self-host</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 
@@ -31,7 +31,7 @@ The artwork above is project artwork; the screenshots below show the app. VHSFin
 
 <p align="center">
   <img src="docs/screenshots/connect.png" width="360" alt="VHSFin welcome screen with server and account fields">
-  <img src="docs/screenshots/living-room.png" width="360" alt="VHSFin living room ready to connect a Jellyfin library">
+  <img src="docs/screenshots/living-room.png" width="360" alt="VHSFin living room: a CRT TV above a walnut shelf of VHS tapes">
 </p>
 
 ## Get started
