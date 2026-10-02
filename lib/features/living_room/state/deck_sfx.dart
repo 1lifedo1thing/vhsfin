@@ -14,7 +14,7 @@ class DeckSfx {
   DeckSfx() {
     _shuttle = AudioPlayer();
     _shuttle.setReleaseMode(ReleaseMode.loop);
-    _shuttle.setVolume(0.55);
+    _shuttle.setVolume(0.55 * _mix);
     // One preloaded player per clip: starting a clip is then a seek + resume
     // with no fetch/decode in the way, so it lands on its animation beat.
     _insert = _preloaded('sounds/vhs_insert.ogg');
@@ -30,7 +30,7 @@ class DeckSfx {
       ])
         sound: [
           for (final file in files)
-            _preloaded('sounds/$file.wav', volume: _uiVolume[sound]!),
+            _preloaded('sounds/$file.wav', volume: _uiVolume[sound]! * _mix),
         ],
     };
   }
@@ -41,6 +41,11 @@ class DeckSfx {
   late final Map<DeckUiSound, List<AudioPlayer>> _ui;
   final _lastVariant = <DeckUiSound, int>{};
   final _random = math.Random();
+
+  /// The clips peak near full scale while film dialogue sits around -25 dB,
+  /// so at a volume where the movie is comfortable they'd shout over it.
+  /// Every deck sound plays at half level (-6 dB) to sit under the film.
+  static const _mix = 0.5;
 
   static const _uiVolume = {
     DeckUiSound.tick: 0.4,
@@ -71,7 +76,8 @@ class DeckSfx {
     }
     _lastVariant[sound] = pick;
     final player = variants[pick];
-    final volume = _uiVolume[sound]! * (0.82 + _random.nextDouble() * 0.18);
+    final volume =
+        _uiVolume[sound]! * _mix * (0.82 + _random.nextDouble() * 0.18);
     unawaited(() async {
       try {
         // stop + resume retriggers in every mode (low-latency can't seek).
@@ -84,7 +90,7 @@ class DeckSfx {
     }());
   }
 
-  static AudioPlayer _preloaded(String asset, {double volume = 0.9}) {
+  static AudioPlayer _preloaded(String asset, {double volume = 0.9 * _mix}) {
     final player = AudioPlayer()
       ..setReleaseMode(ReleaseMode.stop)
       ..setVolume(volume);

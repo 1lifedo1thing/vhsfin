@@ -26,6 +26,11 @@ void main() {
     expect(uri.queryParameters['MinSegments'], '1');
     expect(uri.queryParameters['VideoCodec'], 'h264');
     expect(uri.queryParameters['AudioCodec'], 'aac');
+    expect(
+      uri.queryParameters['MaxAudioChannels'],
+      '6',
+      reason: 'mpv downmixes',
+    );
     expect(uri.queryParameters['DeviceId'], 'device-1');
     expect(uri.queryParameters['api_key'], 'token + /');
     expect(uri.queryParameters.containsKey('Static'), isFalse);
@@ -47,6 +52,7 @@ void main() {
     expect(uri.queryParameters['EnableAutoStreamCopy'], 'true');
     expect(uri.queryParameters['MaxWidth'], '1920');
     expect(uri.queryParameters['MaxHeight'], '1080');
+    expect(uri.queryParameters['MaxAudioChannels'], '2');
     expect(uri.queryParameters['DeviceId'], 'device-1');
     expect(uri.queryParameters['api_key'], 'token + /');
   });

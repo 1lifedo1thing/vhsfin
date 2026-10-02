@@ -291,10 +291,13 @@ class JellyfinClient {
             'AllowVideoStreamCopy': 'true',
             'AllowAudioStreamCopy': 'true',
             'VideoBitRate': '8000000',
-            'AudioBitRate': '192000',
+            // Native playback takes surround as-is and lets mpv fold it to
+            // stereo: Jellyfin's own stereo downmix normalises the mix and
+            // leaves dialogue very quiet on a phone. Browsers stay stereo.
+            'AudioBitRate': hls ? '384000' : '192000',
             'MaxWidth': '1920',
             'MaxHeight': '1080',
-            'MaxAudioChannels': '2',
+            'MaxAudioChannels': hls ? '6' : '2',
             'DeviceId': session.deviceId,
             'api_key': session.accessToken,
           },
