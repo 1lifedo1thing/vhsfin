@@ -713,6 +713,20 @@ class _ShelfTapeRow extends StatelessWidget {
           leftover: leftover,
           height: baseHeight,
         );
+        bool isSelected(Tape tape) =>
+            tape.kind == TapeKind.series && tape.id == loadedSeriesId;
+        final leans = VhsSpine.restingOffsetsForRow(
+          tips: [
+            for (var i = 0; i < tapes.length; i++)
+              isSelected(tapes[i]) ? 0 : tips[i],
+          ],
+          widths: [
+            for (final tape in tapes)
+              isSelected(tape) ? 34.0 : VhsSpine.nominalWidth,
+          ],
+          gap: gap,
+          height: baseHeight,
+        );
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -741,6 +755,7 @@ class _ShelfTapeRow extends StatelessWidget {
                           tapes[i].kind == TapeKind.series &&
                           tapes[i].id == loadedSeriesId,
                       tipRadians: tips[i],
+                      leanOffset: leans[i],
                       ghosted:
                           loadedIntoDeck ||
                           flyingTapeId == tapes[i].id && isSource,

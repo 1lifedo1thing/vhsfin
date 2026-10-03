@@ -19,6 +19,7 @@ class VhsSpine extends StatelessWidget {
     this.onTap,
     this.height = nominalHeight,
     this.tipRadians,
+    this.leanOffset,
     this.ghosted = false,
   });
 
@@ -48,6 +49,54 @@ class VhsSpine extends StatelessWidget {
     final t = ((salt * 37) & 255) / 255.0;
     final target = maxAbs * (0.4 + 0.6 * t);
     return -math.min(target, maxTip);
+  }
+
+  /// Base slide for a lean when nothing says where the neighbour is: big left
+  /// leans kick their base right so the top stays over the upright slot.
+  static double defaultLeanOffset(double tip, double height) =>
+      tip.abs() >= _kickTipThreshold ? -height * math.sin(tip) : 0.0;
+
+  /// Base slide for each kicked lean so its top-left corner rests on its left
+  /// neighbour's top-right corner, wherever that neighbour's own tip put it.
+  /// Without this a tape leaned on air whenever its neighbour tipped away.
+  ///
+  /// [tips] are the effective angles (0 for a selected spine); [widths] the
+  /// packed widths; [gap] the space between packed spines. Null keeps the
+  /// spine's default.
+  static List<double?> restingOffsetsForRow({
+    required List<double?> tips,
+    required List<double> widths,
+    required double gap,
+    required double height,
+  }) {
+    const seamOverlap = 0.75;
+    final offsets = List<double?>.filled(tips.length, null);
+    for (var i = 1; i < tips.length; i++) {
+      final tip = tips[i] ?? 0;
+      if (tip > -_kickTipThreshold) continue; // only strong left leans kick
+      final prevTip = tips[i - 1] ?? 0;
+      final prevShift = offsets[i - 1] ?? defaultLeanOffset(prevTip, height);
+      final w0 = widths[i - 1];
+      final w = widths[i];
+      // Neighbour's upright centre, relative to this spine's upright centre.
+      final prevCentre = -(w0 / 2 + gap + w / 2) + prevShift;
+      final prevTopRight =
+          prevCentre +
+          (w0 / 2) * math.cos(prevTip) +
+          height * math.sin(prevTip);
+      final prevBaseRight = prevCentre + (w0 / 2) * math.cos(prevTip);
+      // Rotating about the bottom centre puts the top-left corner at
+      // -(w/2)·cosθ + h·sinθ; shift it onto the neighbour's corner.
+      final resting =
+          prevTopRight -
+          seamOverlap +
+          (w / 2) * math.cos(tip) -
+          height * math.sin(tip);
+      // Never let the base slide back into the neighbour's base.
+      final clear = prevBaseRight + (w / 2) * math.cos(tip);
+      offsets[i] = math.max(resting, clear);
+    }
+    return offsets;
   }
 
   /// Per-index tips for one packed row — varied so shelves don't all match.
@@ -133,6 +182,10 @@ class VhsSpine extends StatelessWidget {
   /// When set, overrides upright (e.g. bookend / casual lean).
   final double? tipRadians;
 
+  /// Base slide for the lean, from [restingOffsetsForRow]; null uses
+  /// [defaultLeanOffset].
+  final double? leanOffset;
+
   /// Invisible but still laid out — overlay is flying this tape.
   final bool ghosted;
 
@@ -142,10 +195,11 @@ class VhsSpine extends StatelessWidget {
     // Tip is visual only — layout width stays at [width] so rows never grow
     // past the shelf from leaning.
     final tip = selected ? 0.0 : (tipRadians ?? 0.0);
-    // Strong left lean: top into the stack, base kicks right into empty shelf.
-    final leanX = tip.abs() >= _kickTipThreshold
-        ? -height * math.sin(tip)
-        : 0.0;
+    // Strong left lean: top rests on the stack, base kicks right into empty
+    // shelf.
+    final leanX = selected
+        ? 0.0
+        : (leanOffset ?? defaultLeanOffset(tip, height));
     final popY = selected ? -14.0 : 0.0;
     // Visual can sit well outside the packing box (kick + rotate + pop).
     final tipSpread = height * math.sin(tip.abs());

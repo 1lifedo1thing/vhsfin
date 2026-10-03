@@ -286,6 +286,18 @@ class _EpisodeShelfRow extends StatelessWidget {
           leftover: leftover,
           height: spineHeight,
         );
+        final leans = VhsSpine.restingOffsetsForRow(
+          tips: [
+            for (var i = 0; i < episodes.length; i++)
+              episodes[i].id == loadedId ? 0 : tips[i],
+          ],
+          widths: [
+            for (final episode in episodes)
+              episode.id == loadedId ? 34.0 : VhsSpine.nominalWidth,
+          ],
+          gap: 0,
+          height: spineHeight,
+        );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,6 +312,7 @@ class _EpisodeShelfRow extends StatelessWidget {
                     height: spineHeight,
                     selected: episodes[i].id == loadedId,
                     tipRadians: tips[i],
+                    leanOffset: leans[i],
                     onTap: () => onTap(episodes[i]),
                   ),
               ],
