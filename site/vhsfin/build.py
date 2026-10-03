@@ -33,8 +33,6 @@ HEADERS = """/*
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), geolocation=(), microphone=()
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
 """
 
 # Simple Icons paths (CC0), 24x24 viewBox.
