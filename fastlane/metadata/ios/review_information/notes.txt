@@ -1,0 +1,13 @@
+VHSFin is a client for Jellyfin, a free self-hosted media server, like Swiftfin or Infuse. It includes no media and needs a Jellyfin server to sign in to.
+
+To review, use Jellyfin's public demo server:
+1. Tap the empty shelf (or Settings > SIGN IN).
+2. Server address: https://demo.jellyfin.org/stable
+3. Username: demo (leave the password blank) and tap Connect & Choose Shelves.
+4. Check a library, tap Done, then tap a tape and Insert Tape to play it. If a shelf looks empty, turn off VHS ONLY in Settings.
+
+No account with us exists or is created. The app has no ads, analytics, or in-app purchases. The privacy policy is linked under Settings > ABOUT > PRIVACY.
+
+NSAllowsArbitraryLoads: users connect to their own media servers, which often run over plain HTTP on a home network (for example http://192.168.1.20:8096) or on a private hostname without a public certificate. The address is always entered by the user.
+
+Cover art: the app looks up VHS sleeve scans for the user's own titles from the Internet Archive's public API, to identify the movies in their library.

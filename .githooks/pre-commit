@@ -1,0 +1,8 @@
+#!/bin/sh
+# Keep the Apple Team ID out of git. It lives in ios/Flutter/Signing.xcconfig
+# (gitignored); Xcode's Signing UI may write it back into project.pbxproj.
+if git diff --cached -U0 -- '*.pbxproj' | grep -q '^+.*DEVELOPMENT_TEAM'; then
+  echo "pre-commit: DEVELOPMENT_TEAM found in a staged project.pbxproj." >&2
+  echo "Remove those lines; the Team ID belongs in ios/Flutter/Signing.xcconfig." >&2
+  exit 1
+fi

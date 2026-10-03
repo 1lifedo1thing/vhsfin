@@ -1,0 +1,1 @@
+jellyfin,vhs,vcr,crt,retro,tape,media server,self-hosted,home video,movies,90s,nostalgia,player

@@ -8,7 +8,7 @@
   <img alt="Built with Flutter" src="https://img.shields.io/badge/built_with-Flutter-E6ECEE?style=flat-square&labelColor=111417">
   <img alt="Status: early access" src="https://img.shields.io/badge/status-early_access-E0483E?style=flat-square&labelColor=111417">
 </p>
-<p align="center"><a href="#get-started">Get started</a> · <a href="#what-it-does">Take a look</a> · <a href="#self-host-the-web-app">Self-host</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="https://markdid.dev">MarkDid</a></p>
+<p align="center"><a href="#get-started">Get started</a> · <a href="#what-it-does">Take a look</a> · <a href="#self-host-the-web-app">Self-host</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="https://vhsfin.markdid.dev">Website</a></p>
 
 ![Movie-night artwork: a glowing CRT, a VHS deck, and a shelf of tapes](docs/movie-night.jpg)
 
@@ -116,7 +116,9 @@ Signing stays out of the repository:
 - **Android:** copy `android/key.properties.example` to `android/key.properties` and point it at your upload keystore (or set the `VHSFIN_ANDROID_*` variables from `.env.example`). Without either, release builds use the debug key for local installs.
 - **iOS:** copy `ios/Flutter/Signing.xcconfig.example` to `ios/Flutter/Signing.xcconfig` and set your Team ID. If Xcode writes `DEVELOPMENT_TEAM` back into `project.pbxproj` when you change signing settings, remove it before committing.
 
-Both files are gitignored. Never commit keystores, certificates, provisioning profiles, or App Store Connect keys.
+Both files are gitignored. Never commit keystores, certificates, provisioning profiles, or App Store Connect keys. `git config core.hooksPath .githooks` turns on a pre-commit check that rejects a Team ID in `project.pbxproj`.
+
+Store releases use Fastlane (`fastlane/Fastfile`, secrets in a gitignored `.env`; see `.env.example`). Store screenshots come from the demo shelf: `tool/store_screenshots.sh`, then `tool/frame_screenshots.py`. The website in `site/vhsfin` builds the [privacy policy](docs/legal/privacy-policy.md) and [terms](docs/legal/terms-of-service.md) from Markdown.
 
 ## When the picture needs tuning
 

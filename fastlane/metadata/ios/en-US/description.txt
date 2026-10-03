@@ -1,0 +1,26 @@
+Movie night, rewound.
+
+VHSFin turns your Jellyfin library into a shelf of VHS tapes. Pick one, watch it slide into the deck, and press play on a glowing CRT.
+
+PICK A TAPE
+Every movie and show sits on the shelf as a tape spine, with real VHS sleeve art where it exists. Tap one to see the box, then insert it.
+
+PRESS PLAY
+The tape flies from the shelf into the VCR with real mechanical sounds. Your movie plays on the TV's curved glass, with scanlines and all. Go full screen whenever you like.
+
+BE KIND, REWIND
+A remote with rewind, fast-forward, pause, and eject. Turn on Save on Eject and VHSFin remembers your place.
+
+SET UP THE LIVING ROOM
+Choose from six TV cabinets and a walnut or charcoal shelf. Pick which libraries and folders go on each shelf.
+
+FAMILY-FRIENDLY
+Give the kids their own Jellyfin account and only their movies show up. Jellyfin's account permissions decide what each person can watch.
+
+YOUR SERVER, YOUR TAPES
+VHSFin is a client for Jellyfin, the free media server you run yourself. It includes no movies or subscriptions; you need a Jellyfin server and an account on it. It works with servers on your home network and anywhere you can reach over the internet or a VPN.
+
+FREE, PRIVATE, OPEN SOURCE
+No ads, no tracking, and no account with us. VHSFin talks to your server and to the Internet Archive for sleeve art, and nothing else. The source code is on GitHub under the GPL.
+
+VHSFin is an independent app and is not affiliated with the Jellyfin project.

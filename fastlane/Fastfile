@@ -1,0 +1,129 @@
+# VHSFin release lanes. Secrets come from the repository-root .env (see .env.example).
+require "json"
+require "fileutils"
+require "tmpdir"
+require "dotenv"
+
+default_platform(:ios)
+
+ROOT = File.expand_path("..", __dir__)
+Dotenv.load(File.join(ROOT, ".env"))
+APP_ID = "dev.markdid.vhsfin"
+APP_ENV_PREFIX = "VHSFIN"
+
+def required_env(*names)
+  names.each { |n| UI.user_error!("Missing #{n}") if ENV[n].to_s.strip.empty? }
+end
+
+def required_file(name)
+  required_env(name)
+  UI.user_error!("#{name} does not exist") unless File.file?(ENV.fetch(name))
+  ENV.fetch(name)
+end
+
+# Store builds compile without VHSFIN_VHSCOLLECTOR (see lib/constants/build_flags.dart).
+def define_args(_platform)
+  []
+end
+
+def app_store_key
+  required_env("ASC_KEY_ID", "ASC_ISSUER_ID")
+  app_store_connect_api_key(key_id: ENV.fetch("ASC_KEY_ID"),
+                            issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+                            key_filepath: required_file("ASC_KEY_PATH"))
+end
+
+def ios_build
+  sh("flutter", "build", "ipa", "--release", "--export-method", "app-store",
+     *define_args(:ios), "--build-number=#{ENV.fetch("BUILD_NUMBER", "1")}")
+  ipa = Dir[File.join(ROOT, "build", "ios", "ipa", "*.ipa")].max_by { |p| File.mtime(p) }
+  UI.user_error!("No IPA was produced") unless ipa
+  ipa
+end
+
+def android_build
+  # android/app/build.gradle.kts reads these env vars (see SKILL.md "Android upload signing").
+  required_file("#{APP_ENV_PREFIX}_ANDROID_KEYSTORE_PATH")
+  required_env("#{APP_ENV_PREFIX}_ANDROID_KEY_ALIAS", "#{APP_ENV_PREFIX}_ANDROID_STORE_PASSWORD",
+               "#{APP_ENV_PREFIX}_ANDROID_KEY_PASSWORD")
+  sh("flutter", "build", "appbundle", "--release",
+     *define_args(:android), "--build-number=#{ENV.fetch("BUILD_NUMBER", "1")}")
+  aab = File.join(ROOT, "build", "app", "outputs", "bundle", "release", "app-release.aab")
+  UI.user_error!("No AAB was produced") unless File.file?(aab)
+  aab
+end
+
+def play_key = required_file("GOOGLE_PLAY_JSON_KEY")
+
+platform :ios do
+  desc "Build a signed IPA and upload it to TestFlight"
+  lane :beta do
+    key = app_store_key
+    upload_to_testflight(api_key: key, app_identifier: APP_ID, ipa: ios_build,
+                         skip_waiting_for_build_processing: true)
+  end
+
+  desc "Upload App Store metadata and screenshots without submitting"
+  lane :listing do
+    deliver(api_key: app_store_key, app_identifier: APP_ID,
+            metadata_path: File.join(ROOT, "fastlane", "metadata", "ios"),
+            screenshots_path: File.join(ROOT, "fastlane", "screenshots", "ios"),
+            overwrite_screenshots: true,
+            skip_binary_upload: true, submit_for_review: false, force: true,
+            run_precheck_before_submit: false)
+  end
+
+  desc "Build, upload, attach to the App Store version, and submit for review"
+  lane :release do
+    key = app_store_key
+    build = ENV.fetch("BUILD_NUMBER")
+    upload_to_testflight(api_key: key, app_identifier: APP_ID, ipa: ios_build,
+                         skip_waiting_for_build_processing: false,
+                         wait_processing_timeout_duration: 2700)
+    deliver(api_key: key, app_identifier: APP_ID, build_number: build,
+            skip_binary_upload: true, skip_screenshots: true, skip_metadata: true,
+            submit_for_review: true, automatic_release: false, force: true,
+            run_precheck_before_submit: false,
+            submission_information: {
+              add_id_info_uses_idfa: false,
+              content_rights_has_rights: true,
+              content_rights_contains_third_party_content: true,
+              export_compliance_uses_encryption: false,
+              export_compliance_platform: "ios"
+            })
+  end
+end
+
+platform :android do
+  desc "Build a signed AAB and upload a draft to the internal track (binary only)"
+  lane :internal do
+    upload_to_play_store(package_name: APP_ID, json_key: play_key, aab: android_build,
+                         track: "internal", release_status: "draft",
+                         skip_upload_metadata: true, skip_upload_images: true,
+                         skip_upload_screenshots: true)
+  end
+
+  desc "Upload Play listing text and images without a binary"
+  lane :listing do
+    upload_to_play_store(package_name: APP_ID, json_key: play_key,
+                         metadata_path: File.join(ROOT, "fastlane", "metadata", "android"),
+                         skip_upload_apk: true, skip_upload_aab: true, skip_upload_changelogs: true)
+  end
+
+  desc "Listing + images, then a signed AAB draft to internal"
+  lane :ship do
+    upload_to_play_store(package_name: APP_ID, json_key: play_key, aab: android_build,
+                         track: "internal", release_status: "draft",
+                         metadata_path: File.join(ROOT, "fastlane", "metadata", "android"),
+                         skip_upload_changelogs: true)
+  end
+
+  desc "Signed AAB to production and send for review"
+  lane :production do
+    upload_to_play_store(package_name: APP_ID, json_key: play_key, aab: android_build,
+                         track: "production", release_status: "completed",
+                         metadata_path: File.join(ROOT, "fastlane", "metadata", "android"),
+                         # Release notes: metadata/android/en-US/changelogs/<BUILD_NUMBER>.txt
+                         skip_upload_changelogs: false, changes_not_sent_for_review: false)
+  end
+end

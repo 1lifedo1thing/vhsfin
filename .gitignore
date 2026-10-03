@@ -57,7 +57,24 @@ app.*.map.json
 key.properties
 .env
 .env.*
+!.env.example
 **/Flutter/Signing.xcconfig
 fastlane/report.xml
 fastlane/*.json
 **/__pycache__/
+
+# Fastlane output and private App Review contact
+/fastlane/report.xml
+/fastlane/Preview.html
+/fastlane/metadata/ios/review_information/first_name.txt
+/fastlane/metadata/ios/review_information/last_name.txt
+/fastlane/metadata/ios/review_information/email_address.txt
+/fastlane/metadata/ios/review_information/phone_number.txt
+# Store screenshots are generated: tool/store_screenshots.sh, then
+# tool/frame_screenshots.py. Too large to keep in history.
+/screenshots/raw/
+/fastlane/screenshots/
+/fastlane/metadata/android/en-US/images/phoneScreenshots/
+# Site build output
+/site/*/dist/
+/site/*/.netlify/
