@@ -1,7 +1,9 @@
 """Cut screenshots/raw/film.mov (tool/site_film.sh) into the landing-page videos.
 
 Writes site/vhsfin/media/intro.mp4 (tape into the deck, title card, picture up),
-loop.mp4 (the movie playing), and poster.webp (intro's first frame). The TV and
+loop.mp4 (the movie playing), poster.webp (intro's first frame), and the hover
+overlays: shelf.json (each spine's place in the frame, from the film log) and
+spines/<slug>.webp. The TV and
 shelf are cropped from the 1320x2868 capture and their edges melt into black.
 
 Needs ffmpeg and Pillow. The intro starts on the first frame after the tape
@@ -12,6 +14,7 @@ offset into the movie.
 from __future__ import annotations
 
 import io
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -20,6 +23,9 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 FILM = ROOT / "screenshots" / "raw" / "film.mov"
+LOG = ROOT / "screenshots" / "raw" / "film.log"
+SLEEVES = ROOT / "assets" / "demo_sleeves"
+IN_DECK = "demo-bbb"  # the film's tape: in the deck, so no overlay
 OUT = ROOT / "site" / "vhsfin" / "media"
 
 CROP = (1320, 2065, 0, 400)  # w, h, x, y on the capture: TV top to shelf bottom
@@ -67,6 +73,43 @@ def sheet_cleared_at() -> float:
     raise SystemExit("Couldn't find the tape sheet in the film")
 
 
+def shelf_overlays() -> list[dict]:
+    """Each shelf spine's box in the film frame, as percentages, plus its art.
+
+    The film test logs every spine's logical layout (left/bottom/size, tip, and
+    base slide). Device pixels = logical x dpr; the frame is CROP of those.
+    """
+    line = next((l for l in LOG.read_text().splitlines() if "FILM_SHELF " in l), None)
+    if line is None:
+        raise SystemExit(f"No FILM_SHELF line in {LOG}; re-record with tool/site_film.sh")
+    data = json.loads(line.split("FILM_SHELF ", 1)[1])
+    dpr = data["dpr"]
+    w, h, x0, y0 = CROP
+    spines_dir = OUT / "spines"
+    spines_dir.mkdir(exist_ok=True)
+    overlays = []
+    for spine in data["spines"]:
+        if spine["id"] == IN_DECK or not spine["id"].startswith("demo-"):
+            continue
+        slug = spine["id"].removeprefix("demo-")
+        art = Image.open(SLEEVES / f"{slug}-spine.webp").convert("RGB")
+        # Shown about 230px tall at most; 2x for retina. Same black crush as the film.
+        art = art.resize((96, 576), Image.LANCZOS).point(lambda v: 0 if v < 14 else round((v - 14) * 255 / 241))
+        art.save(spines_dir / f"{slug}.webp", quality=82, method=6)
+        width, height = spine["width"], spine["height"]
+        overlays.append({
+            "slug": slug,
+            "left": round(spine["left"] * dpr / w * 100, 3),
+            "bottom": round((h - (spine["bottom"] * dpr - y0)) / h * 100, 3),
+            "width": round(width * dpr / w * 100, 3),
+            "height": round(height * dpr / h * 100, 3),
+            "lean": round(spine["lean"] / width * 100, 2),  # % of its own width
+            "tip": round(spine["tip"] * 180 / 3.141592653589793, 2),
+        })
+    (OUT / "shelf.json").write_text(json.dumps(overlays, indent=1))
+    return overlays
+
+
 def edge_mask(path: Path) -> None:
     """Black frame, transparent middle, soft edges: overlaid on every frame."""
     w, h = SIZE
@@ -110,6 +153,7 @@ def main() -> None:
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(OUT / "intro.mp4"),
                         "-frames:v", "1", str(frame)], check=True)
         Image.open(frame).save(OUT / "poster.webp", quality=88, method=6)
+    print(f"{len(shelf_overlays())} shelf overlays")
     for f in sorted(OUT.iterdir()):
         print(f"{f.stat().st_size / 1e6:5.2f} MB  {f.relative_to(ROOT)}")
 

@@ -1,0 +1,56 @@
+[
+ {
+  "slug": "elephants",
+  "left": 8.636,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 0.0,
+  "tip": 0.0
+ },
+ {
+  "slug": "sintel",
+  "left": 22.273,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 0.0,
+  "tip": 0.0
+ },
+ {
+  "slug": "tears",
+  "left": 29.091,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 0.0,
+  "tip": 0.0
+ },
+ {
+  "slug": "caminandes",
+  "left": 35.909,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 0.0,
+  "tip": 0.0
+ },
+ {
+  "slug": "cosmos",
+  "left": 42.727,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 0.0,
+  "tip": 0.0
+ },
+ {
+  "slug": "spring",
+  "left": 49.545,
+  "bottom": 8.04,
+  "width": 6.364,
+  "height": 24.407,
+  "lean": 33.72,
+  "tip": -4.17
+ }
+]

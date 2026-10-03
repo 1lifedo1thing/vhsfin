@@ -12,3 +12,18 @@ if (intro && loop && !still) {
   // Let the room fade up before the tape moves.
   setTimeout(() => intro.play().catch(() => {}), 1100);
 }
+
+// Touch screens have no hover: a tap slides a tape out, another tap (or a tap
+// anywhere else) slides it back.
+if (matchMedia("(hover: none)").matches) {
+  const spines = [...document.querySelectorAll(".spine")];
+  for (const spine of spines) {
+    spine.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const out = !spine.classList.contains("out");
+      spines.forEach((s) => s.classList.remove("out"));
+      spine.classList.toggle("out", out);
+    });
+  }
+  document.addEventListener("click", () => spines.forEach((s) => s.classList.remove("out")));
+}

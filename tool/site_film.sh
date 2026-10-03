@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Record the landing-page film (tape into the deck, then playback) on a simulator.
 # Usage: tool/site_film.sh ["iPhone 18 Pro Max"]   → screenshots/raw/film.mov
+# The log (with the shelf geometry the site's hover overlays need) goes to
+# screenshots/raw/film.log.
 set -euo pipefail
 name="${1:-iPhone 18 Pro Max}"
 udid=$(xcrun simctl list devices available | grep -F "$name (" | head -1 | grep -oE '[0-9A-F-]{36}')
@@ -13,5 +15,5 @@ rec=$!
 sleep 2
 flutter drive --driver=test_driver/store_screenshots.dart \
   --target=integration_test/site_film_test.dart \
-  --dart-define=VHSFIN_DEMO=true -d "$udid" || true
+  --dart-define=VHSFIN_DEMO=true -d "$udid" | tee screenshots/raw/film.log || true
 kill -INT "$rec"; wait "$rec" || true
