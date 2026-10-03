@@ -156,7 +156,7 @@ The focus is deliberately small: libraries, shelves, movies, shows, and playback
 
 VHSFin is made by [MarkDid](https://markdid.dev), an independent software studio. If you enjoy it, take a look at the other apps:
 
-- **[ROLL BACK](https://rollback.markdid.dev)**: a dice game with a very small wizard who knows how every turn could have gone. Out now on Android.
+- **[Rollback](https://rollback.markdid.dev)**: a dice game with a very small wizard who knows how every turn could have gone. Out now on Android.
 - **[pabo](https://pabo.markdid.dev)**: conversation practice in Korean, Japanese, and Mandarin. Coming soon to iPhone.
 
 ## License

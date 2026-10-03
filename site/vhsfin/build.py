@@ -20,7 +20,7 @@ PLACEHOLDER = re.compile(r"\[(?:[A-Z][A-Z0-9_ -]{2,}|TODO|TBD)\]")
 APP = "VHSFin"
 HOST = "https://vhsfin.markdid.dev"
 SUPPORT = "support+vhsfin@markdid.dev"
-THEME = "#07090B"
+THEME = "#000000"
 SOURCE = "https://github.com/markdid/vhsfin"
 # Fill in when the listings are live; empty shows "coming soon".
 APP_STORE = ""
@@ -115,86 +115,34 @@ def page(title: str, content: str, *, description: str, path: str) -> str:
 </head>
 <body class="{'landing' if path == '/' else 'doc'}">
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header"><a class="wordmark" href="/"><img src="/assets/favicon.png" width="28" height="28" alt="">{APP}</a>
-    <nav aria-label="Main"><a href="/support/">Support</a><a href="/privacy/">Privacy</a><a href="{SOURCE}">Source</a></nav></header>
-  <main id="main">{content}</main>
-  <footer class="site-footer"><span>© 2026 <a href="https://markdid.dev">MarkDid, LLC</a></span>
-    <nav aria-label="Footer"><a href="/support/">Support</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="{SOURCE}">Source</a><a href="mailto:{SUPPORT}">{SUPPORT}</a></nav></footer>
+{'' if path == '/' else '  <header class="site-header"><a class="wordmark" href="/">VHSFIN</a></header>' + chr(10)}  <main id="main">{content}</main>
+  <footer class="site-footer">
+    <p>Made by Mark at <a href="https://markdid.dev">MarkDid</a> · <a href="https://x.com/_markdid">@_markdid on X</a></p>
+    <nav aria-label="Footer"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/support/">Support</a><a href="{SOURCE}">Source</a></nav>
+    <p class="copyright">© 2026 MarkDid, LLC</p>
+  </footer>
 </body>
 </html>
 """
 
 
-def store_buttons() -> str:
-    def button(url: str, label: str) -> str:
-        if url:
-            return f'<a class="button" href="{url}">{label}</a>'
-        return f'<span class="button soon" aria-disabled="true">{label}<small>Coming soon</small></span>'
-    return (button(APP_STORE, "App Store") + button(PLAY_STORE, "Google Play")
-            + f'<a class="button ghost" href="{SOURCE}">Source code</a>')
-
-
-def phone(name: str, alt: str, cls: str = "", lazy: bool = True) -> str:
-    loading = ' loading="lazy"' if lazy else ""
-    return (f'<figure class="phone {cls}"><img src="/assets/img/{name}.webp" width="640" '
-            f'height="1391" alt="{alt}"{loading}></figure>')
+def store_button(url: str, label: str) -> str:
+    if url:
+        return f'<a class="store" href="{url}">{label}</a>'
+    return f'<span class="store soon">{label}<small>Coming soon</small></span>'
 
 
 def home() -> str:
     return f"""
-  <section class="hero wrap" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <p class="eyebrow">A Jellyfin client</p>
-      <h1 id="hero-title">Movie night,<br>rewound.</h1>
-      <p class="lede">Your movies and shows as VHS tapes on a shelf. Pick one, watch it slide into the deck, and press play on a glowing CRT.</p>
-      <div class="actions">{store_buttons()}</div>
-      <ul class="facts" aria-label="Quick facts"><li>Free</li><li>No ads</li><li>No tracking</li><li>Open source</li></ul>
-    </div>
-    <div class="hero-phones">
-      {phone("living-room", "The living room: a chrome CRT TV above a walnut shelf of VHS tapes", "back", lazy=False)}
-      {phone("playing", "Big Buck Bunny playing on the CRT", "front", lazy=False)}
-    </div>
+  <section class="stage" aria-label="VHSFin">
+    <img src="/assets/img/hero.webp" width="1320" height="2065" alt="A chrome CRT television playing a cartoon bird, on a walnut shelf of VHS tapes" fetchpriority="high">
+    <span class="scroll-cue" aria-hidden="true"></span>
   </section>
-
-  <div class="band"><ul><li>Pick a tape</li><li>Insert</li><li>Press play</li><li>Be kind, rewind</li></ul></div>
-
-  <section class="features wrap" aria-labelledby="features-title">
-    <h2 id="features-title">The video store, <em>in your living room.</em></h2>
-    <div class="grid">
-      <article>{phone("tape", "Tape info for Big Buck Bunny with Back and Insert Tape keys")}
-        <h3>Every title gets a tape</h3><p>Movies and shows sit on the shelf as spines, with real VHS sleeve art where it exists.</p></article>
-      <article>{phone("remote", "A remote with rewind, pause, fast-forward, full screen, and eject")}
-        <h3>A remote that clunks</h3><p>Rewind, fast-forward, and eject with mechanical sounds and haptics. Full screen when you want it.</p></article>
-      <article>{phone("settings", "Settings with two shelf styles and six TV cabinets")}
-        <h3>Six TVs, two shelves</h3><p>Set up the living room you remember: chrome, crimson, wood-grain knobs, and more.</p></article>
-    </div>
-  </section>
-
-  <section class="split wrap" aria-labelledby="jellyfin-title">
-    {phone("connect", "The welcome screen asking for a Jellyfin server address, username, and password")}
-    <div>
-      <p class="eyebrow">Bring your own server</p>
-      <h2 id="jellyfin-title">Your Jellyfin. <em>Your tapes.</em></h2>
-      <p>VHSFin connects to a <a href="https://jellyfin.org">Jellyfin</a> server you already run, at home or anywhere you can reach it. Choose which libraries go on the shelf, and set up a kid-friendly account for the little ones.</p>
-      <p>It comes with no media, no subscriptions, and no account with us. We never see what you watch. <a href="/privacy/">Read the privacy policy</a>.</p>
-      <p class="fine">VHSFin is an independent app, not affiliated with the Jellyfin project.</p>
-    </div>
-  </section>
-
-  <section class="open wrap" aria-labelledby="open-title">
-    <h2 id="open-title">Open source, <em>like your server.</em></h2>
-    <p>VHSFin is free software under the GPL. Read the code, report a bug, or build it yourself, including a self-hosted web version.</p>
-    <a class="button ghost" href="{SOURCE}">View on GitHub</a>
-  </section>
-
-  <section class="more wrap" aria-labelledby="more-title">
-    <p class="eyebrow">More from MarkDid</p>
-    <h2 id="more-title">Other apps from <em>the studio.</em></h2>
-    <div class="cards">
-      <a class="card" href="https://rollback.markdid.dev"><strong>ROLL BACK</strong><span>A dice game with a very small wizard who knows how every turn could have gone.</span><small>Out now on Android</small></a>
-      <a class="card" href="https://pabo.markdid.dev"><strong>pabo.</strong><span>Talk your way into another language: conversation practice in Korean, Japanese, and Mandarin.</span><small>Coming soon to iPhone</small></a>
-      <a class="card" href="https://markdid.dev"><strong>markdid.dev</strong><span>Apps, devices, and the software between them, from MarkDid, LLC.</span><small>Visit the studio</small></a>
-    </div>
+  <section class="about" id="about">
+    <h1>VHSFin</h1>
+    <p class="tagline">A nostalgic, fully functioning Jellyfin client.</p>
+    <p>Your movies and shows become VHS tapes on a shelf. Pick one, watch it slide into the deck, and press play on a glowing CRT. Rewind, fast-forward, eject. Free, no ads, open source.</p>
+    <div class="stores">{store_button(APP_STORE, "App Store")}{store_button(PLAY_STORE, "Google Play")}</div>
   </section>
 """
 
@@ -231,7 +179,7 @@ def main() -> None:
     if (SITE / "robots.txt").is_file():
         shutil.copy2(SITE / "robots.txt", DIST / "robots.txt")
 
-    write("", page(APP, home(), description="Movie night, rewound. A free, open-source Jellyfin client that puts your movies and shows on a shelf of VHS tapes.", path="/"))
+    write("", page(APP, home(), description="A nostalgic, fully functioning Jellyfin client. Your movies and shows as VHS tapes on a shelf, played on a glowing CRT.", path="/"))
     support = f"""<div class="doc-wrap"><p class="eyebrow">Need a hand?</p><h1>Support</h1>
   <p>Email <a href="mailto:{SUPPORT}">{SUPPORT}</a>. Tell us your device, your Jellyfin version, and what happened. Please leave out passwords and server addresses.</p>
   <h2>Can't connect?</h2>
