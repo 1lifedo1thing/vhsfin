@@ -1,4 +1,4 @@
-# Base directory: site/{app}. Static pages, no scripts.
+# Base directory: site/vhsfin. Static pages; main.js only sequences the hero videos.
 [build]
   command = "python3 build.py"
   publish = "dist"
@@ -12,7 +12,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "DENY"
-    Content-Security-Policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
 
 # AdMob apps only: app-ads.txt must be plain text at the site root.
 # [[headers]]

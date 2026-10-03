@@ -6,6 +6,7 @@ come from tool/frame_screenshots.py. Fails on unresolved legal placeholders.
 
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 import shutil
@@ -87,6 +88,11 @@ def render_markdown(source: str) -> str:
     return "\n".join(blocks)
 
 
+def asset_version(name: str) -> str:
+    """Short content hash so browsers never mix a new page with an old stylesheet."""
+    return hashlib.sha256((SITE / name).read_bytes()).hexdigest()[:10]
+
+
 def page(title: str, content: str, *, description: str, path: str) -> str:
     canonical = f"{HOST}{path}"
     full_title = APP if path == "/" else f"{title} · {APP}"
@@ -110,7 +116,8 @@ def page(title: str, content: str, *, description: str, path: str) -> str:
   <link rel="icon" href="/assets/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/assets/favicon.png">
   <link rel="preload" href="/assets/fonts/Bungee-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v={asset_version("style.css")}">
+  <script src="/assets/main.js?v={asset_version("main.js")}" defer></script>
   <title>{html.escape(full_title)}</title>
 </head>
 <body class="{'landing' if path == '/' else 'doc'}">
@@ -119,7 +126,7 @@ def page(title: str, content: str, *, description: str, path: str) -> str:
   <footer class="site-footer">
     <p>Made by Mark at <a href="https://markdid.dev">MarkDid</a> · <a href="https://x.com/_markdid">@_markdid on X</a></p>
     <nav aria-label="Footer"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/support/">Support</a><a href="{SOURCE}">Source</a></nav>
-    <p class="copyright">© 2026 MarkDid, LLC</p>
+    <p class="copyright">© 2026 MarkDid, LLC. <a href="https://peach.blender.org">Big Buck Bunny</a> © Blender Foundation, CC BY 3.0.</p>
   </footer>
 </body>
 </html>
@@ -134,14 +141,21 @@ def store_button(url: str, label: str) -> str:
 
 def home() -> str:
     return f"""
-  <section class="stage" aria-label="VHSFin">
-    <img src="/assets/img/hero.webp" width="1320" height="2065" alt="A chrome CRT television playing a cartoon bird, on a walnut shelf of VHS tapes" fetchpriority="high">
-    <span class="scroll-cue" aria-hidden="true"></span>
+  <section class="stage" aria-label="VHSFin playing Big Buck Bunny">
+    <div class="pin">
+      <div class="spot" aria-hidden="true"></div>
+      <figure class="tv">
+        <video class="intro" src="/assets/media/intro.mp4" poster="/assets/media/poster.webp" muted playsinline preload="auto" aria-hidden="true"></video>
+        <video class="loop" src="/assets/media/loop.mp4" muted playsinline loop preload="auto" aria-hidden="true"></video>
+      </figure>
+      <span class="scroll-cue" aria-hidden="true"></span>
+    </div>
   </section>
   <section class="about" id="about">
+    <p class="kicker">Introducing</p>
     <h1>VHSFin</h1>
-    <p class="tagline">A nostalgic, fully functioning Jellyfin client.</p>
-    <p>Your movies and shows become VHS tapes on a shelf. Pick one, watch it slide into the deck, and press play on a glowing CRT. Rewind, fast-forward, eject. Free, no ads, open source.</p>
+    <p class="tagline">A nostalgic, fully functioning<br>Jellyfin client.</p>
+    <p class="copy">Your movies and shows become VHS tapes on a shelf. Pick one, watch it slide into the deck, and press play on a glowing CRT. Rewind, fast-forward, eject. Free, no ads, open source.</p>
     <div class="stores">{store_button(APP_STORE, "App Store")}{store_button(PLAY_STORE, "Google Play")}</div>
   </section>
 """
@@ -166,6 +180,8 @@ def main() -> None:
     assets = DIST / "assets"
     assets.mkdir(parents=True)
     shutil.copy2(SITE / "style.css", assets / "style.css")
+    shutil.copy2(SITE / "main.js", assets / "main.js")
+    shutil.copytree(SITE / "media", assets / "media")
     for extra in ("img", "fonts"):
         if (SITE / extra).is_dir():
             shutil.copytree(SITE / extra, assets / extra)

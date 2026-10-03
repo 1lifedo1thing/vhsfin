@@ -3,64 +3,111 @@
 @font-face { font-family: "Nunito"; src: url("/assets/fonts/Nunito-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
 
 :root {
-  --ink: #e6ecee;
-  --muted: #8d989e;
-  --faint: #5c666c;
-  --line: #1c2024;
+  --ink: #f2f5f6;
+  --muted: #8a949a;
+  --faint: #545c61;
+  --line: #16191c;
   --accent: #6fe0e6;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: #000; color: var(--ink); font: 400 17px/1.65 "Nunito", system-ui, sans-serif; }
-a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--faint); }
+html { -webkit-text-size-adjust: 100%; background: #000; }
+body { margin: 0; background: #000; color: var(--ink); font: 400 17px/1.6 var(--display); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--faint); }
 a:hover { color: var(--accent); text-decoration-color: currentColor; }
 img { display: block; max-width: 100%; height: auto; }
-code { font-size: 0.92em; background: #111417; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+code { font-size: 0.92em; background: #0e1113; border: 1px solid #1f2427; border-radius: 6px; padding: 1px 6px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: #000; padding: 8px 14px; border-radius: 8px; z-index: 10; }
 .skip:focus { left: 16px; }
 
-/* The TV, alone on black. */
-.stage { position: relative; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; }
-.stage img { width: auto; max-height: min(88vh, 1032px); max-height: min(88svh, 1032px); }
+/* ---------- The TV, lit on a black stage ---------- */
+
+.stage { position: relative; }
+.pin { position: relative; height: 100vh; height: 100svh; display: grid; place-items: center; overflow: clip; }
+.spot {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 46% 42% at 50% 40%, rgba(150, 185, 195, 0.10), rgba(150, 185, 195, 0.03) 55%, transparent 75%);
+  animation: lights 2.4s ease-out both;
+}
+.tv {
+  position: relative; margin: 0;
+  height: min(80vh, 940px, calc((100vw - 32px) * 1.565));
+  height: min(80svh, 940px, calc((100vw - 32px) * 1.565));
+  aspect-ratio: 800 / 1252;
+  -webkit-box-reflect: below 0 linear-gradient(transparent 88%, rgba(255, 255, 255, 0.13));
+  animation: rise-in 2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.tv video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.tv .loop { opacity: 0; transition: opacity 0.5s ease; }
+.tv .loop.on { opacity: 1; }
+
 .scroll-cue {
-  position: absolute; bottom: 22px; left: 50%; width: 12px; height: 12px; margin-left: -6px;
-  border-right: 2px solid var(--faint); border-bottom: 2px solid var(--faint); transform: rotate(45deg);
-  animation: cue 2.4s ease-in-out infinite;
+  position: absolute; bottom: 26px; left: 50%; width: 11px; height: 11px; margin-left: -5.5px;
+  border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg);
+  opacity: 0; animation: cue 2.6s ease-in-out 2.4s infinite;
 }
-@keyframes cue { 0%, 100% { opacity: 0.25; translate: 0 0; } 50% { opacity: 0.8; translate: 0 6px; } }
 
-/* What it is, then where to get it. */
-.about { width: min(560px, 100% - 32px); margin: 0 auto; padding: 18vh 0 16vh; text-align: center; }
-.about h1 { margin: 0 0 14px; font: 400 clamp(54px, 13vw, 96px)/1 "Bungee", sans-serif; letter-spacing: 0.01em; }
-.tagline { margin: 0 0 22px; color: var(--accent); font-size: clamp(19px, 3.6vw, 23px); font-weight: 700; line-height: 1.35; }
-.about p { color: var(--muted); }
-.stores { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 36px; }
+@keyframes lights { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(18px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes cue { 0%, 100% { opacity: 0; translate: 0 -4px; } 50% { opacity: 0.7; translate: 0 4px; } }
+
+/* ---------- Introducing VHSFin ---------- */
+
+.about { position: relative; z-index: 1; width: min(720px, 100% - 40px); margin: 0 auto; padding: 14vh 0 18vh; text-align: center; }
+.kicker { margin: 0 0 10px; color: var(--muted); font-size: clamp(19px, 2.6vw, 26px); font-weight: 400; }
+.about h1 { margin: 0 0 26px; font: 400 clamp(64px, 15vw, 140px)/0.95 "Bungee", sans-serif; letter-spacing: 0.005em; }
+.tagline { margin: 0 0 26px; font-size: clamp(27px, 4.6vw, 46px); font-weight: 300; line-height: 1.14; letter-spacing: -0.01em; }
+.copy { margin: 0 auto; max-width: 31em; color: var(--muted); font-size: clamp(17px, 2vw, 20px); line-height: 1.55; }
+.stores { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 44px; }
 .store {
-  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 168px; min-height: 56px;
-  padding: 10px 22px; border: 1px solid #2b3136; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 700; line-height: 1.2;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 176px; min-height: 58px; padding: 10px 26px; border-radius: 999px;
+  border: 1px solid #343a3e; color: var(--ink); text-decoration: none; font-size: 17px; font-weight: 500; line-height: 1.2;
 }
-a.store:hover { border-color: var(--accent); color: var(--ink); }
-.store small { margin-top: 3px; color: var(--faint); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+a.store { background: var(--ink); border-color: var(--ink); color: #000; }
+a.store:hover { background: #fff; color: #000; }
+.store small { margin-top: 2px; color: var(--faint); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
 
-@supports (animation-timeline: view()) {
+/* ---------- Scroll choreography (browsers with scroll-driven animations) ---------- */
+
+@supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .about > * { animation: rise linear both; animation-timeline: view(); animation-range: entry 10% cover 35%; }
+    .stage { height: 175vh; height: 175svh; }
+    .pin { position: sticky; top: 0; }
+    /* Over the first 70vh of scrolling the TV recedes into the dark. */
+    .tv { animation: rise-in 2s cubic-bezier(0.2, 0.7, 0.2, 1) both, recede linear both; animation-timeline: auto, scroll(root); animation-range: normal, 0 70vh; }
+    .spot { animation: lights 2.4s ease-out both, dim linear both; animation-timeline: auto, scroll(root); animation-range: normal, 0 70vh; }
+    .scroll-cue { animation: cue 2.6s ease-in-out 2.4s infinite, fade-out linear both; animation-timeline: auto, scroll(root); animation-range: normal, 0 12vh; }
+    /* ...while the words rise over it. */
+    .about { margin-top: -62vh; margin-top: -62svh; }
+    .about > * { animation: reveal linear both; animation-timeline: view(); animation-range: entry 20% cover 38%; }
   }
 }
-@keyframes rise { from { opacity: 0; translate: 0 28px; } to { opacity: 1; translate: 0 0; } }
-@media (prefers-reduced-motion: reduce) { .scroll-cue { animation: none; opacity: 0.5; } }
+@keyframes recede { to { transform: scale(0.84) translateY(-3%); opacity: 0.09; filter: blur(2px); } }
+@keyframes dim { to { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes reveal { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 
-.site-footer { padding: 40px 16px 48px; border-top: 1px solid var(--line); text-align: center; color: var(--faint); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .tv, .spot { animation: none; }
+  .scroll-cue { animation: none; opacity: 0.5; }
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer { padding: 44px 20px 52px; border-top: 1px solid var(--line); text-align: center; color: var(--faint); font-size: 14px; }
 .site-footer p { margin: 0 0 10px; }
-.site-footer nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 10px; }
+.site-footer nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; margin-bottom: 12px; }
 .site-footer a { color: var(--muted); }
 .copyright { font-size: 12px; }
 
-/* Privacy, Terms, Support */
-.site-header { width: min(760px, 100% - 32px); margin: 0 auto; padding: 24px 0 8px; }
+/* ---------- Privacy, Terms, Support ---------- */
+
+.doc { font-family: "Nunito", var(--display); }
+.site-header { width: min(760px, 100% - 32px); margin: 0 auto; padding: 26px 0 8px; }
 .wordmark { font: 20px/1 "Bungee", sans-serif; text-decoration: none; }
 .doc-wrap { width: min(760px, 100% - 32px); margin: 24px auto 72px; }
 .doc-wrap h1, .policy h1 { font: 400 clamp(32px, 5vw, 44px)/1.1 "Bungee", sans-serif; margin: 0 0 18px; }
@@ -68,8 +115,8 @@ a.store:hover { border-color: var(--accent); color: var(--ink); }
 .doc-wrap p, .doc-wrap li { color: #c2ccd0; }
 .doc-wrap a { color: var(--accent); }
 .eyebrow { margin: 0 0 10px; color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 0.22em; text-transform: uppercase; }
-.table { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: 12px; }
+.table { overflow-x: auto; margin: 20px 0; border: 1px solid #1f2427; border-radius: 12px; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; }
-th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-th { background: #0d1012; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid #1f2427; }
+th { background: #0b0d0f; }
 tr:last-child td { border-bottom: 0; }

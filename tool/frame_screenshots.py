@@ -3,7 +3,7 @@
 Input:  screenshots/raw/{iphone,ipad}/0N-*.png  (tool/store_screenshots.sh)
 Output: fastlane/screenshots/ios/en-US/        App Store, iPhone 6.9" + iPad 13"
         fastlane/metadata/android/en-US/images/ Play phone shots, feature graphic, icon
-        site/vhsfin/img/hero.webp               website: the TV and shelf on black
+        site/vhsfin/og.png                      link preview (the hero film is tool/encode_site_film.py)
 
 Needs Pillow: python3 -m pip install pillow
 """
@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "screenshots" / "raw"
 IOS_OUT = ROOT / "fastlane" / "screenshots" / "ios" / "en-US"
 PLAY_OUT = ROOT / "fastlane" / "metadata" / "android" / "en-US" / "images"
-SITE_OUT = ROOT / "site" / "vhsfin" / "img"
+SITE_OUT = ROOT / "site" / "vhsfin"
 FONTS = ROOT / "assets" / "fonts"
 
 INK = (230, 236, 238)
@@ -172,30 +172,13 @@ def feature_graphic(playing: Image.Image, size: tuple[int, int] = (1024, 500)) -
     return canvas.convert("RGB")
 
 
-def site_hero(playing: Image.Image) -> Image.Image:
-    """The TV and shelf from the playing capture, melted into pure black."""
-    w, h = playing.size
-    # Bounds measured on the 1320x2868 capture: TV top 470, shelf bottom 2421;
-    # the "Be kind. Rewind." line below the shelf is left out.
-    box = (0, round(h * 400 / 2868), w, round(h * 2465 / 2868))
-    crop = playing.convert("RGB").crop(box)
-    mask = Image.new("L", crop.size, 0)
-    inset = round(w * 0.025)
-    ImageDraw.Draw(mask).rounded_rectangle(
-        (inset, inset, crop.width - inset, crop.height - inset), inset * 2, fill=255)
-    black = Image.new("RGB", crop.size, (0, 0, 0))
-    # Crush the app's near-black room to true black so there's no visible box.
-    lifted = crop.point(lambda v: 0 if v < 14 else round((v - 14) * 255 / 241))
-    return Image.composite(lifted, black, mask.filter(ImageFilter.GaussianBlur(inset)))
-
-
 def main() -> None:
     iphone = sorted((RAW / "iphone").glob("0*.png"))
     ipad = sorted((RAW / "ipad").glob("0*.png"))
     if len(iphone) != len(CAPTIONS):
         raise SystemExit(f"Expected {len(CAPTIONS)} iPhone captures in {RAW / 'iphone'}")
 
-    for out in (IOS_OUT, PLAY_OUT / "phoneScreenshots", SITE_OUT):
+    for out in (IOS_OUT, PLAY_OUT / "phoneScreenshots"):
         out.mkdir(parents=True, exist_ok=True)
         for old in out.glob("*"):
             if old.suffix in {".png", ".webp"}:
@@ -212,9 +195,8 @@ def main() -> None:
         compose(Image.open(path), (2064, 2752), caption, screen_width=0.8, radius_ratio=0.03).save(
             IOS_OUT / f"iPad_{i:02}.png", optimize=True)
 
-    site_hero(Image.open(iphone[2])).save(SITE_OUT / "hero.webp", quality=86, method=6)
     feature_graphic(Image.open(iphone[2])).save(PLAY_OUT / "featureGraphic.png", optimize=True)
-    feature_graphic(Image.open(iphone[2]), (1200, 630)).save(SITE_OUT.parent / "og.png", optimize=True)
+    feature_graphic(Image.open(iphone[2]), (1200, 630)).save(SITE_OUT / "og.png", optimize=True)
     Image.open(ROOT / "assets" / "icons" / "app_icon_1024.png").convert("RGB").resize(
         (512, 512), Image.LANCZOS).save(PLAY_OUT / "icon.png", optimize=True)
     print(f"Framed {len(iphone)} iPhone, {len(ipad)} iPad, Play, and site images.")
