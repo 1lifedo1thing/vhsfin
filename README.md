@@ -4,11 +4,11 @@
 <h1 align="center">VHSFin</h1>
 <p align="center"><strong>Movie night, rewound.</strong><br>A small Jellyfin client with a VHS player interface.</p>
 <p align="center">
-  <a href="LICENSE"><img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-6FE0E6?style=flat-square&labelColor=111417"></a>
+  <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-6FE0E6?style=flat-square&labelColor=111417"></a>
   <img alt="Built with Flutter" src="https://img.shields.io/badge/built_with-Flutter-E6ECEE?style=flat-square&labelColor=111417">
   <img alt="Status: early access" src="https://img.shields.io/badge/status-early_access-E0483E?style=flat-square&labelColor=111417">
 </p>
-<p align="center"><a href="#get-started">Get started</a> · <a href="#what-it-does">Take a look</a> · <a href="#self-host-the-web-app">Self-host</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+<p align="center"><a href="#get-started">Get started</a> · <a href="#what-it-does">Take a look</a> · <a href="#self-host-the-web-app">Self-host</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="https://markdid.dev">MarkDid</a></p>
 
 ![Movie-night artwork: a glowing CRT, a VHS deck, and a shelf of tapes](docs/movie-night.jpg)
 
@@ -16,7 +16,7 @@ VHSFin is a small, family-friendly client for a Jellyfin server. It presents mov
 
 Pick a tape, let it slide into the deck, and press play.
 
-The artwork above is project artwork; the screenshots below show the app. VHSFin is an independent project, not an official Jellyfin client. It includes no media, subscriptions, or hosted service.
+The artwork above is project artwork; the screenshots below show the app. VHSFin is an independent project by [MarkDid](https://markdid.dev), not an official Jellyfin client. It includes no media, subscriptions, ads, analytics, or hosted service.
 
 ## What it does
 
@@ -36,7 +36,7 @@ The artwork above is project artwork; the screenshots below show the app. VHSFin
 
 ## Get started
 
-VHSFin is currently installed from source. Bring a running Jellyfin server and an existing account. There are no official store releases yet.
+App Store and Google Play releases are on the way from [MarkDid](https://markdid.dev). Until then, VHSFin installs from source. Bring a running Jellyfin server and an existing account.
 
 1. Download or clone this repository and open its folder.
 2. Install [Flutter](https://docs.flutter.dev/get-started/install) with Dart **3.13.2 or later, below 4.0** (see `pubspec.yaml`).
@@ -77,7 +77,7 @@ The late-90s TV/VCR on walnut shelves is the default look. **Settings → SHELF*
 
 ## Self-host the web app
 
-The included Python server serves the release build and proxies cover-art lookups that otherwise run into browser CORS restrictions:
+The included Python server serves the release build and proxies VHSCollector lookups, which browsers otherwise block (CORS):
 
 ```sh
 make web                 # build and serve on port 8080
@@ -98,7 +98,7 @@ flutter build web --release
 # Publish the contents of build/web with your web server.
 ```
 
-The Python helper is intended for a trusted home network. Use an appropriately configured web server/reverse proxy for public hosting. Static hosting alone does not provide the cover-art proxy.
+The Python helper is intended for a trusted home network. Use an appropriately configured web server/reverse proxy for public hosting. Static hosting works for everything except the optional VHSCollector lookup, which needs the proxy. The mobile and desktop apps need no server besides Jellyfin.
 
 ## Build it
 
@@ -109,7 +109,12 @@ flutter build ios                # macOS; configure signing in Xcode
 flutter build macos              # macOS
 ```
 
-Android release builds currently use the debug signing configuration for easy local installation. Configure your own signing key before distributing a production release or building a store bundle. iOS signing and device provisioning are also your responsibility.
+Signing stays out of the repository:
+
+- **Android:** copy `android/key.properties.example` to `android/key.properties` and point it at your upload keystore. Without that file, release builds use the debug key for local installs.
+- **iOS:** copy `ios/Flutter/Signing.xcconfig.example` to `ios/Flutter/Signing.xcconfig` and set your Team ID. If Xcode writes `DEVELOPMENT_TEAM` back into `project.pbxproj` when you change signing settings, remove it before committing.
+
+Both files are gitignored. Never commit keystores, certificates, provisioning profiles, or App Store Connect keys.
 
 ## When the picture needs tuning
 
@@ -127,7 +132,7 @@ Android release builds currently use the debug signing configuration for easy lo
 
 Your password is sent to your Jellyfin server for authentication and is not persisted by VHSFin. A session token is saved in local app preferences (browser storage on web), so treat a signed-in device as having access to that account. This storage is not an encrypted credential vault. Sign out on shared devices, and revoke sessions from Jellyfin when needed.
 
-Cover lookup may send title/year searches to Internet Archive and VHSCollector. Artwork is cached locally; availability and matching vary. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
+VHSFin has no accounts, analytics, ads, or tracking, and MarkDid receives no data from the app. It talks to your Jellyfin server and, to find sleeve art, sends movie titles and years to [Internet Archive](https://archive.org). **Settings → VHSCOLLECTOR** also searches [VHSCollector](https://vhscollector.com). That lookup is off by default: VHSFin doesn’t scrape a site unless you ask it to. Artwork is cached locally; availability and matching vary. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
 
 The original VHSFin icon concepts and movie-night illustration were generated for this project. Source images, prompts, and platform export instructions live in [assets/branding](assets/branding/README.md). Mechanical sound credits are in [assets/sounds/CREDITS.txt](assets/sounds/CREDITS.txt).
 
@@ -143,8 +148,15 @@ CI runs analysis, tests, and a web release build. The code is organized by featu
 
 The focus is deliberately small: libraries, shelves, movies, shows, and playback. Downloads, music, live TV, casting, and multi-server navigation are outside the current scope.
 
+## More from MarkDid
+
+VHSFin is made by [MarkDid](https://markdid.dev), an independent software studio. If you enjoy it, take a look at the other apps:
+
+- **[ROLL BACK](https://rollback.markdid.dev)**: a dice game with a very small wizard who knows how every turn could have gone. Out now on Android.
+- **[pabo](https://pabo.markdid.dev)**: conversation practice in Korean, Japanese, and Mandarin. Coming soon to iPhone.
+
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE). Personal and other noncommercial use, self-hosting, and contribution are welcome. Commercial use — including listing builds on app stores for sale or other commercial purposes — needs a separate license from the copyright holders.
+VHSFin is free software under the [GNU General Public License v3.0](LICENSE), with an [additional permission](NOTICE.md) that allows distribution through app stores as long as the source stays public. The “VHSFin” name and icon are not licensed for use in forks; see [NOTICE.md](NOTICE.md).
 
-This is **not** an OSI open-source license. Built with [Flutter](https://flutter.dev) for [Jellyfin](https://jellyfin.org).
+Copyright © 2026 MarkDid, LLC. Built with [Flutter](https://flutter.dev) for [Jellyfin](https://jellyfin.org).

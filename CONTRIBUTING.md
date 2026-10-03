@@ -54,4 +54,4 @@ Be kind and keep contributions family-friendly. Discuss larger changes before in
 
 ## License
 
-By contributing, you agree your contributions are licensed under the same [PolyForm Noncommercial 1.0.0](LICENSE) terms as the rest of the project.
+By contributing, you agree that your contributions are licensed under the [GPL-3.0](LICENSE), including the app-store [additional permission](NOTICE.md), the same terms as the rest of the project.

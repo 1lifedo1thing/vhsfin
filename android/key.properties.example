@@ -1,0 +1,6 @@
+# Copy to key.properties (gitignored) for Play Store release builds.
+# storeFile may be absolute or relative to android/. Keep the keystore out of the repo.
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=/absolute/path/to/vhsfin-upload.jks

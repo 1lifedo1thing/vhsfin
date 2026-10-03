@@ -46,3 +46,18 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Signing material and local secrets — never commit
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+key.properties
+.env
+.env.*
+**/Flutter/Signing.xcconfig
+fastlane/report.xml
+fastlane/*.json
+**/__pycache__/
