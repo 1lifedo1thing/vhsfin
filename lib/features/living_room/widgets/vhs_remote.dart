@@ -110,7 +110,6 @@ class VhsRemoteSheet extends StatelessWidget {
                             title: live
                                 ? (title ?? 'PLAYING').toUpperCase()
                                 : 'NO TAPE',
-                            detail: live ? (running ? 'PLAY' : 'PAUSE') : null,
                             onClose: () => Navigator.of(context).pop(),
                           ),
                           const SizedBox(height: 14),

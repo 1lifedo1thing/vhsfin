@@ -35,8 +35,8 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(find.text('PLAY'), findsWidgets);
-    expect(find.text('PAUSE'), findsWidgets, reason: 'display readout');
+    expect(find.text('PLAY'), findsOneWidget, reason: 'the key only');
+    expect(find.text('PAUSE'), findsNothing);
 
     playing.add(true);
     await tester.pump();
