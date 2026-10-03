@@ -21,16 +21,26 @@ extension ShelfSortModeLabel on ShelfSortMode {
 class ShelfDisplayPrefs {
   const ShelfDisplayPrefs({
     this.vhsOnly = true,
+    this.vhsCollector = false,
     this.sort = ShelfSortMode.titleAsc,
   });
 
   /// When true, only titles with real VHS sleeve art (Box / resolved scan).
   final bool vhsOnly;
+
+  /// Opt-in: also look up sleeves on vhscollector.com (Internet Archive is
+  /// always tried). Off by default — the app doesn't scrape a site unasked.
+  final bool vhsCollector;
   final ShelfSortMode sort;
 
-  ShelfDisplayPrefs copyWith({bool? vhsOnly, ShelfSortMode? sort}) {
+  ShelfDisplayPrefs copyWith({
+    bool? vhsOnly,
+    bool? vhsCollector,
+    ShelfSortMode? sort,
+  }) {
     return ShelfDisplayPrefs(
       vhsOnly: vhsOnly ?? this.vhsOnly,
+      vhsCollector: vhsCollector ?? this.vhsCollector,
       sort: sort ?? this.sort,
     );
   }
@@ -43,6 +53,7 @@ final shelfDisplayPrefsProvider =
 
 class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
   static const _vhsOnlyKey = 'vhsfin.box_art_only';
+  static const _vhsCollectorKey = 'vhsfin.vhscollector_lookup.v1';
   static const _sortKey = 'vhsfin.shelf_sort';
 
   /// Bumped to ignore in-flight SharedPreferences restores after user edits.
@@ -66,6 +77,7 @@ class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
     if (!ref.mounted || epoch != _epoch) return;
     state = ShelfDisplayPrefs(
       vhsOnly: prefs.getBool(_vhsOnlyKey) ?? true,
+      vhsCollector: prefs.getBool(_vhsCollectorKey) ?? false,
       sort: sort,
     );
   }
@@ -75,6 +87,13 @@ class ShelfDisplayPrefsNotifier extends Notifier<ShelfDisplayPrefs> {
     state = state.copyWith(vhsOnly: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_vhsOnlyKey, value);
+  }
+
+  Future<void> setVhsCollector(bool value) async {
+    _epoch++;
+    state = state.copyWith(vhsCollector: value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_vhsCollectorKey, value);
   }
 
   Future<void> setSort(ShelfSortMode sort) async {

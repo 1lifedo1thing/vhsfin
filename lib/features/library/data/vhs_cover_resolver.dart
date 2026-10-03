@@ -53,11 +53,13 @@ class VhsSpineArt {
 
 /// Looks up period VHS sleeve scans (VHSCollector, then Internet Archive).
 ///
-/// VHSCollector uses predictable `/movie/{slug}` pages with dedicated spine
+/// VHSCollector is opt-in ([useCollector], off by default); Internet Archive
+/// is always tried. Cache keys are namespaced per mode so turning VHSCollector
+/// on retries titles that missed on IA alone. VHSCollector uses predictable `/movie/{slug}` pages with dedicated spine
 /// or wraparound sleeve scans. Flutter web hits them via `/vc/lookup` proxy
 /// (no CORS on vhscollector.com). IA still uses JSONP on web.
 class VhsCoverResolver {
-  VhsCoverResolver({Dio? dio})
+  VhsCoverResolver({Dio? dio, this.useCollector = false})
     : _dio =
           dio ??
           Dio(
@@ -72,7 +74,10 @@ class VhsCoverResolver {
 
   final Dio _dio;
 
-  static const _cacheKey = 'vhsfin.spine_art.v10';
+  /// Also search vhscollector.com before Internet Archive.
+  final bool useCollector;
+
+  static const _cacheKey = 'vhsfin.spine_art.v11';
   static const _miss = '__miss__';
   static const vhsEraLastYear = 2005;
   static const wraparoundSpineFraction = 0.09;
@@ -353,12 +358,14 @@ class VhsCoverResolver {
     }
 
     final isSeriesBox = kind == TapeKind.series;
-    for (final queryTitle in lookupTitles) {
-      final fromCollector = await _searchVhsCollector(
-        queryTitle,
-        avoidAmbiguousMovieSlug: isSeriesBox,
-      );
-      if (fromCollector != null) return fromCollector;
+    if (useCollector) {
+      for (final queryTitle in lookupTitles) {
+        final fromCollector = await _searchVhsCollector(
+          queryTitle,
+          avoidAmbiguousMovieSlug: isSeriesBox,
+        );
+        if (fromCollector != null) return fromCollector;
+      }
     }
 
     // IA is weaker for episode tapes; still try primary title.
@@ -722,7 +729,7 @@ class VhsCoverResolver {
     String? seriesTitle,
     TapeKind kind = TapeKind.movie,
   ]) =>
-      '${_normalizeTitle(title).toLowerCase()}|${seriesTitle?.toLowerCase() ?? ''}|${year ?? ''}|${kind.name}';
+      '${useCollector ? 'vc|' : ''}${_normalizeTitle(title).toLowerCase()}|${seriesTitle?.toLowerCase() ?? ''}|${year ?? ''}|${kind.name}';
 
   Map<String, String> _readDisk(SharedPreferences prefs) {
     final raw = prefs.getString(_cacheKey);

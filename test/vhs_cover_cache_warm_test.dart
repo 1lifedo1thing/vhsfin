@@ -17,7 +17,7 @@ void main() {
           .toIso8601String(),
     });
     SharedPreferences.setMockInitialValues({
-      'vhsfin.spine_art.v10': jsonEncode({key: stale}),
+      'vhsfin.spine_art.v11': jsonEncode({key: stale}),
     });
 
     final resolver = VhsCoverResolver();
@@ -39,7 +39,7 @@ void main() {
     const key = 'jaws||1975|movie';
     final hit = jsonEncode({'u': 'https://example.com/jaws.jpg', 'f': 0.09});
     SharedPreferences.setMockInitialValues({
-      'vhsfin.spine_art.v10': jsonEncode({key: hit}),
+      'vhsfin.spine_art.v11': jsonEncode({key: hit}),
     });
 
     final resolver = VhsCoverResolver();
@@ -49,5 +49,16 @@ void main() {
       allowNetwork: false,
     );
     expect(art?.imageUrl, 'https://example.com/jaws.jpg');
+  });
+
+  test('VHSCollector mode keeps its own cache entries', () async {
+    const key = 'jaws||1975|movie';
+    final hit = jsonEncode({'u': 'https://example.com/jaws.jpg', 'f': 0.09});
+    SharedPreferences.setMockInitialValues({
+      'vhsfin.spine_art.v11': jsonEncode({key: hit}),
+    });
+
+    final collector = VhsCoverResolver(useCollector: true);
+    expect(await collector.hasCachedLookup(title: 'Jaws', year: 1975), isFalse);
   });
 }

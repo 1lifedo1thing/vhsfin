@@ -85,6 +85,7 @@ void main() {
                 context,
                 connected: false,
                 vhsOnly: true,
+                vhsCollector: false,
                 sortLabel: 'A–Z',
                 saveTimestampOnEject: false,
                 jellyfinPosters: false,
@@ -96,6 +97,7 @@ void main() {
                 onConnect: () {},
                 onSignOut: () {},
                 onVhsOnlyChanged: (_) {},
+                onVhsCollectorChanged: (_) {},
                 onOpenSort: () {},
                 onSaveTimestampChanged: (_) {},
                 onCrtSkinChanged: (skin) => selected = skin,
@@ -175,6 +177,10 @@ void main() {
 
   test('ShelfDisplayPrefs defaults vhsOnly ON for new installs', () {
     expect(const ShelfDisplayPrefs().vhsOnly, isTrue);
+  });
+
+  test('ShelfDisplayPrefs keeps VHSCollector lookups off by default', () {
+    expect(const ShelfDisplayPrefs().vhsCollector, isFalse);
   });
 
   test('TV picker offers six labeled skins', () {

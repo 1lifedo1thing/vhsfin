@@ -35,6 +35,7 @@ class LivingRoomPage extends ConsumerWidget {
       connected: session != null,
       userName: session?.userName,
       vhsOnly: displayPrefs.vhsOnly,
+      vhsCollector: displayPrefs.vhsCollector,
       sortLabel: displayPrefs.sort.buttonLabel,
       saveTimestampOnEject: experience.saveTimestampOnEject,
       jellyfinPosters: experience.jellyfinPosters,
@@ -57,6 +58,8 @@ class LivingRoomPage extends ConsumerWidget {
       },
       onVhsOnlyChanged: (value) =>
           ref.read(shelfDisplayPrefsProvider.notifier).setVhsOnly(value),
+      onVhsCollectorChanged: (value) =>
+          ref.read(shelfDisplayPrefsProvider.notifier).setVhsCollector(value),
       onOpenSort: () => showShelfSortSheet(
         context,
         current: ref.read(shelfDisplayPrefsProvider).sort,
