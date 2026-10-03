@@ -25,7 +25,17 @@ THEME = "#000000"
 SOURCE = "https://github.com/markdid/vhsfin"
 # Store listings. An empty URL shows the button greyed out with "Coming soon".
 APP_STORE = ""
-PLAY_STORE = "https://play.google.com/store/apps/details?id=dev.markdid.vhsfin"
+PLAY_STORE = ""
+
+HEADERS = """/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), geolocation=(), microphone=()
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+"""
 
 # Simple Icons paths (CC0), 24x24 viewBox.
 ICONS = {
@@ -201,6 +211,8 @@ def main() -> None:
     for single in ("favicon.png", "og.png"):
         if (SITE / single).is_file():
             shutil.copy2(SITE / single, assets / single)
+    # Netlify reads headers from the published folder on every kind of deploy.
+    (DIST / "_headers").write_text(HEADERS, encoding="utf-8")
     if (SITE / "robots.txt").is_file():
         shutil.copy2(SITE / "robots.txt", DIST / "robots.txt")
 

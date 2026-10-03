@@ -1,21 +1,7 @@
-# Base directory: site/vhsfin. Static pages; main.js only sequences the hero videos.
+# Base directory: site/vhsfin. build.py writes dist/, including its _headers.
 [build]
   command = "python3 build.py"
   publish = "dist"
 
 [build.environment]
   PYTHON_VERSION = "3.13"
-
-[[headers]]
-  for = "/*"
-    [headers.values]
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-Frame-Options = "DENY"
-    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
-
-# AdMob apps only: app-ads.txt must be plain text at the site root.
-# [[headers]]
-#   for = "/app-ads.txt"
-#     [headers.values]
-#     Content-Type = "text/plain; charset=utf-8"
