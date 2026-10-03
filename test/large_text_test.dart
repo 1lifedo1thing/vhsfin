@@ -56,6 +56,7 @@ void main() {
         crtSkin: CrtTvSkin.crtIcon,
         cabinetStyle: CabinetStyle.walnut,
         onCabinetStyleChanged: (_) {},
+        onOpenLink: (_) {},
         onCollection: () {},
         onConnect: () {},
         onSignOut: () {},

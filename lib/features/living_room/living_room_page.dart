@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
@@ -73,6 +74,7 @@ class LivingRoomPage extends ConsumerWidget {
           ref.read(experiencePrefsProvider.notifier).setCrtSkin(skin),
       onCabinetStyleChanged: (style) =>
           ref.read(experiencePrefsProvider.notifier).setCabinetStyle(style),
+      onOpenLink: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
     );
   }
 

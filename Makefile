@@ -1,4 +1,7 @@
 PORT ?= 8081
+# VHSCOLLECTOR=true compiles in the optional VHSCollector sleeve lookup.
+VHSCOLLECTOR ?= false
+DEFINES = --dart-define=VHSFIN_VHSCOLLECTOR=$(VHSCOLLECTOR)
 PYTHON ?= python3
 
 .PHONY: help build serve stop restart web demo demo-onboarding
@@ -14,7 +17,7 @@ help:
 	@echo "  make demo-onboarding  how to re-trigger the VHS art-grab popup"
 
 build:
-	flutter build web --release
+	flutter build web --release $(DEFINES)
 
 serve:
 	$(PYTHON) tool/serve_web.py --port $(PORT)
@@ -29,7 +32,7 @@ web: restart
 
 # Sample shelves from open-licensed films; no Jellyfin account required.
 demo: stop
-	flutter build web --release --dart-define=VHSFIN_DEMO=true
+	flutter build web --release --dart-define=VHSFIN_DEMO=true $(DEFINES)
 	$(PYTHON) tool/serve_web.py --port $(PORT)
 
 demo-onboarding:

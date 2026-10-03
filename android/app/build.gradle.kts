@@ -6,12 +6,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing comes from android/key.properties (gitignored). Without it,
+// Release signing: VHSFIN_ANDROID_* env vars (Fastlane loads .env) first, then
+// android/key.properties for local builds. Both are gitignored. Without either,
 // release builds fall back to the debug key for local installs.
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("key.properties")
     if (file.exists()) file.inputStream().use { load(it) }
 }
+
+fun signingValue(env: String, prop: String): String? =
+    System.getenv(env)?.takeIf { it.isNotBlank() } ?: keystoreProperties.getProperty(prop)
 
 android {
     namespace = "dev.markdid.vhsfin"
@@ -38,12 +42,13 @@ android {
     }
 
     signingConfigs {
-        if (keystoreProperties.isNotEmpty()) {
+        val store = signingValue("VHSFIN_ANDROID_KEYSTORE_PATH", "storeFile")
+        if (store != null) {
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                storeFile = rootProject.file(store)
+                keyAlias = signingValue("VHSFIN_ANDROID_KEY_ALIAS", "keyAlias")
+                storePassword = signingValue("VHSFIN_ANDROID_STORE_PASSWORD", "storePassword")
+                keyPassword = signingValue("VHSFIN_ANDROID_KEY_PASSWORD", "keyPassword")
             }
         }
     }

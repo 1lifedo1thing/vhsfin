@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vhsfin/constants/build_flags.dart';
 
 import 'package:vhsfin/features/library/data/ia_jsonp_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/library/data/ia_jsonp_web.dart';
@@ -53,7 +54,8 @@ class VhsSpineArt {
 
 /// Looks up period VHS sleeve scans (VHSCollector, then Internet Archive).
 ///
-/// VHSCollector is opt-in ([useCollector], off by default); Internet Archive
+/// VHSCollector is compiled in only with [vhsCollectorBuild], then opt-in
+/// ([useCollector], off by default); Internet Archive
 /// is always tried. Cache keys are namespaced per mode so turning VHSCollector
 /// on retries titles that missed on IA alone. VHSCollector uses predictable `/movie/{slug}` pages with dedicated spine
 /// or wraparound sleeve scans. Flutter web hits them via `/vc/lookup` proxy
@@ -65,7 +67,7 @@ class VhsCoverResolver {
           Dio(
             BaseOptions(
               headers: const {
-                'User-Agent': 'vhsfin/0.1 (kids jellyfin client)',
+                'User-Agent': 'VHSFin/1.0 (+https://vhsfin.markdid.dev)',
               },
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 12),
@@ -358,7 +360,7 @@ class VhsCoverResolver {
     }
 
     final isSeriesBox = kind == TapeKind.series;
-    if (useCollector) {
+    if (vhsCollectorBuild && useCollector) {
       for (final queryTitle in lookupTitles) {
         final fromCollector = await _searchVhsCollector(
           queryTitle,

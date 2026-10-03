@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vhsfin/constants/build_flags.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -10,7 +11,7 @@ final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
   final useCollector = ref.watch(
     shelfDisplayPrefsProvider.select((p) => p.vhsCollector),
   );
-  return VhsCoverResolver(useCollector: useCollector);
+  return VhsCoverResolver(useCollector: vhsCollectorBuild && useCollector);
 });
 
 /// Resolves spine art for a tape: Jellyfin Box image first, else remote lookup.

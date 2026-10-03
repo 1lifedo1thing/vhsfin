@@ -77,12 +77,14 @@ The late-90s TV/VCR on walnut shelves is the default look. **Settings → SHELF*
 
 ## Self-host the web app
 
-The included Python server serves the release build and proxies VHSCollector lookups, which browsers otherwise block (CORS):
+The included Python server serves the release build. It also proxies the optional VHSCollector lookup (see [Data and artwork](#data-and-artwork)), which browsers otherwise block:
 
 ```sh
 make web                 # build and serve on port 8080
 # Or choose a different port:
 make web PORT=8090
+# Include the optional VHSCollector lookup:
+make web VHSCOLLECTOR=true
 ```
 
 To try the app without a server, `make demo` stocks the shelf with Blender open movies streamed from Wikimedia Commons.
@@ -111,7 +113,7 @@ flutter build macos              # macOS
 
 Signing stays out of the repository:
 
-- **Android:** copy `android/key.properties.example` to `android/key.properties` and point it at your upload keystore. Without that file, release builds use the debug key for local installs.
+- **Android:** copy `android/key.properties.example` to `android/key.properties` and point it at your upload keystore (or set the `VHSFIN_ANDROID_*` variables from `.env.example`). Without either, release builds use the debug key for local installs.
 - **iOS:** copy `ios/Flutter/Signing.xcconfig.example` to `ios/Flutter/Signing.xcconfig` and set your Team ID. If Xcode writes `DEVELOPMENT_TEAM` back into `project.pbxproj` when you change signing settings, remove it before committing.
 
 Both files are gitignored. Never commit keystores, certificates, provisioning profiles, or App Store Connect keys.
@@ -123,7 +125,7 @@ Both files are gitignored. Never commit keystores, certificates, provisioning pr
 | Can’t connect | Use a full `http://` or `https://` base address, including the port when needed. Keep reverse-proxy prefixes such as `/jellyfin`; omit `/web/#/home`. |
 | Works at home, fails elsewhere | Make sure your device can reach the server through your configured network or VPN. |
 | Browser blocks the connection | Check HTTPS/HTTP compatibility, server CORS, and browser local-network permissions. |
-| iOS rejects an HTTP server | Prefer HTTPS; the project does not add a blanket transport-security exception. |
+| iOS asks about the local network | Allow it. VHSFin needs local network access to reach a Jellyfin server on your LAN. |
 | A shelf seems empty | Disable VHS-only in Settings, and check the account’s library permissions. |
 | Wrong sleeve art | Inspect the tape and reject the mismatched sleeve; external lookups are best effort. |
 | Playback won’t start | Check Jellyfin’s playback/transcoding settings and the device’s supported codecs. |
@@ -132,7 +134,7 @@ Both files are gitignored. Never commit keystores, certificates, provisioning pr
 
 Your password is sent to your Jellyfin server for authentication and is not persisted by VHSFin. A session token is saved in local app preferences (browser storage on web), so treat a signed-in device as having access to that account. This storage is not an encrypted credential vault. Sign out on shared devices, and revoke sessions from Jellyfin when needed.
 
-VHSFin has no accounts, analytics, ads, or tracking, and MarkDid receives no data from the app. It talks to your Jellyfin server and, to find sleeve art, sends movie titles and years to [Internet Archive](https://archive.org). **Settings → VHSCOLLECTOR** also searches [VHSCollector](https://vhscollector.com). That lookup is off by default: VHSFin doesn’t scrape a site unless you ask it to. Artwork is cached locally; availability and matching vary. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
+VHSFin has no accounts, analytics, ads, or tracking, and MarkDid receives no data from the app. It talks to your Jellyfin server and, to find sleeve art, sends movie titles and years to [Internet Archive](https://archive.org). Builds made with `--dart-define=VHSFIN_VHSCOLLECTOR=true` (or `make web VHSCOLLECTOR=true`) add a **Settings → VHSCOLLECTOR** switch that also searches [VHSCollector](https://vhscollector.com). That lookup is left out of the store apps and off by default everywhere else; VHSCollector's scans belong to its contributors, so please respect the site. Artwork is cached locally; availability and matching vary. Third-party cover art belongs to its respective rights holders and is not included in the project’s license.
 
 The original VHSFin icon concepts and movie-night illustration were generated for this project. Source images, prompts, and platform export instructions live in [assets/branding](assets/branding/README.md). Mechanical sound credits are in [assets/sounds/CREDITS.txt](assets/sounds/CREDITS.txt).
 
@@ -144,7 +146,7 @@ flutter test
 flutter build web --release
 ```
 
-CI runs analysis, tests, and a web release build. The code is organized by feature, with Riverpod in state/coordinator layers and ordinary Flutter widgets for views. See the [contribution guide](CONTRIBUTING.md) for architecture and local checks.
+VHSFin is written by a human with AI coding assistants; commits made with one say so in a `Co-Authored-By` line. CI runs analysis, tests, and a web release build. The code is organized by feature, with Riverpod in state/coordinator layers and ordinary Flutter widgets for views. See the [contribution guide](CONTRIBUTING.md) for architecture and local checks.
 
 The focus is deliberately small: libraries, shelves, movies, shows, and playback. Downloads, music, live TV, casting, and multi-server navigation are outside the current scope.
 

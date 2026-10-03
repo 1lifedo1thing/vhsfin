@@ -103,6 +103,7 @@ void main() {
                 onCrtSkinChanged: (skin) => selected = skin,
                 cabinetStyle: CabinetStyle.walnut,
                 onCabinetStyleChanged: (style) => cabinet = style,
+                onOpenLink: (_) {},
               ),
               child: const Text('open'),
             ),

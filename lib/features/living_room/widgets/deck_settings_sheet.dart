@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:vhsfin/constants/build_flags.dart';
 import 'package:vhsfin/constants/feedback.dart';
+import 'package:vhsfin/constants/links.dart';
 import 'package:vhsfin/constants/theme.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
@@ -32,6 +34,7 @@ Future<void> showDeckSettingsSheet(
   required ValueChanged<CrtTvSkin> onCrtSkinChanged,
   required CabinetStyle cabinetStyle,
   required ValueChanged<CabinetStyle> onCabinetStyleChanged,
+  required ValueChanged<Uri> onOpenLink,
   String? userName,
 }) {
   return showDeckPanelSheet<void>(
@@ -58,6 +61,7 @@ Future<void> showDeckSettingsSheet(
       onCrtSkinChanged: onCrtSkinChanged,
       cabinetStyle: cabinetStyle,
       onCabinetStyleChanged: onCabinetStyleChanged,
+      onOpenLink: onOpenLink,
     ),
   );
 }
@@ -84,6 +88,7 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.onCrtSkinChanged,
     required this.cabinetStyle,
     required this.onCabinetStyleChanged,
+    required this.onOpenLink,
     this.userName,
   });
 
@@ -108,6 +113,7 @@ class _DeckSettingsSheet extends StatefulWidget {
   final ValueChanged<CrtTvSkin> onCrtSkinChanged;
   final CabinetStyle cabinetStyle;
   final ValueChanged<CabinetStyle> onCabinetStyleChanged;
+  final ValueChanged<Uri> onOpenLink;
 
   @override
   State<_DeckSettingsSheet> createState() => _DeckSettingsSheetState();
@@ -184,16 +190,18 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
             widget.onVhsOnlyChanged(value);
           },
         ),
-        const SizedBox(height: 8),
-        DeckOptionRow(
-          label: 'VHSCOLLECTOR',
-          subtitle: 'Also search vhscollector.com for sleeves.',
-          value: _vhsCollector,
-          onChanged: (value) {
-            setState(() => _vhsCollector = value);
-            widget.onVhsCollectorChanged(value);
-          },
-        ),
+        if (vhsCollectorBuild) ...[
+          const SizedBox(height: 8),
+          DeckOptionRow(
+            label: 'VHSCOLLECTOR',
+            subtitle: 'Also search vhscollector.com for sleeves.',
+            value: _vhsCollector,
+            onChanged: (value) {
+              setState(() => _vhsCollector = value);
+              widget.onVhsCollectorChanged(value);
+            },
+          ),
+        ],
         const SizedBox(height: 8),
         DeckOptionRow(
           label: 'SAVE ON EJECT',
@@ -265,6 +273,38 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                     widget.onConnect();
                   }
                 },
+              ),
+            ),
+          ],
+        ),
+        const DeckLabel('ABOUT'),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: DeckHardKey(
+                label: 'PRIVACY',
+                sublabel: 'POLICY',
+                semanticLabel: 'Privacy policy',
+                onPressed: () => widget.onOpenLink(VhsLinks.privacy),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: DeckHardKey(
+                label: 'SOURCE',
+                sublabel: 'GITHUB',
+                semanticLabel: 'Source code on GitHub',
+                onPressed: () => widget.onOpenLink(VhsLinks.source),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: DeckHardKey(
+                label: 'MORE APPS',
+                sublabel: 'MARKDID',
+                semanticLabel: 'More apps from MarkDid',
+                onPressed: () => widget.onOpenLink(VhsLinks.studio),
               ),
             ),
           ],

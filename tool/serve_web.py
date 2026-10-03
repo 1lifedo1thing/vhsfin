@@ -13,7 +13,7 @@ import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-UA = "vhsfin-proxy/0.1 (kids jellyfin client)"
+UA = "VHSFin-proxy/1.0 (+https://vhsfin.markdid.dev)"
 IA = "https://archive.org"
 VC = "https://vhscollector.com"
 ROOT = Path(__file__).resolve().parents[1] / "build" / "web"
