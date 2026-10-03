@@ -29,14 +29,15 @@ LINE = (39, 45, 51)
 # Gradient stops (position 0 = centre, 1 = farthest corner).
 STOPS = [(0.0, (24, 52, 56)), (0.35, (12, 20, 24)), (0.75, (5, 7, 9)), (1.0, (2, 3, 3))]
 
-CAPTIONS = [
-    ("MOVIE NIGHT,\nREWOUND.", "Your Jellyfin library as a shelf of tapes."),
-    ("PICK A TAPE.", "Every movie and show gets a spine."),
-    ("PRESS PLAY.", "Watch it glow on a classic CRT."),
-    ("BE KIND.\nREWIND.", "A remote with REW, FF, and eject."),
-    ("SIX TVS.\nTWO SHELVES.", "Set up the living room you remember."),
-    ("BRING YOUR\nOWN JELLYFIN.", "Free. No ads. No tracking."),
-]
+# Store slides in order, keyed by capture name (tool/store_screenshots.sh).
+# Captures without a caption here, like 03-playing, aren't framed.
+CAPTIONS = {
+    "01-living-room": ("MOVIE NIGHT,\nREWOUND.", "Your Jellyfin library as a shelf of tapes."),
+    "02-tape": ("PICK A TAPE.", "Every movie and show gets a spine."),
+    "04-remote": ("BE KIND.\nREWIND.", ""),
+    "05-settings": ("CUSTOMIZE YOUR\nEXPERIENCE.", "Set up the living room you remember."),
+    "06-connect": ("BRING YOUR\nOWN JELLYFIN.", "Free. No ads. No tracking."),
+}
 
 
 def lerp(a: tuple[int, ...], b: tuple[int, ...], t: float) -> tuple[int, ...]:
@@ -118,7 +119,7 @@ def compose(shot: Image.Image, size: tuple[int, int], caption: tuple[str, str], 
     margin = round(w * 0.07)
 
     title_font = fit_font(draw, title, "Bungee-Regular.ttf", round(w * 0.085), w - 2 * margin)
-    sub_font = fit_font(draw, sub, "Nunito-SemiBold.ttf", round(w * 0.04), w - 2 * margin)
+    sub_font = fit_font(draw, sub or "Ag", "Nunito-SemiBold.ttf", round(w * 0.04), w - 2 * margin)
     y = round(h * 0.05)
     spacing = title_font.size * 0.12
     tb = draw.multiline_textbbox((0, 0), title, font=title_font, align="center", spacing=spacing)
@@ -129,8 +130,10 @@ def compose(shot: Image.Image, size: tuple[int, int], caption: tuple[str, str], 
     draw.multiline_text(((w - (tb[2] - tb[0])) / 2 - tb[0], title_y - tb[1]), title, font=title_font,
                         fill=INK, align="center", spacing=spacing)
     y += block_h + round(title_font.size * 0.45)
-    sb = draw.textbbox((0, 0), sub, font=sub_font)
-    draw.text(((w - (sb[2] - sb[0])) / 2 - sb[0], y - sb[1]), sub, font=sub_font, fill=MUTED)
+    # Measure a full line even when there's no subtitle, so screens line up.
+    sb = draw.textbbox((0, 0), sub or "Ag", font=sub_font)
+    if sub:
+        draw.text(((w - (sb[2] - sb[0])) / 2 - sb[0], y - sb[1]), sub, font=sub_font, fill=MUTED)
     y += sb[3] - sb[1] + round(h * 0.035)
 
     box_width = round(w * screen_width)
@@ -173,10 +176,15 @@ def feature_graphic(playing: Image.Image, size: tuple[int, int] = (1024, 500)) -
 
 
 def main() -> None:
-    iphone = sorted((RAW / "iphone").glob("0*.png"))
-    ipad = sorted((RAW / "ipad").glob("0*.png"))
-    if len(iphone) != len(CAPTIONS):
-        raise SystemExit(f"Expected {len(CAPTIONS)} iPhone captures in {RAW / 'iphone'}")
+    def captures(device: str) -> list[Path]:
+        paths = [RAW / device / f"{name}.png" for name in CAPTIONS]
+        missing = [p.name for p in paths if not p.is_file()]
+        if missing:
+            raise SystemExit(f"Missing {device} captures: {', '.join(missing)}")
+        return paths
+
+    iphone, ipad = captures("iphone"), captures("ipad")
+    playing = Image.open(RAW / "iphone" / "03-playing.png")
 
     for out in (IOS_OUT, PLAY_OUT / "phoneScreenshots"):
         out.mkdir(parents=True, exist_ok=True)
@@ -184,19 +192,19 @@ def main() -> None:
             if old.suffix in {".png", ".webp"}:
                 old.unlink()
 
-    for i, (path, caption) in enumerate(zip(iphone, CAPTIONS), start=1):
+    for i, (path, caption) in enumerate(zip(iphone, CAPTIONS.values()), start=1):
         shot = Image.open(path)
         compose(shot, (1320, 2868), caption, screen_width=0.78, radius_ratio=0.1).save(
             IOS_OUT / f"iPhone_{i:02}.png", optimize=True)
         compose(shot, (1080, 1920), caption, screen_width=0.66, radius_ratio=0.1).save(
             PLAY_OUT / "phoneScreenshots" / f"{i:02}.png", optimize=True)
 
-    for i, (path, caption) in enumerate(zip(ipad, CAPTIONS), start=1):
+    for i, (path, caption) in enumerate(zip(ipad, CAPTIONS.values()), start=1):
         compose(Image.open(path), (2064, 2752), caption, screen_width=0.8, radius_ratio=0.03).save(
             IOS_OUT / f"iPad_{i:02}.png", optimize=True)
 
-    feature_graphic(Image.open(iphone[2])).save(PLAY_OUT / "featureGraphic.png", optimize=True)
-    feature_graphic(Image.open(iphone[2]), (1200, 630)).save(SITE_OUT / "og.png", optimize=True)
+    feature_graphic(playing).save(PLAY_OUT / "featureGraphic.png", optimize=True)
+    feature_graphic(playing, (1200, 630)).save(SITE_OUT / "og.png", optimize=True)
     Image.open(ROOT / "assets" / "icons" / "app_icon_1024.png").convert("RGB").resize(
         (512, 512), Image.LANCZOS).save(PLAY_OUT / "icon.png", optimize=True)
     print(f"Framed {len(iphone)} iPhone, {len(ipad)} iPad, Play, and site images.")

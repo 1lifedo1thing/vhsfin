@@ -169,7 +169,6 @@ def home() -> str:
     </div>
   </section>
   <section class="about" id="about">
-    <p class="kicker">Introducing</p>
     <h1>VHSFin</h1>
     <p class="tagline">A nostalgic, fully functioning<br>Jellyfin client.</p>
     <p class="copy">Your movies and shows become VHS tapes on a shelf. Pick one, watch it slide into the deck, and press play on a glowing CRT. Rewind, fast-forward, eject. Free, no ads, open source.</p>
