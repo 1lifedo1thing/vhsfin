@@ -17,8 +17,8 @@ class DeckSfx {
     _shuttle.setVolume(0.55 * _mix);
     // One preloaded player per clip: starting a clip is then a seek + resume
     // with no fetch/decode in the way, so it lands on its animation beat.
-    _insert = _preloaded('sounds/vhs_insert.ogg');
-    _eject = _preloaded('sounds/vhs_eject.ogg');
+    _insert = _preloaded('sounds/vhs_insert.m4a');
+    _eject = _preloaded('sounds/vhs_eject.m4a');
     _ui = {
       for (final (sound, files) in const [
         (DeckUiSound.tick, ['ui_tick_1', 'ui_tick_2', 'ui_tick_3']),
@@ -106,10 +106,10 @@ class DeckSfx {
     return player;
   }
 
-  Future<void> playInsert() => _fire(_insert, 'sounds/vhs_insert.ogg');
+  Future<void> playInsert() => _fire(_insert, 'sounds/vhs_insert.m4a');
 
   /// Starts the eject clunk (does not wait for the clip to finish).
-  Future<void> playEject() => _fire(_eject, 'sounds/vhs_eject.ogg');
+  Future<void> playEject() => _fire(_eject, 'sounds/vhs_eject.m4a');
 
   Future<void> _fire(AudioPlayer player, String asset) async {
     if (!enabled) return;
@@ -125,9 +125,9 @@ class DeckSfx {
     }
   }
 
-  Future<void> startFastForward() => _playShuttle('sounds/vhs_ff.ogg');
+  Future<void> startFastForward() => _playShuttle('sounds/vhs_ff.wav');
 
-  Future<void> startRewind() => _playShuttle('sounds/vhs_rew.ogg');
+  Future<void> startRewind() => _playShuttle('sounds/vhs_rew.wav');
 
   Future<void> stopShuttle() async {
     try {

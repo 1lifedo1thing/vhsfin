@@ -41,10 +41,10 @@ flutter:
     - assets/branding/crt-90s.png
     - assets/branding/crt-icon-cutout-v3.png
     - assets/branding/walnut.jpg
-    - assets/sounds/vhs_insert.ogg
-    - assets/sounds/vhs_eject.ogg
-    - assets/sounds/vhs_ff.ogg
-    - assets/sounds/vhs_rew.ogg
+    - assets/sounds/vhs_insert.m4a
+    - assets/sounds/vhs_eject.m4a
+    - assets/sounds/vhs_ff.wav
+    - assets/sounds/vhs_rew.wav
     - assets/sounds/ui_tick_1.wav
     - assets/sounds/ui_tick_2.wav
     - assets/sounds/ui_tick_3.wav

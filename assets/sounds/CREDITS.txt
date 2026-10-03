@@ -1,16 +1,18 @@
 # Sound credits (CC0 / public domain — no attribution required)
+# iOS cannot decode Ogg: one-shots are AAC (.m4a); the looped shuttle sounds
+# are mono WAV so the loop point stays gapless.
 # Source: BigSoundBank — author Pierre SIBAN — https://bigsoundbank.com/
 #
-# vhs_insert.ogg  — VCR: Cassette Insertion (#2690)
+# vhs_insert.m4a  — VCR: Cassette Insertion (#2690)
 #   https://bigsoundbank.com/vcr-cassette-insertion-s2690.html
 #
-# vhs_eject.ogg   — VCR: cassette output (#2694), lead-in trimmed (~1.4s)
+# vhs_eject.m4a   — VCR: cassette output (#2694), lead-in trimmed (~1.4s)
 #   https://bigsoundbank.com/vcr-cassette-output-s2694.html
 #
-# vhs_ff.ogg      — VCR: forward (#2692), trimmed to 8s + looped in app
+# vhs_ff.wav      — VCR: forward (#2692), trimmed to 8s + looped in app
 #   https://bigsoundbank.com/vcr-forward-s2692.html
 #
-# vhs_rew.ogg     — VCR: rewind (#2693), trimmed to 8s + looped in app
+# vhs_rew.wav     — VCR: rewind (#2693), trimmed to 8s + looped in app
 #   https://bigsoundbank.com/vcr-rewind-s2693.html
 #
 # Press sounds, cut from the clips above (also CC0):
