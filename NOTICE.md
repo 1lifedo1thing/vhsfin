@@ -19,5 +19,6 @@ As allowed by GPL section 7(e), this license grants no rights to use the tradema
 
 - **Fonts:** Nunito, Bungee, and VT323 are licensed under the SIL Open Font License. See the `OFL-*.txt` files in [assets/fonts](assets/fonts).
 - **Sounds:** credits and licenses are in [assets/sounds/CREDITS.txt](assets/sounds/CREDITS.txt).
-- **Cover art:** VHSFin bundles no movie artwork. Sleeve scans fetched at runtime from Internet Archive, or optionally VHSCollector, belong to their respective rights holders.
+- **Demo shelf:** the open movies and the sleeves made for them are based on Blender Foundation films and artwork under Creative Commons Attribution licenses; see [docs/demo-sleeves.md](docs/demo-sleeves.md).
+- **Cover art:** VHSFin bundles no artwork for other movies. Sleeve scans fetched at runtime from Internet Archive, or optionally VHSCollector, belong to their respective rights holders.
 - **Jellyfin:** Jellyfin is a trademark of the Jellyfin project. VHSFin is an independent client, not affiliated with or endorsed by Jellyfin.

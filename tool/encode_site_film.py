@@ -21,8 +21,8 @@ OUT = ROOT / "site" / "vhsfin" / "media"
 
 CROP = (1320, 2065, 0, 400)  # w, h, x, y on the capture: TV top to shelf bottom
 SIZE = (800, 1252)           # output, same aspect
-INTRO = (35.0, 5.5)          # start, duration: tape flight, title card, picture
-LOOP = (52.0, 12.0)          # the meadow, then the bird
+INTRO = (38.30, 5.55)        # start, duration: tape flight, title card, picture
+LOOP = (55.25, 12.0)         # the meadow, then the bird
 
 
 def edge_mask(path: Path) -> None:

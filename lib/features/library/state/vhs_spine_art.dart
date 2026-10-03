@@ -3,9 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/build_flags.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
+import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/library/state/vhs_art_rejects.dart';
+
+/// Bundled sleeves for the open-movie demo shelf (`assets/demo_sleeves/`):
+/// a dedicated spine and a front cover per film.
+VhsSpineArt? demoSleeveArt(Tape tape) {
+  const prefix = 'demo-';
+  if (!tape.id.startsWith(prefix)) return null;
+  final slug = tape.id.substring(prefix.length);
+  const base = '${VhsImageCache.assetScheme}assets/demo_sleeves';
+  return VhsSpineArt(
+    imageUrl: '$base/$slug-spine.webp',
+    centerWidthFraction: 1,
+    frontImageUrl: '$base/$slug-front.webp',
+  );
+}
 
 final vhsCoverResolverProvider = Provider<VhsCoverResolver>((ref) {
   final useCollector = ref.watch(
@@ -42,8 +57,9 @@ final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
     return VhsSpineArt(imageUrl: tape.boxImageUrl!);
   }
 
-  // Open-movie samples never had a retail VHS release; skip remote lookups.
-  if (tape.isDemo) return null;
+  // Open-movie samples never had a retail VHS release: they get the bundled
+  // sleeves made for them, and never a remote lookup.
+  if (tape.isDemo) return demoSleeveArt(tape);
 
   final art = await ref
       .watch(vhsCoverResolverProvider)

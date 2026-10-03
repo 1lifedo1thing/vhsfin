@@ -11,8 +11,16 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 ///
 /// On web, disk resize/fetch hits CORS for Archive.org / VHSCollector, while
 /// HTML `<img>` loads work — so web warms via [precacheImage] only.
+///
+/// URLs starting with [assetScheme] name bundled images (the demo shelf's
+/// sleeves) and skip the network and disk cache entirely.
 class VhsImageCache {
   VhsImageCache._();
+
+  static const String assetScheme = 'asset:';
+
+  static String? _assetPath(String url) =>
+      url.startsWith(assetScheme) ? url.substring(assetScheme.length) : null;
 
   static const String key = 'vhsfin_sleeve_art_v2';
 
@@ -26,19 +34,21 @@ class VhsImageCache {
   static final CacheManager manager = VhsArtCacheManager();
 
   static ImageProvider provider(String url, {int? cacheHeight}) {
+    final height = cacheHeight ?? sharedDecodeHeight;
+    final asset = _assetPath(url);
+    if (asset != null) return ResizeImage(AssetImage(asset), height: height);
     final network = CachedNetworkImageProvider(
       url,
       cacheManager: manager,
       maxHeight: kIsWeb ? null : diskMaxHeight,
       maxWidth: kIsWeb ? null : diskMaxWidth,
     );
-    final height = cacheHeight ?? sharedDecodeHeight;
     return ResizeImage(network, height: height);
   }
 
   /// Ensure [url] is in Flutter's image cache (and disk cache on mobile).
   static Future<void> warm(String url, {BuildContext? context}) async {
-    if (!kIsWeb) {
+    if (!kIsWeb && _assetPath(url) == null) {
       try {
         final imageManager = manager as VhsArtCacheManager;
         await imageManager
@@ -54,6 +64,10 @@ class VhsImageCache {
 
   /// Drop memory + disk copies after a sleeve is marked wrong.
   static Future<void> evict(String url) async {
+    if (_assetPath(url) != null) {
+      imageCache.evict(provider(url));
+      return;
+    }
     await CachedNetworkImage.evictFromCache(url, cacheManager: manager);
     imageCache.evict(provider(url));
     try {
@@ -73,6 +87,19 @@ class VhsImageCache {
     Widget? placeholder,
     Duration fadeIn = Duration.zero,
   }) {
+    if (_assetPath(url) != null) {
+      return Image(
+        image: provider(url, cacheHeight: memCacheHeight),
+        fit: fit,
+        width: width,
+        height: height,
+        alignment: alignment,
+        filterQuality: filterQuality,
+        errorBuilder: (context, error, _) =>
+            errorBuilder?.call(context, url, error) ??
+            const ColoredBox(color: Colors.black),
+      );
+    }
     return CachedNetworkImage(
       imageUrl: url,
       cacheManager: manager,

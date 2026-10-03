@@ -46,6 +46,7 @@ flutter:
     - assets/branding/crt-90s.png
     - assets/branding/crt-icon-cutout-v3.png
     - assets/branding/walnut.jpg
+    - assets/demo_sleeves/
     - assets/sounds/vhs_insert.m4a
     - assets/sounds/vhs_eject.m4a
     - assets/sounds/vhs_ff.wav
