@@ -48,7 +48,7 @@ Future<T?> showDeckPanelSheet<T>(
                         ? SingleChildScrollView(
                             padding: EdgeInsets.fromLTRB(
                               18,
-                              20,
+                              12,
                               18,
                               22 + bottom,
                             ),
@@ -57,7 +57,7 @@ Future<T?> showDeckPanelSheet<T>(
                         : Padding(
                             padding: EdgeInsets.fromLTRB(
                               18,
-                              20,
+                              12,
                               18,
                               16 + bottom,
                             ),
@@ -225,108 +225,13 @@ class _ScrewPainter extends CustomPainter {
   bool shouldRepaint(_ScrewPainter oldDelegate) => false;
 }
 
-/// Glowing fluorescent display window — the panel's title.
-class DeckDisplay extends StatelessWidget {
-  const DeckDisplay({super.key, required this.text, this.detail});
-
-  final String text;
-
-  /// Dimmer readout on the right, like a channel or counter.
-  final String? detail;
-
-  static TextStyle style(double size, {double alpha = 1}) => TextStyle(
-    fontFamily: 'VT323',
-    fontSize: size,
-    height: 1,
-    letterSpacing: size * 0.1,
-    color: VhsColors.accent.withValues(alpha: alpha),
-    shadows: [
-      Shadow(
-        color: VhsColors.accent.withValues(alpha: 0.6 * alpha),
-        blurRadius: 8,
-      ),
-    ],
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 9, 14, 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF030607), Color(0xFF081012)],
-        ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x14FFFFFF), offset: Offset(0, 1)),
-        ],
-        border: Border.all(),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: style(28),
-            ),
-          ),
-          if (detail != null) ...[
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                detail!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: style(18, alpha: 0.65),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Display window plus a slim close button: the header of a deck sheet.
-class DeckPanelHeader extends StatelessWidget {
-  const DeckPanelHeader({
-    super.key,
-    required this.title,
-    this.detail,
-    this.onClose,
-  });
-
-  final String title;
-  final String? detail;
-  final VoidCallback? onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: DeckDisplay(text: title, detail: detail),
-        ),
-        if (onClose != null) ...[
-          const SizedBox(width: 6),
-          DeckCloseButton(onPressed: onClose!),
-        ],
-      ],
-    );
-  }
-}
-
 /// A slim title row — silkscreened name, optional actions, and a close X.
 /// For sheets where the content, not the chrome, should lead.
 class DeckSheetHeader extends StatelessWidget {
   const DeckSheetHeader({
     super.key,
     required this.title,
-    required this.onClose,
+    this.onClose,
     this.detail,
     this.actions = const [],
   });
@@ -334,7 +239,9 @@ class DeckSheetHeader extends StatelessWidget {
   final String title;
   final String? detail;
   final List<Widget> actions;
-  final VoidCallback onClose;
+
+  /// Dialogs that close themselves leave this out (no X).
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -376,7 +283,11 @@ class DeckSheetHeader extends StatelessWidget {
           ),
         ),
         ...actions,
-        DeckCloseButton(onPressed: onClose),
+        if (onClose != null)
+          DeckCloseButton(onPressed: onClose!)
+        // Same height as a row with the X, so titles line up across sheets.
+        else
+          const SizedBox(height: 40),
       ],
     );
   }

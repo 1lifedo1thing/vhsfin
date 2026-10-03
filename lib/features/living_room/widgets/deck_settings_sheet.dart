@@ -122,7 +122,7 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DeckPanelHeader(title: 'SETTINGS', onClose: _close),
+        DeckSheetHeader(title: 'SETTINGS', onClose: _close),
         const DeckLabel('SHELF'),
         Row(
           children: [
@@ -342,7 +342,7 @@ Future<void> showShelfSortSheet(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DeckPanelHeader(
+        DeckSheetHeader(
           title: 'SORT',
           detail: current.buttonLabel,
           onClose: () => Navigator.of(context).pop(),

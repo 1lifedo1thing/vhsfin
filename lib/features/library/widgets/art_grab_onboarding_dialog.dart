@@ -26,15 +26,15 @@ class ArtGrabOnboardingDialog extends StatelessWidget {
         child: Material(
           type: MaterialType.transparency,
           child: DeckPanel(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DeckDisplay(
-                  text: _finished ? 'SHELVES STOCKED' : 'GRABBING VHS ART',
+                DeckSheetHeader(
+                  title: _finished ? 'SHELVES STOCKED' : 'GRABBING VHS ART',
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 Text('VHSFin', style: vhsBrandStyle(size: 28)),
                 const SizedBox(height: 10),
                 Text(

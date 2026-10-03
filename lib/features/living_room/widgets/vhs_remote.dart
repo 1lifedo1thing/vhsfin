@@ -93,28 +93,11 @@ class VhsRemoteSheet extends StatelessWidget {
               radius: 30,
               screws: false,
               attachedToBottom: true,
-              padding: EdgeInsets.fromLTRB(22, 14, 22, 22 + bottom),
+              padding: EdgeInsets.fromLTRB(22, 12, 22, 22 + bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // IR window.
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF3A0D0D), Color(0xFF140404)],
-                        ),
-                        border: Border.all(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
                   StreamBuilder<bool>(
                     stream: playing,
                     initialData: initiallyPlaying,
@@ -123,13 +106,14 @@ class VhsRemoteSheet extends StatelessWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          DeckDisplay(
-                            text: live
+                          DeckSheetHeader(
+                            title: live
                                 ? (title ?? 'PLAYING').toUpperCase()
                                 : 'NO TAPE',
                             detail: live ? (running ? 'PLAY' : 'PAUSE') : null,
+                            onClose: () => Navigator.of(context).pop(),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 14),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             crossAxisAlignment: CrossAxisAlignment.end,
