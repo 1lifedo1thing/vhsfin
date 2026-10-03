@@ -498,7 +498,15 @@ class _VhsSleeveCropState extends State<VhsSleeveCrop> {
             ? 1.0
             : widget.widthFraction.clamp(0.02, 1.0);
         if (fraction >= 0.99) {
-          return VhsImageCache.image(url: url, width: w, height: h);
+          // A dedicated spine fills its slot. Scans run ~1:5–1:8; fitting by
+          // height left dark side bars, so a leaning tape seemed to stop
+          // short of the neighbour it rests on.
+          return VhsImageCache.image(
+            url: url,
+            width: w,
+            height: h,
+            fit: BoxFit.fill,
+          );
         }
 
         return ClipRect(

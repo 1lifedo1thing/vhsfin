@@ -4,11 +4,14 @@ Writes site/vhsfin/media/intro.mp4 (tape into the deck, title card, picture up),
 loop.mp4 (the movie playing), and poster.webp (intro's first frame). The TV and
 shelf are cropped from the 1320x2868 capture and their edges melt into black.
 
-Needs ffmpeg and Pillow. Adjust the cut points if you re-record the film.
+Needs ffmpeg and Pillow. The intro starts on the first frame after the tape
+sheet has slid off screen, found automatically; the loop follows at a fixed
+offset into the movie.
 """
 
 from __future__ import annotations
 
+import io
 import subprocess
 import tempfile
 from pathlib import Path
@@ -21,8 +24,47 @@ OUT = ROOT / "site" / "vhsfin" / "media"
 
 CROP = (1320, 2065, 0, 400)  # w, h, x, y on the capture: TV top to shelf bottom
 SIZE = (800, 1252)           # output, same aspect
-INTRO = (37.80, 5.55)        # start, duration: tape flight, title card, picture
-LOOP = (54.75, 12.0)         # the meadow, then the bird
+INTRO_LENGTH = 5.55         # tape flight, title card, picture
+LOOP_AFTER = 16.95           # seconds from the intro start to the loop: the meadow
+LOOP_LENGTH = 12.0           # ...then the bird
+
+
+def frame_strip(t: float) -> Image.Image:
+    """The strip under the shelf at time t, where the tape sheet slides out."""
+    png = subprocess.run([
+        "ffmpeg", "-loglevel", "error", "-ss", f"{t:.2f}", "-i", str(FILM), "-frames:v", "1",
+        "-vf", "crop=1320:300:0:2160", "-f", "image2pipe", "-vcodec", "png", "-",
+    ], capture_output=True, check=True).stdout
+    return Image.open(io.BytesIO(png)).convert("L")
+
+
+def sheet_cleared_at() -> float:
+    """First moment after the tape sheet covers the shelf that it's fully gone.
+
+    While the sheet is up the strip is its dark panel; once it has slid away the
+    strip shows the lit shelf and tapes.
+    """
+    def lit(t: float) -> float:
+        strip = frame_strip(t)
+        return sum(1 for v in strip.tobytes() if v > 45) / (strip.width * strip.height)
+
+    # Dark spells: the app's launch screen, then the tape sheet. The sheet is
+    # the last one, so take the last dark-to-lit change.
+    t, dark, cleared = 10.0, False, None
+    while t < 70:
+        value = lit(t)
+        if value < 0.1:
+            dark = True
+        elif dark and value > 0.3:
+            cleared, dark = t, False
+        t += 0.25
+    if cleared is not None:
+        t = cleared
+        # Step back to the exact frame, then one more for the sheet's edge.
+        while lit(t - 0.05) > 0.3:
+            t -= 0.05
+        return round(t + 0.05, 2)
+    raise SystemExit("Couldn't find the tape sheet in the film")
 
 
 def edge_mask(path: Path) -> None:
@@ -60,8 +102,10 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         mask = Path(tmp) / "mask.png"
         edge_mask(mask)
-        encode(*INTRO, mask, OUT / "intro.mp4")
-        encode(*LOOP, mask, OUT / "loop.mp4")
+        start = sheet_cleared_at()
+        print(f"intro starts at {start:.2f}s")
+        encode(start, INTRO_LENGTH, mask, OUT / "intro.mp4")
+        encode(start + LOOP_AFTER, LOOP_LENGTH, mask, OUT / "loop.mp4")
         frame = Path(tmp) / "poster.png"
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(OUT / "intro.mp4"),
                         "-frames:v", "1", str(frame)], check=True)

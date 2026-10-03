@@ -32,6 +32,9 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     await prefs.setBool(ArtOnboardingDoneNotifier.prefsKey, true);
+    // Oldest first puts Big Buck Bunny second, so taking it leaves a gap
+    // mid-shelf rather than an empty far left.
+    await prefs.setString('vhsfin.shelf_sort', 'yearOldest');
 
     await app.main();
     await wait(tester, 5000);

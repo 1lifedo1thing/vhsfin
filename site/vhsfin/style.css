@@ -61,15 +61,23 @@ code { font-size: 0.92em; background: #0e1113; border: 1px solid #1f2427; border
 .about h1 { margin: 0 0 26px; font: 400 clamp(64px, 15vw, 140px)/0.95 "Bungee", sans-serif; letter-spacing: 0.005em; }
 .tagline { margin: 0 0 26px; font-size: clamp(27px, 4.6vw, 46px); font-weight: 300; line-height: 1.14; letter-spacing: -0.01em; }
 .copy { margin: 0 auto; max-width: 31em; color: var(--muted); font-size: clamp(17px, 2vw, 20px); line-height: 1.55; }
-.stores { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 44px; }
-.store {
-  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-  min-width: 176px; min-height: 58px; padding: 10px 26px; border-radius: 999px;
-  border: 1px solid #343a3e; color: var(--ink); text-decoration: none; font-size: 17px; font-weight: 500; line-height: 1.2;
+.links { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 12px; margin-top: 44px; }
+.link { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px;
+  border: 1px solid #343a3e; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 500;
+  transition: border-color 0.2s, background-color 0.2s;
 }
-a.store { background: var(--ink); border-color: var(--ink); color: #000; }
-a.store:hover { background: #fff; color: #000; }
-.store small { margin-top: 2px; color: var(--faint); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+.pill svg { width: 19px; height: 19px; fill: currentColor; flex: none; }
+a.pill:hover { color: var(--ink); border-color: #6b7479; background: rgba(255, 255, 255, 0.04); }
+.link.soon .pill { color: var(--faint); border-color: #202528; cursor: default; }
+.link small { color: var(--faint); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+@media (max-width: 500px) {
+  .links { gap: 8px; }
+  .pill { gap: 7px; min-height: 46px; padding: 0 14px; font-size: 14px; }
+  .pill svg { width: 16px; height: 16px; }
+  .link small { font-size: 10px; }
+}
 
 /* ---------- Scroll choreography (browsers with scroll-driven animations) ---------- */
 
