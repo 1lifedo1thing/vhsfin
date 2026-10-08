@@ -127,7 +127,11 @@ class LivingRoomView extends StatelessWidget {
             ),
             child: SafeArea(
               child: LayoutBuilder(
-                builder: (context, constraints) {
+                builder: (context, outer) {
+                  // Tablets draw the whole console larger; everything below is
+                  // laid out at the unscaled size, then scaled evenly.
+                  final scale = consoleScaleFor(outer.biggest);
+                  final constraints = outer / scale;
                   const maxConsole = 800.0;
                   final wide = constraints.maxWidth > 820;
                   final pad = wide ? 32.0 : 12.0;
@@ -142,107 +146,120 @@ class LivingRoomView extends StatelessWidget {
                     (constraints.maxHeight * 0.53).clamp(300.0, 530.0),
                   ].reduce(math.min);
 
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.only(top: wide ? 28 : 16, bottom: 40),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: maxConsole + pad * 2,
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                pad + 8,
-                                0,
-                                pad + 4,
-                                14,
+                  final console = Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: maxConsole + pad * 2,
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              pad + 8,
+                              0,
+                              pad + 4,
+                              14,
+                            ),
+                            child: Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'HOME VIDEO',
+                                    style: TextStyle(
+                                      color: VhsColors.inkMuted,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 3,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    DeckFeedback.tap();
+                                    onShowRemote();
+                                  },
+                                  tooltip: 'Remote',
+                                  color: VhsColors.inkMuted,
+                                  icon: const Icon(
+                                    Icons.settings_remote_rounded,
+                                    size: 21,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    DeckFeedback.tap();
+                                    onShowSettings();
+                                  },
+                                  tooltip: 'Settings',
+                                  color: VhsColors.inkMuted,
+                                  icon: const Icon(
+                                    Icons.tune_rounded,
+                                    size: 21,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CabinetScope(
+                            style: cabinetStyle,
+                            child: _EntertainmentCenter(
+                              maxTvWidth: maxTv,
+                              sidePadding: pad,
+                              vcr: VcrBox(
+                                deck: deck,
+                                player: player,
+                                surfaceEpoch: surfaceEpoch,
+                                surfaceOwner: surfaceOwner,
+                                crtSkin: crtSkin,
+                                slotKey: flightAnchors.slotKey,
+                                flyingTapeId: flyingTapeId,
+                                rewinding: rewinding,
+                                onRew: onRew,
+                                onRewEnd: onRewEnd,
+                                onPlay: onPlay,
+                                onFf: onFf,
+                                onFfEnd: onFfEnd,
+                                onEject: onEject,
+                                onFull: player.enterFullscreen,
+                                onRemote: onShowRemote,
+                                videoSurface: videoSurface,
                               ),
-                              child: Row(
-                                children: [
-                                  const Expanded(
-                                    child: Text(
-                                      'HOME VIDEO',
-                                      style: TextStyle(
-                                        color: VhsColors.inkMuted,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 3,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      DeckFeedback.tap();
-                                      onShowRemote();
-                                    },
-                                    tooltip: 'Remote',
-                                    color: VhsColors.inkMuted,
-                                    icon: const Icon(
-                                      Icons.settings_remote_rounded,
-                                      size: 21,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      DeckFeedback.tap();
-                                      onShowSettings();
-                                    },
-                                    tooltip: 'Settings',
-                                    color: VhsColors.inkMuted,
-                                    icon: const Icon(
-                                      Icons.tune_rounded,
-                                      size: 21,
-                                    ),
-                                  ),
-                                ],
+                              bookshelf: _BookshelfBody(
+                                shelvesLoading: shelvesLoading,
+                                shelvesError: shelvesError,
+                                shelves: shelves,
+                                deck: deck,
+                                vhsOnly: vhsOnly,
+                                flightAnchors: flightAnchors,
+                                flyingTapeId: flyingTapeId,
+                                flightSourceKey: flightSourceKey,
+                                resolveSpineArt: resolveSpineArt,
+                                onTapeTap: onTapeTap,
+                                onConnectPrompt: onConnectPrompt,
+                                onRetryShelves: onRetryShelves,
+                                shelvesRetrying: shelvesRetrying,
                               ),
                             ),
-                            CabinetScope(
-                              style: cabinetStyle,
-                              child: _EntertainmentCenter(
-                                maxTvWidth: maxTv,
-                                sidePadding: pad,
-                                vcr: VcrBox(
-                                  deck: deck,
-                                  player: player,
-                                  surfaceEpoch: surfaceEpoch,
-                                  surfaceOwner: surfaceOwner,
-                                  crtSkin: crtSkin,
-                                  slotKey: flightAnchors.slotKey,
-                                  flyingTapeId: flyingTapeId,
-                                  rewinding: rewinding,
-                                  onRew: onRew,
-                                  onRewEnd: onRewEnd,
-                                  onPlay: onPlay,
-                                  onFf: onFf,
-                                  onFfEnd: onFfEnd,
-                                  onEject: onEject,
-                                  onFull: player.enterFullscreen,
-                                  onRemote: onShowRemote,
-                                  videoSurface: videoSurface,
-                                ),
-                                bookshelf: _BookshelfBody(
-                                  shelvesLoading: shelvesLoading,
-                                  shelvesError: shelvesError,
-                                  shelves: shelves,
-                                  deck: deck,
-                                  vhsOnly: vhsOnly,
-                                  flightAnchors: flightAnchors,
-                                  flyingTapeId: flyingTapeId,
-                                  flightSourceKey: flightSourceKey,
-                                  resolveSpineArt: resolveSpineArt,
-                                  onTapeTap: onTapeTap,
-                                  onConnectPrompt: onConnectPrompt,
-                                  onRetryShelves: onRetryShelves,
-                                  shelvesRetrying: shelvesRetrying,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
+                  );
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      top: (wide ? 28 : 16) * scale,
+                      bottom: 40 * scale,
+                    ),
+                    child: scale == 1
+                        ? console
+                        : FittedBox(
+                            fit: BoxFit.fitWidth,
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: constraints.maxWidth,
+                              child: console,
+                            ),
+                          ),
                   );
                 },
               ),
@@ -274,6 +291,12 @@ class LivingRoomView extends StatelessWidget {
     );
   }
 }
+
+/// How much larger tablets draw the living room. Phones and small tablets
+/// (shortest side under 760pt, e.g. iPad mini) keep the designed size; a
+/// 13-inch iPad gets about 1.36x so the TV and shelf fill the screen.
+double consoleScaleFor(Size size) =>
+    (size.shortestSide / 760).clamp(1.0, 1.45).toDouble();
 
 class _BookshelfBody extends StatelessWidget {
   const _BookshelfBody({

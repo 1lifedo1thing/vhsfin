@@ -147,18 +147,24 @@ class _TapeFlightOverlayState extends State<TapeFlightOverlay>
       sourceKey: widget.flightSourceKey,
     );
 
+    // The console may be drawn scaled (tablets); a spine's slot is its height
+    // plus 8, so its measured height gives the scale.
+    final scale = spineGlobal == null
+        ? 1.0
+        : (spineGlobal.height / (VhsSpine.nominalHeight + 8)).clamp(0.5, 3.0);
+
     var slot = _localRect(slotGlobal) ?? _fallbackSlotLocal();
     slot = Rect.fromCenter(
       center: slot.center,
-      width: math.min(slot.width, VhsSpine.nominalHeight * 1.5),
+      width: math.min(slot.width, VhsSpine.nominalHeight * 1.5 * scale),
       height: slot.height,
     );
 
     var spine = _localRect(spineGlobal) ?? _fallbackShelfLocal(slot);
     spine = Rect.fromCenter(
       center: spine.center,
-      width: VhsSpine.nominalWidth,
-      height: math.min(spine.height, VhsSpine.nominalHeight),
+      width: VhsSpine.nominalWidth * scale,
+      height: math.min(spine.height, VhsSpine.nominalHeight * scale),
     );
 
     _notifyFlyingTapeId(tape.id);

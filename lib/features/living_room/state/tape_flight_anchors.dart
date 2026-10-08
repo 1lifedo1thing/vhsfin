@@ -26,8 +26,12 @@ class TapeFlightAnchors {
     if (ctx == null) return null;
     final box = ctx.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize || !box.attached) return null;
-    final topLeft = box.localToGlobal(Offset.zero);
-    return topLeft & box.size;
+    // Through every ancestor transform, so a scaled console (tablets) reports
+    // the size it's actually drawn at.
+    return MatrixUtils.transformRect(
+      box.getTransformTo(null),
+      Offset.zero & box.size,
+    );
   }
 
   /// Prefer [sourceKey]; else first mounted instance for [tapeId] (top shelf).
