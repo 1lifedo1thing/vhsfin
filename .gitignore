@@ -78,3 +78,7 @@ fastlane/*.json
 # Site build output
 /site/*/dist/
 /site/*/.netlify/
+
+# Fastlane gems (make gems)
+/vendor/bundle/
+/.bundle/

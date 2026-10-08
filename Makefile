@@ -4,7 +4,9 @@ VHSCOLLECTOR ?= false
 DEFINES = --dart-define=VHSFIN_VHSCOLLECTOR=$(VHSCOLLECTOR)
 PYTHON ?= python3
 
-.PHONY: help build serve stop restart web demo demo-onboarding
+.PHONY: help build serve stop restart web demo demo-onboarding \
+	gems ios-beta ios-listing ios-release android-internal android-listing android-ship android-production \
+	store-screenshots site-film site
 
 help:
 	@echo "VHSFin targets:"
@@ -15,6 +17,17 @@ help:
 	@echo "  make web              alias for restart"
 	@echo "  make demo             build + serve with open-movie demo shelves (no server)"
 	@echo "  make demo-onboarding  how to re-trigger the VHS art-grab popup"
+	@echo ""
+	@echo "Release (secrets in .env; see .env.example and docs/release-checklist.md):"
+	@echo "  make gems             install Fastlane (Homebrew Ruby, into vendor/bundle)"
+	@echo "  make ios-beta         build and upload to TestFlight"
+	@echo "  make ios-listing      upload App Store text and screenshots"
+	@echo "  make ios-release      build, upload, and submit for review"
+	@echo "  make android-ship     Play listing + images + internal-track draft"
+	@echo "  make android-production  signed AAB to production review"
+	@echo "  make store-screenshots   capture and frame store screenshots"
+	@echo "  make site-film        re-record and re-cut the website film"
+	@echo "  make site             build the website into site/vhsfin/dist"
 
 build:
 	flutter build web --release $(DEFINES)
@@ -46,3 +59,46 @@ demo-onboarding:
 	@echo "      or wipe app prefs on device/desktop.)"
 	@echo "  4. Reload — the warm pass + popup runs again."
 	@echo ""
+
+# --- Release -----------------------------------------------------------------
+# Fastlane needs Ruby >= 3.1; macOS ships 2.6, so use Homebrew's (brew install ruby).
+RUBY_PATH := /opt/homebrew/opt/ruby/bin:/opt/homebrew/bin
+BUNDLE := PATH="$(RUBY_PATH):$$PATH" BUNDLE_PATH="$(CURDIR)/vendor/bundle" bundle
+# Pillow for the screenshot and film scripts.
+PY_TOOLS ?= python3
+
+gems:
+	$(BUNDLE) install
+
+ios-beta: gems
+	$(BUNDLE) exec fastlane ios beta
+
+ios-listing: gems
+	$(BUNDLE) exec fastlane ios listing
+
+ios-release: gems
+	$(BUNDLE) exec fastlane ios release
+
+android-internal: gems
+	$(BUNDLE) exec fastlane android internal
+
+android-listing: gems
+	$(BUNDLE) exec fastlane android listing
+
+android-ship: gems
+	$(BUNDLE) exec fastlane android ship
+
+android-production: gems
+	$(BUNDLE) exec fastlane android production
+
+store-screenshots:
+	tool/store_screenshots.sh "iPhone 18 Pro Max" iphone
+	tool/store_screenshots.sh "iPad Pro 13-inch (M5)" ipad
+	$(PY_TOOLS) tool/frame_screenshots.py
+
+site-film:
+	tool/site_film.sh
+	$(PY_TOOLS) tool/encode_site_film.py
+
+site:
+	cd site/vhsfin && python3 build.py
