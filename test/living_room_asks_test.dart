@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
@@ -174,6 +177,49 @@ void main() {
     final spine = tester.widget<VhsSpine>(find.byType(VhsSpine));
     expect(spine.ghosted, isTrue);
     expect(spine.selected, isFalse);
+  });
+
+  testWidgets('shelves stay a compact loader until their art is warm', (
+    tester,
+  ) async {
+    final art = Completer<VhsSpineArt?>();
+    final tapes = [
+      for (var i = 0; i < 40; i++)
+        Tape(id: 'movie$i', title: 'Movie $i', streamUrl: 'stream'),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: BookshelfView(
+              shelves: [Shelf(id: 'movies', title: 'Movies', items: tapes)],
+              loadedId: null,
+              loadedSeriesId: null,
+              vhsOnly: false,
+              flightAnchors: TapeFlightAnchors(),
+              flyingTapeId: null,
+              flightSourceKey: null,
+              resolveSpineArt: (_) => art.future,
+              onTapeTap: (_, _) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(ShelfLoadingBox), findsOneWidget);
+    expect(find.byType(VhsSpine), findsNothing, reason: 'no tall empty bays');
+    expect(tester.getSize(find.byType(BookshelfView)).height, 180);
+
+    art.complete(null);
+    await tester.pump();
+    // Let the crossfade finish; the spinner never settles on its own.
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(ShelfLoadingBox), findsNothing);
+    expect(find.byType(VhsSpine), findsWidgets);
   });
 
   test('ShelfDisplayPrefs defaults vhsOnly ON for new installs', () {

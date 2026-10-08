@@ -56,26 +56,54 @@ class BookshelfView extends StatelessWidget {
     if (shelves.isEmpty) {
       return const Text('No tapes on these shelves yet.');
     }
-    return Column(
-      children: [
-        for (var i = 0; i < shelves.length; i++) ...[
-          if (i > 0) const SizedBox(height: 14),
-          _ShelfBlock(
-            shelf: shelves[i],
-            loadedId: loadedId,
-            loadedSeriesId: loadedSeriesId,
-            embedded: embedded,
-            showTitle: !embedded || shelves.length > 1,
-            vhsOnly: vhsOnly,
-            flightAnchors: flightAnchors,
-            flyingTapeId: flyingTapeId,
-            flightSourceKey: flightSourceKey,
-            resolveSpineArt: resolveSpineArt,
-            onTapeTap: onTapeTap,
-            onConnectPrompt: onConnectPrompt,
-          ),
+    // One reveal for every shelf, so the bays appear together, at full height,
+    // with their art — not as tall empty bays waiting on sleeves.
+    final seen = <String>{};
+    final tapes = [
+      for (final shelf in shelves)
+        for (final tape in shelf.items)
+          if (seen.add(tape.id)) tape,
+    ];
+    return _ShelfArtReveal(
+      tapes: tapes,
+      resolveSpineArt: resolveSpineArt,
+      builder: (arts) => Column(
+        children: [
+          for (var i = 0; i < shelves.length; i++) ...[
+            if (i > 0) const SizedBox(height: 14),
+            _ShelfBlock(
+              shelf: shelves[i],
+              arts: arts,
+              loadedId: loadedId,
+              loadedSeriesId: loadedSeriesId,
+              embedded: embedded,
+              showTitle: !embedded || shelves.length > 1,
+              vhsOnly: vhsOnly,
+              flightAnchors: flightAnchors,
+              flyingTapeId: flyingTapeId,
+              flightSourceKey: flightSourceKey,
+              onTapeTap: onTapeTap,
+              onConnectPrompt: onConnectPrompt,
+            ),
+          ],
         ],
-      ],
+      ),
+    );
+  }
+}
+
+/// The compact loader the bookshelf shows before its tapes are ready — one
+/// size for every wait, so the bay doesn't jump between them.
+class ShelfLoadingBox extends StatelessWidget {
+  const ShelfLoadingBox({super.key, this.message = 'STAND BY'});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 180,
+      child: CrtLoadingIndicator(compact: true, message: message),
     );
   }
 }
@@ -83,6 +111,7 @@ class BookshelfView extends StatelessWidget {
 class _ShelfBlock extends StatelessWidget {
   const _ShelfBlock({
     required this.shelf,
+    required this.arts,
     required this.loadedId,
     required this.loadedSeriesId,
     required this.embedded,
@@ -91,12 +120,12 @@ class _ShelfBlock extends StatelessWidget {
     required this.flightAnchors,
     required this.flyingTapeId,
     required this.flightSourceKey,
-    required this.resolveSpineArt,
     required this.onTapeTap,
     this.onConnectPrompt,
   });
 
   final Shelf shelf;
+  final Map<String, VhsSpineArt?> arts;
   final String? loadedId;
   final String? loadedSeriesId;
   final bool embedded;
@@ -105,7 +134,6 @@ class _ShelfBlock extends StatelessWidget {
   final TapeFlightAnchors flightAnchors;
   final String? flyingTapeId;
   final String? flightSourceKey;
-  final Future<VhsSpineArt?> Function(Tape tape) resolveSpineArt;
   final void Function(Tape tape, String instanceKey) onTapeTap;
   final VoidCallback? onConnectPrompt;
 
@@ -152,31 +180,27 @@ class _ShelfBlock extends StatelessWidget {
                 rows.add(shelf.items.sublist(i, end));
               }
 
-              return _ShelfArtReveal(
-                tapes: shelf.items,
-                resolveSpineArt: resolveSpineArt,
-                builder: (arts) => Column(
-                  children: [
-                    for (var r = 0; r < rows.length; r++) ...[
-                      if (r > 0) const SizedBox(height: 10),
-                      _shelfBay(
-                        row: r,
-                        child: _ShelfTapeRow(
-                          shelfId: shelf.id,
-                          rowIndex: r,
-                          tapes: rows[r],
-                          arts: arts,
-                          loadedId: loadedId,
-                          loadedSeriesId: loadedSeriesId,
-                          flightAnchors: flightAnchors,
-                          flyingTapeId: flyingTapeId,
-                          flightSourceKey: flightSourceKey,
-                          onTap: onTapeTap,
-                        ),
+              return Column(
+                children: [
+                  for (var r = 0; r < rows.length; r++) ...[
+                    if (r > 0) const SizedBox(height: 10),
+                    _shelfBay(
+                      row: r,
+                      child: _ShelfTapeRow(
+                        shelfId: shelf.id,
+                        rowIndex: r,
+                        tapes: rows[r],
+                        arts: arts,
+                        loadedId: loadedId,
+                        loadedSeriesId: loadedSeriesId,
+                        flightAnchors: flightAnchors,
+                        flyingTapeId: flyingTapeId,
+                        flightSourceKey: flightSourceKey,
+                        onTap: onTapeTap,
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               );
             },
           ),
@@ -493,8 +517,11 @@ class _GhostSpineRow extends StatelessWidget {
   }
 }
 
-/// Holds the shelf at opacity 0 until every tape's sleeve bytes are warmed,
-/// then fades the whole bay in together.
+/// Holds the shelves back until every tape's sleeve bytes are warmed, then
+/// fades them in together. The first time, the shelves build offstage behind a
+/// compact loader so the cabinet doesn't grow to full height before there's
+/// anything to show; later re-warms (a filter change) keep the bays in place
+/// at opacity 0.
 class _ShelfArtReveal extends StatefulWidget {
   const _ShelfArtReveal({
     required this.tapes,
@@ -515,6 +542,7 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
   static const _budget = Duration(seconds: 12);
 
   var _visible = false;
+  var _revealed = false;
   String? _warmKey;
   int _warmGen = 0;
   Timer? _budgetTimer;
@@ -523,6 +551,11 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
   @override
   void initState() {
     super.initState();
+    if (widget.tapes.isEmpty) {
+      // Nothing to warm (empty or connect bays) — skip the loader entirely.
+      _visible = _revealed = true;
+      return;
+    }
     _scheduleWarm();
   }
 
@@ -575,7 +608,7 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
     }
     if (!mounted || gen != _warmGen || _warmKey != key) return;
     // One opacity fade for the whole bay — never drip-feed spine swaps.
-    setState(() => _visible = true);
+    setState(() => _visible = _revealed = true);
   }
 
   Future<void> _budgetGate() {
@@ -636,6 +669,18 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      children: [
+        // Built even while hidden: the spines' own image widgets start the
+        // sleeve loads. Loads begun only by the warm's precache never finish
+        // decoding on Android, so the shelf must not wait to build.
+        Offstage(offstage: !_revealed, child: _shelves()),
+        if (!_revealed) const ShelfLoadingBox(message: 'LOADING VHS ART'),
+      ],
+    );
+  }
+
+  Widget _shelves() {
+    return Stack(
       alignment: Alignment.center,
       children: [
         AnimatedOpacity(
@@ -647,23 +692,25 @@ class _ShelfArtRevealState extends State<_ShelfArtReveal> {
             child: widget.builder(_arts),
           ),
         ),
-        Positioned.fill(
-          child: IgnorePointer(
-            ignoring: _visible,
-            child: AnimatedOpacity(
-              opacity: _visible ? 0 : 1,
-              duration: _fade,
-              curve: Curves.easeOutCubic,
-              child: const ColoredBox(
-                color: Color(0x66000000),
-                child: CrtLoadingIndicator(
-                  compact: true,
-                  message: 'LOADING VHS ART',
+        // Only for re-warms; the first warm shows the compact loader instead.
+        if (_revealed)
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: _visible,
+              child: AnimatedOpacity(
+                opacity: _visible ? 0 : 1,
+                duration: _fade,
+                curve: Curves.easeOutCubic,
+                child: const ColoredBox(
+                  color: Color(0x66000000),
+                  child: CrtLoadingIndicator(
+                    compact: true,
+                    message: 'LOADING VHS ART',
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

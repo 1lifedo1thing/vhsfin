@@ -15,7 +15,6 @@ import 'package:vhsfin/features/living_room/state/tape_flight_anchors.dart';
 import 'package:vhsfin/features/living_room/state/vcr_deck_notifier.dart';
 import 'package:vhsfin/features/living_room/views/bookshelf_view.dart';
 import 'package:vhsfin/features/living_room/widgets/cabinet_material.dart';
-import 'package:vhsfin/features/living_room/widgets/crt_loading_indicator.dart';
 import 'package:vhsfin/features/living_room/widgets/html_video_fit_stub.dart'
     if (dart.library.js_interop) 'package:vhsfin/features/living_room/widgets/html_video_fit_web.dart';
 import 'package:vhsfin/features/living_room/widgets/letterboxed_video.dart';
@@ -310,13 +309,9 @@ class _BookshelfBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (shelvesLoading || shelves == null && shelvesError == null) {
-      return SizedBox(
-        height: 180,
-        child: CrtLoadingIndicator(
-          compact: true,
-          // A first try failed and another is on its way.
-          message: shelvesRetrying ? 'TRYING YOUR SERVER' : 'STAND BY',
-        ),
+      return ShelfLoadingBox(
+        // A first try failed and another is on its way.
+        message: shelvesRetrying ? 'TRYING YOUR SERVER' : 'STAND BY',
       );
     }
     if (shelvesError != null) {
