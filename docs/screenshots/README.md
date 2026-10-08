@@ -1,9 +1,10 @@
 # App screenshots
 
-These are captures of the running Flutter web app, not generated UI mockups:
+These are captures of the running app in demo mode on the iPhone simulator, not generated UI mockups:
 
-- `connect.png`: the welcome and connection form, 430 × 1000 viewport at 2×.
-- `living-room.png`: the living room with the demo shelf, 430 × 1000 viewport at 2×.
-- `desktop.png`: the same room on a 1280 × 720 laptop viewport.
+- `connect.png`: the welcome and connection form.
+- `living-room.png`: the living room with the demo shelf.
 
-The README's movie-night image is a separate generated brand illustration. These screenshots intentionally contain no account credentials or copyrighted movie artwork: the shelf is `make demo`'s Blender open movies (CC BY) with printed spines. When updating them, serve the demo build, capture the same viewport sizes with blank login fields and no signed-in account, and reduce them to a 256-colour palette to keep the repository small.
+They come from `tool/store_screenshots.sh` (raw captures in `screenshots/raw/iphone/`), scaled to 860 pixels wide and reduced to a 256-colour palette to keep the repository small. They contain no account credentials or third-party movie artwork: the shelf holds the Blender open movies (CC BY) in the sleeves made for VHSFin (see [demo-sleeves.md](../demo-sleeves.md)).
+
+The README's movie-night image is a separate generated brand illustration.

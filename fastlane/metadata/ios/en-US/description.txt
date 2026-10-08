@@ -24,3 +24,5 @@ FREE, PRIVATE, OPEN SOURCE
 No ads, no tracking, and no account with us. VHSFin talks to your server and to the Internet Archive for sleeve art, and nothing else. The source code is on GitHub under the GPL.
 
 VHSFin is an independent app and is not affiliated with the Jellyfin project.
+
+Screenshots show the demo shelf: Blender Foundation open movies (Big Buck Bunny, Sintel, Tears of Steel, and others), used under Creative Commons Attribution licenses, in sleeves made for VHSFin.
