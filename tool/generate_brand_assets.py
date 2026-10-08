@@ -282,9 +282,19 @@ def main():
             for entry in manifest['images']:
                 size = round(float(entry['size'].split('x')[0]) * float(entry['scale'].rstrip('x')))
                 export(ios_master, folder / entry['filename'], size)
+        # The launch screen isn't masked like the home-screen icon, so the
+        # opaque icon's smeared corners would show around the TV. Use the
+        # transparent casing on the storyboard's exact background instead.
+        icon_size, _, icon_color, _ = decode_png(ICON_SOURCE)
+        if icon_color != 6:
+            raise ValueError(f'{ICON_SOURCE} must be an RGBA PNG')
+        launch_background = scratch / 'launch_background.png'
+        write_solid_background(launch_background, icon_size)
+        launch_master = scratch / 'launch_master.png'
+        composite_launcher(launch_background, ICON_SOURCE, launch_master)
         for scale in (1, 2, 3):
             suffix = '' if scale == 1 else f'@{scale}x'
-            export(ios_master, f'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage{suffix}.png', 160 * scale)
+            export(launch_master, f'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage{suffix}.png', 160 * scale)
     print('Updated Flutter, Android, iOS, macOS, and web brand assets.')
 
 
