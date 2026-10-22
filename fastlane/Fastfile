@@ -65,12 +65,26 @@ platform :ios do
 
   desc "Upload App Store metadata and screenshots without submitting"
   lane :listing do
-    deliver(api_key: app_store_key, app_identifier: APP_ID,
-            metadata_path: File.join(ROOT, "fastlane", "metadata", "ios"),
-            screenshots_path: File.join(ROOT, "fastlane", "screenshots", "ios"),
-            overwrite_screenshots: true,
-            skip_binary_upload: true, submit_for_review: false, force: true,
-            run_precheck_before_submit: false)
+    metadata = File.join(ROOT, "fastlane", "metadata", "ios")
+    contact = %w[first_name last_name phone_number email_address]
+              .map { |f| File.join(metadata, "review_information", "#{f}.txt") }
+    Dir.mktmpdir do |tmp|
+      unless contact.all? { |f| File.file?(f) && !File.read(f).strip.empty? }
+        # Apple rejects review details without a contact, so send the rest until it's filled in.
+        UI.important("No App Review contact in review_information/ yet: skipping review details")
+        FileUtils.cp_r(metadata, tmp)
+        metadata = File.join(tmp, "ios")
+        FileUtils.rm_rf(File.join(metadata, "review_information"))
+      end
+      deliver(api_key: app_store_key, app_identifier: APP_ID,
+              metadata_path: metadata,
+              screenshots_path: File.join(ROOT, "fastlane", "screenshots", "ios"),
+              overwrite_screenshots: true,
+              # The app ships no content of its own: every question is None (4+, like Swiftfin).
+              app_rating_config_path: File.join(ROOT, "fastlane", "metadata", "ios", "age_rating.json"),
+              skip_binary_upload: true, submit_for_review: false, force: true,
+              run_precheck_before_submit: false)
+    end
   end
 
   desc "Build, upload, attach to the App Store version, and submit for review"
