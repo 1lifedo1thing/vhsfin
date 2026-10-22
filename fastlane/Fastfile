@@ -119,7 +119,9 @@ platform :android do
 
   desc "Upload Play listing text and images without a binary"
   lane :listing do
-    upload_to_play_store(package_name: APP_ID, json_key: play_key,
+    # supply looks up a release even without a binary, so point it at the newest internal build.
+    latest = google_play_track_version_codes(package_name: APP_ID, json_key: play_key, track: "internal").max
+    upload_to_play_store(package_name: APP_ID, json_key: play_key, track: "internal", version_code: latest,
                          metadata_path: File.join(ROOT, "fastlane", "metadata", "android"),
                          skip_upload_apk: true, skip_upload_aab: true, skip_upload_changelogs: true)
   end
