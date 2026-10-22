@@ -85,6 +85,9 @@ platform :ios do
               skip_binary_upload: true, submit_for_review: false, force: true,
               run_precheck_before_submit: false)
     end
+    # App Review requires this in App Information: users' own media and public cover art.
+    Spaceship::ConnectAPI::App.find(APP_ID)
+                              .update(attributes: { content_rights_declaration: "USES_THIRD_PARTY_CONTENT" })
   end
 
   desc "Build, upload, attach to the App Store version, and submit for review"
