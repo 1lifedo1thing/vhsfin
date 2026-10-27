@@ -11,3 +11,5 @@ No account with us exists or is created. The app has no ads, analytics, or in-ap
 NSAllowsArbitraryLoads: users connect to their own media servers, which often run over plain HTTP on a home network (for example http://192.168.1.20:8096) or on a private hostname without a public certificate. The address is always entered by the user.
 
 Cover art: the app looks up VHS sleeve scans for the user's own titles from the Internet Archive's public API, to identify the movies in their library.
+
+VPN: the app has no VPN functionality. It does not use NetworkExtension, has no VPN or packet-tunnel entitlements, and does not create, configure, or route traffic through any VPN. It collects no user information through a VPN and shares nothing with third parties. It only makes ordinary HTTP(S) requests to the Jellyfin server address the user enters (and to the Internet Archive for cover art, as described above).
