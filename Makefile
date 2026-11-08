@@ -18,7 +18,7 @@ help:
 	@echo "  make demo             build + serve with open-movie demo shelves (no server)"
 	@echo "  make demo-onboarding  how to re-trigger the VHS art-grab popup"
 	@echo ""
-	@echo "Release (secrets in .env; see .env.example and docs/release-checklist.md):"
+	@echo "Release (secrets in .env; see .env.example):"
 	@echo "  make gems             install Fastlane (Homebrew Ruby, into vendor/bundle)"
 	@echo "  make ios-beta         build and upload to TestFlight"
 	@echo "  make ios-listing      upload App Store text and screenshots"
