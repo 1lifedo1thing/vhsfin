@@ -36,7 +36,7 @@ The artwork above is project artwork; the screenshots below show the app. VHSFin
 
 ## Get started
 
-App Store and Google Play releases are on the way from [MarkDid](https://markdid.dev). Until then, VHSFin installs from source. Bring a running Jellyfin server and an existing account.
+Get VHSFin on the [App Store](https://apps.apple.com/us/app/vhsfin/id6820343551) or [Google Play](https://play.google.com/store/apps/details?id=dev.markdid.vhsfin), or build it from source. Either way, bring a running Jellyfin server and an existing account.
 
 1. Download or clone this repository and open its folder.
 2. Install [Flutter](https://docs.flutter.dev/get-started/install) with Dart **3.13.2 or later, below 4.0** (see `pubspec.yaml`).

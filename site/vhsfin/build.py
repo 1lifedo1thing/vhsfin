@@ -25,8 +25,8 @@ SUPPORT = "support+vhsfin@markdid.dev"
 THEME = "#000000"
 SOURCE = "https://github.com/markdid/vhsfin"
 # Store listings. An empty URL shows the button greyed out with "Coming soon".
-APP_STORE = ""
-PLAY_STORE = ""
+APP_STORE = "https://apps.apple.com/us/app/vhsfin/id6820343551"
+PLAY_STORE = "https://play.google.com/store/apps/details?id=dev.markdid.vhsfin"
 
 HEADERS = """/*
   X-Content-Type-Options: nosniff
