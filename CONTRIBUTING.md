@@ -42,6 +42,8 @@ To replay the sleeve-art introduction, clear the single preferences key `vhsfin.
 
 The artwork and exact generation prompts are documented in [assets/branding/README.md](assets/branding/README.md). Platform exports are checked in. On macOS, regenerate them with `python3 tool/generate_brand_assets.py`.
 
+For changes to Jellyfin requests, `make jellyfin-compat JELLYFIN=10.8.13` runs the client against that server version in Docker; CI covers 10.8 through the latest nightly.
+
 For playback changes, try a movie and a series, pause/resume, seek, eject during insertion, enter/exit fullscreen, and try an unreachable stream. Test your target device; browser playback is not proof of native playback compatibility.
 
 ## Reporting problems

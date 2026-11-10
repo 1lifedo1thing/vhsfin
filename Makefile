@@ -6,7 +6,7 @@ PYTHON ?= python3
 
 .PHONY: help build serve stop restart web demo demo-onboarding \
 	gems ios-beta ios-listing ios-release android-internal android-listing android-ship android-production \
-	store-screenshots site-film site
+	store-screenshots site-film site jellyfin-compat
 
 help:
 	@echo "VHSFin targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  make web              alias for restart"
 	@echo "  make demo             build + serve with open-movie demo shelves (no server)"
 	@echo "  make demo-onboarding  how to re-trigger the VHS art-grab popup"
+	@echo "  make jellyfin-compat  run the client against Jellyfin in Docker (JELLYFIN=10.10.7)"
 	@echo ""
 	@echo "Release (secrets in .env; see .env.example):"
 	@echo "  make gems             install Fastlane (Homebrew Ruby, into vendor/bundle)"
@@ -59,6 +60,16 @@ demo-onboarding:
 	@echo "      or wipe app prefs on device/desktop.)"
 	@echo "  4. Reload — the warm pass + popup runs again."
 	@echo ""
+
+# The Jellyfin client against a real server in Docker. JELLYFIN is an image tag
+# (10.8.13, 10.11, latest, unstable, ...); CI runs the same matrix.
+JELLYFIN ?= latest
+JELLYFIN_PORT ?= 18096
+
+jellyfin-compat:
+	tool/jellyfin_server.sh up jellyfin/jellyfin:$(JELLYFIN) $(JELLYFIN_PORT)
+	JELLYFIN_TEST_URL=http://localhost:$(JELLYFIN_PORT) flutter test test/jellyfin_server_compat_test.dart; \
+		status=$$?; tool/jellyfin_server.sh down; exit $$status
 
 # --- Release -----------------------------------------------------------------
 # Fastlane needs Ruby >= 3.1; macOS ships 2.6, so use Homebrew's (brew install ruby).

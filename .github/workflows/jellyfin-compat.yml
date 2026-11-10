@@ -1,0 +1,51 @@
+name: Jellyfin compatibility
+
+on:
+  pull_request:
+    paths: &client_paths
+      - lib/data/**
+      - lib/features/auth/**
+      - lib/features/library/model/**
+      - pubspec.lock
+      - test/jellyfin_server_compat_test.dart
+      - tool/jellyfin_server.sh
+      - .github/workflows/jellyfin-compat.yml
+  push:
+    branches: [main]
+    paths: *client_paths
+  schedule:
+    # Mondays: catches new Jellyfin releases and nightlies between our changes.
+    - cron: "23 7 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: jellyfin-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: jellyfin ${{ matrix.jellyfin }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Nightlies break on their own; report, don't block.
+    continue-on-error: ${{ matrix.jellyfin == 'unstable' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        jellyfin: ["10.8.13", "10.9.11", "10.10.7", "10.11", "latest", "unstable"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: tool/jellyfin_server.sh up jellyfin/jellyfin:${{ matrix.jellyfin }} 8096
+      - run: flutter test test/jellyfin_server_compat_test.dart
+        env:
+          JELLYFIN_TEST_URL: http://localhost:8096
+      - if: failure()
+        run: docker logs --tail 200 vhsfin-jellyfin-compat
