@@ -1,1 +1,2 @@
-The first release of VHSFin. Be kind, rewind.
+Plays on Jellyfin 12 servers.
+VHS sleeves are saved smaller and load faster. Settings > Shrink makes sleeves saved earlier smaller too.

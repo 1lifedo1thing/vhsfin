@@ -1,7 +1,7 @@
 name: vhsfin
 description: A small Jellyfin client with VHS shelves and a living-room player.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+4
 
 environment:
   sdk: ^3.13.2

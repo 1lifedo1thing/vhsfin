@@ -9,6 +9,8 @@ default_platform(:ios)
 ROOT = File.expand_path("..", __dir__)
 Dotenv.load(File.join(ROOT, ".env"))
 APP_ID = "dev.markdid.vhsfin"
+# Marketing version (1.0.1) from pubspec; the build number comes from BUILD_NUMBER.
+APP_VERSION = File.read(File.join(ROOT, "pubspec.yaml"))[/^version:\s*([\d.]+)/, 1]
 APP_ENV_PREFIX = "VHSFIN"
 
 def required_env(*names)
@@ -90,15 +92,19 @@ platform :ios do
                               .update(attributes: { content_rights_declaration: "USES_THIRD_PARTY_CONTENT" })
   end
 
-  desc "Build, upload, attach to the App Store version, and submit for review"
+  desc "Build, upload, create the App Store version with What's New, and submit for review"
   lane :release do
     key = app_store_key
     build = ENV.fetch("BUILD_NUMBER")
+    notes = File.read(File.join(ROOT, "fastlane", "metadata", "ios", "en-US", "release_notes.txt")).strip
     upload_to_testflight(api_key: key, app_identifier: APP_ID, ipa: ios_build,
                          skip_waiting_for_build_processing: false,
                          wait_processing_timeout_duration: 2700)
-    deliver(api_key: key, app_identifier: APP_ID, build_number: build,
-            skip_binary_upload: true, skip_screenshots: true, skip_metadata: true,
+    # app_version creates the new App Store version (copying the live one's listing);
+    # an update can't be submitted without What's New, so only that is uploaded.
+    deliver(api_key: key, app_identifier: APP_ID, app_version: APP_VERSION, build_number: build,
+            skip_binary_upload: true, skip_screenshots: true,
+            metadata_path: Dir.mktmpdir, release_notes: { "en-US" => notes },
             submit_for_review: true, automatic_release: false, force: true,
             run_precheck_before_submit: false,
             submission_information: {
