@@ -125,7 +125,10 @@ class LivingRoomView extends StatelessWidget {
                 stops: [0, 0.55, 1],
               ),
             ),
+            // The shelves scroll under the home indicator instead of being
+            // clipped at the bottom inset; the scroll padding clears it.
             child: SafeArea(
+              bottom: false,
               child: LayoutBuilder(
                 builder: (context, outer) {
                   // Tablets draw the whole console larger; everything below is
@@ -247,8 +250,8 @@ class LivingRoomView extends StatelessWidget {
                   );
                   return SingleChildScrollView(
                     padding: EdgeInsets.only(
-                      top: (wide ? 28 : 16) * scale,
-                      bottom: 40 * scale,
+                      top: (wide ? 28 : 0) * scale,
+                      bottom: 40 * scale + MediaQuery.paddingOf(context).bottom,
                     ),
                     child: scale == 1
                         ? console
