@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -337,15 +339,7 @@ class JellyfinClient {
     required String imageUrl,
   }) async {
     try {
-      final existing = await _dio.get<Map<String, dynamic>>(
-        '${session.normalizedServerUrl}/Users/${session.userId}/Items/$itemId',
-        queryParameters: {'Fields': 'ImageTags'},
-        options: _authed(session),
-      );
-      final tags = existing.data?['ImageTags'];
-      if (tags is Map && tags['Box'] != null) {
-        return false;
-      }
+      if (await _hasBoxImage(session, itemId)) return false;
 
       await _dio.post<void>(
         '${session.normalizedServerUrl}/Items/$itemId/RemoteImages/Download',
@@ -356,6 +350,39 @@ class JellyfinClient {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Upload a JPEG as the item's `Box` image. Like [saveBoxImageFromUrl],
+  /// never overwrites an existing Box and requires elevation.
+  Future<bool> saveBoxImage({
+    required JellyfinSession session,
+    required String itemId,
+    required Uint8List jpeg,
+  }) async {
+    try {
+      if (await _hasBoxImage(session, itemId)) return false;
+      final options = _authed(session);
+      options.headers!['Content-Type'] = 'image/jpeg';
+      // Jellyfin reads the request body as base64.
+      await _dio.post<void>(
+        '${session.normalizedServerUrl}/Items/$itemId/Images/Box',
+        data: base64Encode(jpeg),
+        options: options,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _hasBoxImage(JellyfinSession session, String itemId) async {
+    final existing = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/${session.userId}/Items/$itemId',
+      queryParameters: {'Fields': 'ImageTags'},
+      options: _authed(session),
+    );
+    final tags = existing.data?['ImageTags'];
+    return tags is Map && tags['Box'] != null;
   }
 
   /// Remove a stored `Box` image (e.g. after the user rejects a bad auto-match).

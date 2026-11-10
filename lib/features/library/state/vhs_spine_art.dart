@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vhsfin/constants/build_flags.dart';
+import 'package:vhsfin/data/repositories/jellyfin_client.dart';
+import 'package:vhsfin/features/auth/model/session.dart';
 import 'package:vhsfin/features/auth/state/session_notifier.dart';
+import 'package:vhsfin/features/library/data/sleeve_downscale.dart';
 import 'package:vhsfin/features/library/data/vhs_cover_resolver.dart';
 import 'package:vhsfin/features/library/data/vhs_image_cache.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
@@ -90,12 +93,15 @@ final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
   if (session == null) return art;
 
   final client = ref.watch(jellyfinClientProvider);
-  // saveBoxImageFromUrl also re-checks ImageTags and refuses overwrite.
-  final saved = await client.saveBoxImageFromUrl(
-    session: session,
-    itemId: tape.id,
-    imageUrl: art.imageUrl,
-  );
+  // Both savers re-check ImageTags and refuse to overwrite.
+  final saved = kIsWeb
+      // Browsers can't read archive.org bytes (CORS): Jellyfin fetches as-is.
+      ? await client.saveBoxImageFromUrl(
+          session: session,
+          itemId: tape.id,
+          imageUrl: art.imageUrl,
+        )
+      : await _saveDownscaledBox(client, session, tape.id, art.imageUrl);
   if (saved) {
     if (rejectsNotifier.shouldSuppressArt(tape.id)) {
       // Race: user rejected while the upload was in flight — drop the Box.
@@ -112,3 +118,29 @@ final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
   }
   return art;
 });
+
+/// Store a downscaled JPEG instead of the archive's original, which can be a
+/// 60 MB, 600 dpi scan that Jellyfin would otherwise resize on every request.
+Future<bool> _saveDownscaledBox(
+  JellyfinClient client,
+  JellyfinSession session,
+  String itemId,
+  String imageUrl,
+) async {
+  try {
+    final original = await VhsImageCache.manager.getSingleFile(imageUrl);
+    final jpeg = await downscaleSleeve(await original.readAsBytes());
+    if (jpeg == null) return false;
+    final saved = await client.saveBoxImage(
+      session: session,
+      itemId: itemId,
+      jpeg: jpeg,
+    );
+    // The shelf now loads the server copy; drop the full-size download.
+    if (saved) await VhsImageCache.manager.removeFile(imageUrl);
+    return saved;
+  } catch (err) {
+    debugPrint('vhs-spine Box save failed for $itemId: $err');
+    return false;
+  }
+}

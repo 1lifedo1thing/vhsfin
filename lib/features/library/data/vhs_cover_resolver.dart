@@ -623,6 +623,48 @@ class VhsCoverResolver {
   }
 
   ({String name, int size})? _pickScanFile(List<dynamic> files) {
+    final images = <({String name, int size})>[];
+    final pick = _pickLargestScan(files, images);
+    if (pick == null) return null;
+    // Uploaders often add the same scan at several resolutions/formats
+    // ("9. cover out 600.png" 63 MB, "15. cover out 300.jpg" 3 MB). The
+    // largest picks the scan; fetch its smallest copy that's still sharp.
+    final stem = scanStem(pick.name);
+    final copies =
+        images
+            .where((f) => scanStem(f.name) == stem && f.size >= minScanBytes)
+            .toList()
+          ..sort((a, b) => a.size.compareTo(b.size));
+    final chosen = copies.isEmpty ? pick : copies.first;
+    // A 200 MB master is never worth a phone download: try the next match.
+    return chosen.size > maxScanBytes ? null : chosen;
+  }
+
+  /// Copies smaller than this are previews, not scans.
+  static const minScanBytes = 1000000;
+  static const maxScanBytes = 50000000;
+
+  /// "9. cover out 600.png" → "cover out": drops the upload index, dpi, size
+  /// word, and extension so renditions of one scan compare equal.
+  @visibleForTesting
+  static String scanStem(String name) => name
+      .toLowerCase()
+      .replaceFirst(RegExp(r'\.[a-z0-9]+$'), '')
+      .replaceFirst(RegExp(r'^\d+[.\s_-]+'), '')
+      .replaceFirst(
+        RegExp(r'[\s_-]*(72|96|150|200|300|400|600|1200)\s*(dpi)?$'),
+        '',
+      )
+      .replaceFirst(
+        RegExp(r'[\s_-]*(small|medium|large|big|full|hi-?res|low-?res)$'),
+        '',
+      )
+      .trim();
+
+  ({String name, int size})? _pickLargestScan(
+    List<dynamic> files,
+    List<({String name, int size})> images,
+  ) {
     ({String name, int size})? best;
     ({String name, int size})? spineNamed;
 
@@ -644,6 +686,7 @@ class VhsCoverResolver {
       if (!isImage) continue;
       final size = int.tryParse('${file['size']}') ?? 0;
       final candidate = (name: name, size: size);
+      images.add(candidate);
       if (lower.contains('spine')) {
         if (spineNamed == null || size > spineNamed.size) {
           spineNamed = candidate;
