@@ -46,8 +46,8 @@ class CrtSpriteLayout {
   final String asset;
   final Size assetSize;
 
-  /// Crop within [asset]. Height ends at the feet so the cabinet plants on the
-  /// shelf ledge.
+  /// Crop within [asset]. Height ends at the feet so the cabinet stands on the
+  /// shelf top.
   final Rect sourceRect;
 
   /// Video aperture as fractions of [sourceRect]. Centered on the transparent
@@ -66,9 +66,6 @@ class CrtSpriteLayout {
 
   /// Speaker grille / side panel — fullscreen.
   final Rect full;
-
-  /// How far feet may overlap the shelf ledge, as a fraction of cabinet width.
-  static const shelfPlant = 0.014;
 
   static const _atlas = 'assets/crts.png';
   static const _atlasSize = Size(1536, 1024);

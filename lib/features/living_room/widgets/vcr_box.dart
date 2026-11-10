@@ -62,10 +62,6 @@ class VcrBox extends StatelessWidget {
         final width = constraints.maxWidth;
         final naturalHeight =
             width * layout.sourceRect.height / layout.sourceRect.width;
-        // Drop the feet a few pixels into the shelf ledge so the cabinet
-        // reads as planted instead of hovering above the bevel.
-        final plant = (width * CrtSpriteLayout.shelfPlant).clamp(2.0, 6.0);
-        final height = naturalHeight - plant;
         Rect box(Rect frac) => Rect.fromLTWH(
           width * frac.left,
           naturalHeight * frac.top,
@@ -78,7 +74,7 @@ class VcrBox extends StatelessWidget {
         final full = box(layout.full);
         return SizedBox(
           width: width,
-          height: height,
+          height: naturalHeight,
           child: Stack(
             clipBehavior: Clip.none,
             children: [

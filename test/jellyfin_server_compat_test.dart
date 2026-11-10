@@ -2,13 +2,18 @@
 // JELLYFIN_TEST_URL is set; `make jellyfin-compat` starts a seeded server
 // (tool/jellyfin_server.sh) and runs this file.
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:vhsfin/data/repositories/jellyfin_client.dart';
 import 'package:vhsfin/features/auth/model/session.dart';
+import 'package:vhsfin/features/library/data/sleeve_downscale.dart';
 import 'package:vhsfin/features/library/model/media_library.dart';
+import 'package:vhsfin/features/library/model/sleeve_shrink_status.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
+import 'package:vhsfin/features/library/state/sleeve_shrink.dart';
 
 final _serverUrl = Platform.environment['JELLYFIN_TEST_URL'];
 
@@ -120,8 +125,64 @@ void main() {
         );
         expect(response.statusCode, isNot(anyOf(401, 403)));
       });
+
+      test('an oversized Box sleeve shrinks in place', () async {
+        expect(await client.isAdministrator(session), isTrue);
+        // A full-resolution scan, as sleeves were saved before 1.0.1.
+        final scan = Uint8List.fromList(
+          img.encodeJpg(_noise(2600, 2000), quality: 95),
+        );
+        expect(
+          await client.saveBoxImage(
+            session: session,
+            itemId: movie.id,
+            jpeg: scan,
+            overwrite: true,
+          ),
+          isTrue,
+        );
+        expect(await client.fetchBoxImageItemIds(session), [movie.id]);
+        expect(await client.boxImageInfo(session, movie.id), (
+          width: 2600,
+          height: 2000,
+          bytes: scan.length,
+          png: false,
+        ));
+
+        final shrinker = SleeveShrinker(client, session);
+        addTearDown(shrinker.dispose);
+        await shrinker.check();
+        expect(shrinker.status.value.phase, SleeveShrinkPhase.ready);
+        expect(shrinker.status.value.oversized, 1);
+        await shrinker.shrink();
+        expect(shrinker.status.value.phase, SleeveShrinkPhase.done);
+        expect(shrinker.status.value.shrunk, 1);
+
+        final after = (await client.boxImageInfo(session, movie.id))!;
+        expect(after.height, sleeveMaxHeight);
+        expect(after.bytes, lessThan(scan.length));
+        final served = await http.get<void>(
+          '${session.normalizedServerUrl}/Items/${movie.id}/Images/Box'
+          '?maxHeight=900&quality=85&ApiKey=${session.accessToken}',
+        );
+        expect(served.statusCode, 200);
+      });
     },
   );
+}
+
+/// Random pixels, so the JPEG stays as large as a real scan.
+img.Image _noise(int width, int height) {
+  final image = img.Image(width: width, height: height);
+  var seed = 7;
+  for (final p in image) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    p
+      ..r = seed & 0xFF
+      ..g = (seed >> 8) & 0xFF
+      ..b = (seed >> 16) & 0xFF;
+  }
+  return image;
 }
 
 Future<String> _get(Dio http, Uri uri) async {

@@ -389,16 +389,54 @@ class _EntertainmentCenter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxTvWidth),
-            child: vcr,
-          ),
-        ),
-        // The artwork feet terminate at this ledge; no controls or gap intervene.
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: sidePadding),
-          child: const CabinetLedge(height: 22, grain: Alignment(-0.6, 0.4)),
+        // The cabinet art is drawn from slightly above, so the shelf shows its
+        // top and the feet stand on it, a little behind the front edge.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // CabinetShelf's default top depth and ledge height.
+            const depth = 16.0;
+            const ledge = 16.0;
+            const feetFromFront = depth * 0.35;
+            final tvWidth = math.min(maxTvWidth, constraints.maxWidth);
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: sidePadding,
+                  right: sidePadding,
+                  bottom: 0,
+                  child: const CabinetShelf(grain: Alignment(-0.6, 0.4)),
+                ),
+                // Contact shadow under the deck.
+                Positioned(
+                  left: (constraints.maxWidth - tvWidth * 0.9) / 2,
+                  width: tvWidth * 0.9,
+                  bottom: ledge + feetFromFront,
+                  height: 4,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xCC000000),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: ledge + feetFromFront),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxTvWidth),
+                      child: vcr,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: sidePadding + 8),

@@ -608,7 +608,7 @@ class VhsCoverResolver {
         meta = response.data ?? {};
       }
       final files = meta['files'] as List<dynamic>? ?? const [];
-      final pick = _pickScanFile(files);
+      final pick = pickScanFile(files);
       if (pick == null) return null;
       final name = pick.name;
       final url =
@@ -622,7 +622,8 @@ class VhsCoverResolver {
     }
   }
 
-  ({String name, int size})? _pickScanFile(List<dynamic> files) {
+  @visibleForTesting
+  static ({String name, int size})? pickScanFile(List<dynamic> files) {
     final images = <({String name, int size})>[];
     final pick = _pickLargestScan(files, images);
     if (pick == null) return null;
@@ -661,7 +662,7 @@ class VhsCoverResolver {
       )
       .trim();
 
-  ({String name, int size})? _pickLargestScan(
+  static ({String name, int size})? _pickLargestScan(
     List<dynamic> files,
     List<({String name, int size})> images,
   ) {

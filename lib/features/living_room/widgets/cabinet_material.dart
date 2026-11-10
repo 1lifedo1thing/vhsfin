@@ -164,3 +164,95 @@ class CabinetLedge extends StatelessWidget {
     );
   }
 }
+
+/// A shelf seen from slightly above: a top surface receding to a narrower
+/// back edge, over a [CabinetLedge] front. Lets cabinet art drawn from above
+/// stand on the shelf instead of hovering in front of a flat edge.
+class CabinetShelf extends StatelessWidget {
+  const CabinetShelf({
+    super.key,
+    this.depth = 16,
+    this.height = 16,
+    this.grain = const Alignment(0.3, -0.2),
+  });
+
+  /// Visible depth of the top surface.
+  final double depth;
+
+  /// Height of the front ledge.
+  final double height;
+  final Alignment grain;
+
+  @override
+  Widget build(BuildContext context) {
+    final walnut = CabinetScope.of(context) == CabinetStyle.walnut;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipPath(
+          clipper: _ShelfTopClipper(inset: depth * 0.6),
+          child: SizedBox(
+            height: depth,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: walnut
+                    ? const Color(0xFF3D281B)
+                    : const Color(0xFF121518),
+                image: walnut
+                    ? DecorationImage(
+                        image: const ExactAssetImage(
+                          'assets/branding/walnut.jpg',
+                          scale: 2,
+                        ),
+                        fit: BoxFit.none,
+                        repeat: ImageRepeat.repeat,
+                        alignment: grain,
+                      )
+                    : null,
+              ),
+              // Darker at the back, catching light toward the front edge.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: walnut
+                        ? const [
+                            Color(0xC0000000),
+                            Color(0x30000000),
+                            Color(0x30D7AD78),
+                          ]
+                        : const [
+                            Color(0xC0000000),
+                            Color(0x00000000),
+                            Color(0x14FFFFFF),
+                          ],
+                    stops: const [0, 0.55, 1],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        CabinetLedge(height: height, grain: grain),
+      ],
+    );
+  }
+}
+
+class _ShelfTopClipper extends CustomClipper<Path> {
+  const _ShelfTopClipper({required this.inset});
+
+  final double inset;
+
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(inset, 0)
+    ..lineTo(size.width - inset, 0)
+    ..lineTo(size.width, size.height)
+    ..lineTo(0, size.height)
+    ..close();
+
+  @override
+  bool shouldReclip(_ShelfTopClipper oldClipper) => oldClipper.inset != inset;
+}
