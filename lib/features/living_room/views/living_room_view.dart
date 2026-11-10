@@ -165,17 +165,7 @@ class LivingRoomView extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                const Expanded(
-                                  child: Text(
-                                    'HOME VIDEO',
-                                    style: TextStyle(
-                                      color: VhsColors.inkMuted,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 3,
-                                    ),
-                                  ),
-                                ),
+                                const Spacer(),
                                 IconButton(
                                   onPressed: () {
                                     DeckFeedback.tap();
