@@ -8,6 +8,7 @@ import 'package:vhsfin/features/library/model/shelf.dart';
 import 'package:vhsfin/features/library/model/tape.dart';
 import 'package:vhsfin/features/library/state/art_onboarding.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
+import 'package:vhsfin/features/library/state/sleeve_shrink.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
 import 'package:vhsfin/features/library/state/vhs_sleeve_actions.dart';
 import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
@@ -31,6 +32,7 @@ class LivingRoomPage extends ConsumerWidget {
     final session = ref.read(sessionProvider).value;
     final displayPrefs = ref.read(shelfDisplayPrefsProvider);
     final experience = ref.read(experiencePrefsProvider);
+    final shrinker = ref.read(sleeveShrinkerProvider);
     showDeckSettingsSheet(
       context,
       connected: session != null,
@@ -75,6 +77,8 @@ class LivingRoomPage extends ConsumerWidget {
       onCabinetStyleChanged: (style) =>
           ref.read(experiencePrefsProvider.notifier).setCabinetStyle(style),
       onOpenLink: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+      sleeveShrink: shrinker.available ? shrinker.status : null,
+      onShrinkSleeves: shrinker.run,
     );
   }
 

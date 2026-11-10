@@ -352,15 +352,16 @@ class JellyfinClient {
     }
   }
 
-  /// Upload a JPEG as the item's `Box` image. Like [saveBoxImageFromUrl],
-  /// never overwrites an existing Box and requires elevation.
+  /// Upload a JPEG as the item's `Box` image. Requires elevation. Unless
+  /// [overwrite], an existing Box is kept, like [saveBoxImageFromUrl].
   Future<bool> saveBoxImage({
     required JellyfinSession session,
     required String itemId,
     required Uint8List jpeg,
+    bool overwrite = false,
   }) async {
     try {
-      if (await _hasBoxImage(session, itemId)) return false;
+      if (!overwrite && await _hasBoxImage(session, itemId)) return false;
       final options = _authed(session);
       options.headers!['Content-Type'] = 'image/jpeg';
       // Jellyfin reads the request body as base64.
@@ -373,6 +374,65 @@ class JellyfinClient {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<bool> isAdministrator(JellyfinSession session) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/Me',
+      options: _authed(session),
+    );
+    final policy = response.data?['Policy'];
+    return policy is Map && policy['IsAdministrator'] == true;
+  }
+
+  /// Ids of every movie, series, season and episode that has a `Box` image.
+  Future<List<String>> fetchBoxImageItemIds(JellyfinSession session) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '${session.normalizedServerUrl}/Users/${session.userId}/Items',
+      queryParameters: {
+        'Recursive': true,
+        'ImageTypes': 'Box',
+        'IncludeItemTypes': 'Movie,Series,Season,Episode',
+        'EnableImages': false,
+      },
+      options: _authed(session),
+    );
+    final items = response.data?['Items'] as List<dynamic>? ?? const [];
+    return [
+      for (final item in items)
+        if (item is Map && item['Id'] is String) item['Id'] as String,
+    ];
+  }
+
+  /// Stored dimensions and file size of the item's `Box` image.
+  Future<({int width, int height, int bytes})?> boxImageInfo(
+    JellyfinSession session,
+    String itemId,
+  ) async {
+    final response = await _dio.get<List<dynamic>>(
+      '${session.normalizedServerUrl}/Items/$itemId/Images',
+      options: _authed(session),
+    );
+    for (final image in response.data ?? const []) {
+      if (image is! Map || image['ImageType'] != 'Box') continue;
+      return (
+        width: (image['Width'] as num?)?.toInt() ?? 0,
+        height: (image['Height'] as num?)?.toInt() ?? 0,
+        bytes: (image['Size'] as num?)?.toInt() ?? 0,
+      );
+    }
+    return null;
+  }
+
+  Future<Uint8List> downloadBoxImage(
+    JellyfinSession session,
+    String itemId,
+  ) async {
+    final response = await _dio.get<List<int>>(
+      '${session.normalizedServerUrl}/Items/$itemId/Images/Box',
+      options: _authed(session).copyWith(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(response.data ?? const []);
   }
 
   Future<bool> _hasBoxImage(JellyfinSession session, String itemId) async {

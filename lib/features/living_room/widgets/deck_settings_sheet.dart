@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:vhsfin/constants/build_flags.dart';
 import 'package:vhsfin/constants/feedback.dart';
 import 'package:vhsfin/constants/links.dart';
 import 'package:vhsfin/constants/theme.dart';
+import 'package:vhsfin/features/library/model/sleeve_shrink_status.dart';
 import 'package:vhsfin/features/library/state/shelf_display_prefs.dart';
 import 'package:vhsfin/features/living_room/model/cabinet_style.dart';
 import 'package:vhsfin/features/living_room/model/crt_sprite_layout.dart';
@@ -36,6 +38,8 @@ Future<void> showDeckSettingsSheet(
   required ValueChanged<CabinetStyle> onCabinetStyleChanged,
   required ValueChanged<Uri> onOpenLink,
   String? userName,
+  ValueListenable<SleeveShrinkStatus>? sleeveShrink,
+  VoidCallback? onShrinkSleeves,
 }) {
   return showDeckPanelSheet<void>(
     context,
@@ -62,6 +66,8 @@ Future<void> showDeckSettingsSheet(
       cabinetStyle: cabinetStyle,
       onCabinetStyleChanged: onCabinetStyleChanged,
       onOpenLink: onOpenLink,
+      sleeveShrink: sleeveShrink,
+      onShrinkSleeves: onShrinkSleeves,
     ),
   );
 }
@@ -90,6 +96,8 @@ class _DeckSettingsSheet extends StatefulWidget {
     required this.onCabinetStyleChanged,
     required this.onOpenLink,
     this.userName,
+    this.sleeveShrink,
+    this.onShrinkSleeves,
   });
 
   final bool connected;
@@ -114,6 +122,8 @@ class _DeckSettingsSheet extends StatefulWidget {
   final CabinetStyle cabinetStyle;
   final ValueChanged<CabinetStyle> onCabinetStyleChanged;
   final ValueChanged<Uri> onOpenLink;
+  final ValueListenable<SleeveShrinkStatus>? sleeveShrink;
+  final VoidCallback? onShrinkSleeves;
 
   @override
   State<_DeckSettingsSheet> createState() => _DeckSettingsSheetState();
@@ -277,6 +287,29 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
             ),
           ],
         ),
+        if (widget.sleeveShrink case final shrink?) ...[
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ValueListenableBuilder(
+                  valueListenable: shrink,
+                  builder: (context, status, _) => DeckHardKey(
+                    label: 'SHRINK',
+                    sublabel: _shrinkSublabel(status),
+                    semanticLabel: 'Shrink sleeves on the server',
+                    onPressed: status.busy ? null : widget.onShrinkSleeves,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Spacer(),
+              const SizedBox(width: 10),
+              const Spacer(),
+            ],
+          ),
+        ],
         const DeckLabel('ABOUT'),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,6 +346,15 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
     );
   }
 }
+
+String _shrinkSublabel(SleeveShrinkStatus status) => switch (status.phase) {
+  SleeveShrinkPhase.idle => 'SLEEVES',
+  SleeveShrinkPhase.checking => '…',
+  SleeveShrinkPhase.running => '${status.checked}/${status.total}',
+  SleeveShrinkPhase.done => '${status.shrunk} DONE',
+  SleeveShrinkPhase.adminOnly => 'ADMIN ONLY',
+  SleeveShrinkPhase.failed => 'FAILED',
+};
 
 /// A tiny live shelf rendered in [style] — the preview is the real material.
 class _ShelfPreview extends StatelessWidget {
