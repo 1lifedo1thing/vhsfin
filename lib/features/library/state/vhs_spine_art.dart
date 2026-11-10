@@ -106,7 +106,7 @@ final vhsSpineArtProvider = FutureProvider.family<VhsSpineArt?, Tape>((
     return VhsSpineArt(
       imageUrl:
           '${session.normalizedServerUrl}/Items/${tape.id}/Images/Box'
-          '?maxHeight=900&quality=85&api_key=${session.accessToken}',
+          '?maxHeight=900&quality=85&ApiKey=${session.accessToken}',
       centerWidthFraction: art.centerWidthFraction,
     );
   }

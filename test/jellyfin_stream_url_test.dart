@@ -32,7 +32,8 @@ void main() {
       reason: 'mpv downmixes',
     );
     expect(uri.queryParameters['DeviceId'], 'device-1');
-    expect(uri.queryParameters['api_key'], 'token + /');
+    expect(uri.queryParameters['ApiKey'], 'token + /');
+    expect(uri.queryParameters.containsKey('api_key'), isFalse);
     expect(uri.queryParameters.containsKey('Static'), isFalse);
   });
 
@@ -54,6 +55,7 @@ void main() {
     expect(uri.queryParameters['MaxHeight'], '1080');
     expect(uri.queryParameters['MaxAudioChannels'], '2');
     expect(uri.queryParameters['DeviceId'], 'device-1');
-    expect(uri.queryParameters['api_key'], 'token + /');
+    expect(uri.queryParameters['ApiKey'], 'token + /');
+    expect(uri.queryParameters.containsKey('api_key'), isFalse);
   });
 }

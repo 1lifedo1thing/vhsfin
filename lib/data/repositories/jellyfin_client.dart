@@ -299,7 +299,8 @@ class JellyfinClient {
             'MaxHeight': '1080',
             'MaxAudioChannels': hls ? '6' : '2',
             'DeviceId': session.deviceId,
-            'api_key': session.accessToken,
+            // Jellyfin 12 only accepts the `ApiKey` spelling (10.8+ accept both).
+            'ApiKey': session.accessToken,
           },
         )
         .toString();
@@ -308,7 +309,7 @@ class JellyfinClient {
   String primaryImageUrl(JellyfinSession session, String itemId) {
     return '${session.normalizedServerUrl}/Items/$itemId/Images/Primary'
         '?maxHeight=400&quality=80'
-        '&api_key=${session.accessToken}';
+        '&ApiKey=${session.accessToken}';
   }
 
   /// VHS sleeve / box art — Jellyfin's `Box` image type (also `box.jpg` on disk).
@@ -322,7 +323,7 @@ class JellyfinClient {
     final tag = tags['Box'];
     return '${session.normalizedServerUrl}/Items/$itemId/Images/Box'
         '?tag=$tag&maxHeight=900&quality=85'
-        '&api_key=${session.accessToken}';
+        '&ApiKey=${session.accessToken}';
   }
 
   /// Ask Jellyfin to download a remote sleeve scan and store it as `Box`

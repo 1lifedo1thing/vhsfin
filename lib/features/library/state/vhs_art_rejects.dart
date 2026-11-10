@@ -66,7 +66,7 @@ class VhsArtRejection {
 }
 
 /// Strip volatile query params so the same sleeve still matches when
-/// maxHeight / api_key / cache-busters change.
+/// maxHeight / ApiKey / cache-busters change.
 String normalizeArtUrl(String url) {
   final uri = Uri.tryParse(url.trim());
   if (uri == null) return url.trim();
