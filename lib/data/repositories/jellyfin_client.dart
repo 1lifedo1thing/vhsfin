@@ -404,8 +404,8 @@ class JellyfinClient {
     ];
   }
 
-  /// Stored dimensions and file size of the item's `Box` image.
-  Future<({int width, int height, int bytes})?> boxImageInfo(
+  /// Stored dimensions, file size and format of the item's `Box` image.
+  Future<({int width, int height, int bytes, bool png})?> boxImageInfo(
     JellyfinSession session,
     String itemId,
   ) async {
@@ -419,6 +419,7 @@ class JellyfinClient {
         width: (image['Width'] as num?)?.toInt() ?? 0,
         height: (image['Height'] as num?)?.toInt() ?? 0,
         bytes: (image['Size'] as num?)?.toInt() ?? 0,
+        png: '${image['Path']}'.toLowerCase().endsWith('.png'),
       );
     }
     return null;

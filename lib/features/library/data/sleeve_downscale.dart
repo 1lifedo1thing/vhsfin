@@ -11,7 +11,7 @@ const _jpegQuality = 88;
 
 /// [bytes] as a JPEG no larger than [sleeveMaxHeight] x [sleeveMaxWidth], or
 /// unchanged when it is a JPEG already within bounds or smaller than the
-/// re-encode. Null if undecodable.
+/// re-encode. Null if undecodable or transparent (JPEG has no alpha).
 Future<Uint8List?> downscaleSleeve(Uint8List bytes) async {
   ui.ImmutableBuffer? buffer;
   ui.ImageDescriptor? descriptor;
@@ -38,11 +38,12 @@ Future<Uint8List?> downscaleSleeve(Uint8List bytes) async {
     frame = (await codec.getNextFrame()).image;
     final rgba = await frame.toByteData();
     if (rgba == null) return null;
-    final jpeg = await compute(_encodeJpeg, (
+    final jpeg = await compute(_encodeOpaqueJpeg, (
       width: frame.width,
       height: frame.height,
       rgba: rgba.buffer.asUint8List(),
     ));
+    if (jpeg == null) return null;
     // A tight JPEG can grow when re-encoded; keep it then.
     return _isJpeg(bytes) && bytes.length <= jpeg.length ? bytes : jpeg;
   } catch (err) {
@@ -59,7 +60,10 @@ Future<Uint8List?> downscaleSleeve(Uint8List bytes) async {
 bool _isJpeg(Uint8List bytes) =>
     bytes.length > 2 && bytes[0] == 0xFF && bytes[1] == 0xD8;
 
-Uint8List _encodeJpeg(({int width, int height, Uint8List rgba}) raw) {
+Uint8List? _encodeOpaqueJpeg(({int width, int height, Uint8List rgba}) raw) {
+  for (var i = 3; i < raw.rgba.length; i += 4) {
+    if (raw.rgba[i] != 0xFF) return null;
+  }
   final image = img.Image.fromBytes(
     width: raw.width,
     height: raw.height,

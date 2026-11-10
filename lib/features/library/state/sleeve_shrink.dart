@@ -18,6 +18,24 @@ class SleeveShrinker {
 
   /// Box images larger than this are re-encoded even within the height cap.
   static const maxBytes = 3000000;
+
+  /// Over the size cap but this small (thin spine strips): not worth it.
+  static const minBytes = 1000000;
+
+  /// Jellyfin serves a PNG Box back as PNG, several times a JPEG's size.
+  static const maxPngBytes = 300000;
+
+  @visibleForTesting
+  static bool isOversized({
+    required int width,
+    required int height,
+    required int bytes,
+    required bool png,
+  }) =>
+      bytes > maxBytes ||
+      (png && bytes > maxPngBytes) ||
+      (bytes > minBytes &&
+          (height > sleeveMaxHeight || width > sleeveMaxWidth));
   static const _checkBatch = 6;
 
   final JellyfinClient _client;
@@ -55,9 +73,12 @@ class SleeveShrinker {
         for (var j = 0; j < batch.length; j++) {
           final info = infos[j];
           if (info == null) continue;
-          if (info.height > sleeveMaxHeight ||
-              info.width > sleeveMaxWidth ||
-              info.bytes > maxBytes) {
+          if (isOversized(
+            width: info.width,
+            height: info.height,
+            bytes: info.bytes,
+            png: info.png,
+          )) {
             oversized.add((id: batch[j], bytes: info.bytes));
           }
         }
