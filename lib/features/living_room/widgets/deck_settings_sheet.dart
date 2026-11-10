@@ -299,7 +299,12 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
                     label: 'SHRINK',
                     sublabel: _shrinkSublabel(status),
                     semanticLabel: 'Shrink sleeves on the server',
-                    onPressed: status.busy ? null : widget.onShrinkSleeves,
+                    onPressed: widget.onShrinkSleeves == null
+                        ? null
+                        : () {
+                            _close();
+                            widget.onShrinkSleeves!();
+                          },
                   ),
                 ),
               ),
@@ -348,12 +353,8 @@ class _DeckSettingsSheetState extends State<_DeckSettingsSheet> {
 }
 
 String _shrinkSublabel(SleeveShrinkStatus status) => switch (status.phase) {
-  SleeveShrinkPhase.idle => 'SLEEVES',
-  SleeveShrinkPhase.checking => '…',
-  SleeveShrinkPhase.running => '${status.checked}/${status.total}',
-  SleeveShrinkPhase.done => '${status.shrunk} DONE',
-  SleeveShrinkPhase.adminOnly => 'ADMIN ONLY',
-  SleeveShrinkPhase.failed => 'FAILED',
+  SleeveShrinkPhase.running => '${status.progress}/${status.total}',
+  _ => 'SLEEVES',
 };
 
 /// A tiny live shelf rendered in [style] — the preview is the real material.

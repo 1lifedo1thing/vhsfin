@@ -12,6 +12,7 @@ import 'package:vhsfin/features/library/state/sleeve_shrink.dart';
 import 'package:vhsfin/features/library/state/tape_library.dart';
 import 'package:vhsfin/features/library/state/vhs_sleeve_actions.dart';
 import 'package:vhsfin/features/library/state/vhs_spine_art.dart';
+import 'package:vhsfin/features/library/widgets/shrink_sleeves_dialog.dart';
 import 'package:vhsfin/features/living_room/state/deck_sfx.dart';
 import 'package:vhsfin/features/living_room/state/experience_prefs.dart';
 import 'package:vhsfin/features/living_room/state/series_episodes.dart';
@@ -78,7 +79,27 @@ class LivingRoomPage extends ConsumerWidget {
           ref.read(experiencePrefsProvider.notifier).setCabinetStyle(style),
       onOpenLink: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
       sleeveShrink: shrinker.available ? shrinker.status : null,
-      onShrinkSleeves: shrinker.run,
+      onShrinkSleeves: () => _showShrinkSleeves(context, shrinker),
+    );
+  }
+
+  void _showShrinkSleeves(BuildContext context, SleeveShrinker shrinker) {
+    // A running pass reopens as-is; anything else starts a fresh check.
+    if (!shrinker.status.value.busy) {
+      shrinker.reset();
+      shrinker.check();
+    }
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ShrinkSleevesDialog(
+        status: shrinker.status,
+        onShrink: shrinker.shrink,
+        onClose: () {
+          Navigator.of(dialogContext).pop();
+          shrinker.reset();
+        },
+      ),
     );
   }
 
